@@ -48,7 +48,7 @@ def angular_frequency(traces, samples, dt = 1):
 
 def derive(signal, omega):
     """ D = iωF[d(t)]
-        
+
         where D is the data-derivatived = data/signal, t = trace
 
         It takes the entire omega (given by the angular_frequency function) as
@@ -63,4 +63,19 @@ def derive(signal, omega):
     # the reference program, this inaccuracy drops to 1e-14.
 
     ff = 1j * omega * fft.fft(signal.T)
-    return fft.ifft(ff).real.T 
+    return fft.ifft(ff).real.T
+
+def constraints(spline, vertical_smoothing, horizontal_smoothing):
+    """ Smoothing constraints
+
+        MxM matrix (M = number of spline functions) containing the vertical
+        smoothing and central component of the horizontal smoothing.
+    """
+    Ipm = spline.dot(spline.T)
+    tracelen = spline.shape[1]
+
+    ones = np.ones(tracelen)
+    D = (-np.diag(ones) + np.diag(ones[:-1], k = 1))[:-1].T
+    Dpm = spline.dot(D.dot(D.T)).dot(spline.T)
+
+    return (horizontal_smoothing * Ipm) + (vertical_smoothing * Dpm)
