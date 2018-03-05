@@ -7,6 +7,31 @@ import numpy as np
 import numpy.fft as fft
 import segyio
 
+from .bspline import bspline as bs
+
+def bspline(samples, density, degree):
+    """ bspline on matrix form
+
+    Compute a MxN bspline matrix, where N = samples-per-trace, where the basis
+    functions are all normalised
+    """
+    step = 1 / density
+    middle = (samples + 1) / 2
+    fst = np.arange(middle, 1 / density, -step)[::-1]
+    lst = np.arange(middle, (1 + samples) - 1/density, step)[1:]
+    knots = np.concatenate([fst, lst])
+    knots = np.asarray(knots, dtype='single')
+
+    rows = len(knots) + degree + 1
+    output = np.zeros([rows, samples], dtype='single')
+
+    bs(knots, output, samples, degree)
+
+    # normalise
+    output = output.T / (np.ones(output.shape[0]) * np.sum(output, axis=1))
+    return output.T
+
+
 def frequency_spectrum(n, dt = 1):
     return np.fft.fftfreq(n, dt)
 
