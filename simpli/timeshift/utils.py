@@ -79,3 +79,13 @@ def constraints(spline, vertical_smoothing, horizontal_smoothing):
     Dpm = spline.dot(D.dot(D.T)).dot(spline.T)
 
     return (horizontal_smoothing * Ipm) + (vertical_smoothing * Dpm)
+
+def linear_operator(derived, spline):
+    """ Compute the linear operator
+
+        MxM matrix (M = number of spline functions).
+    """
+    D = np.diag(derived)
+    F = spline
+    lt = np.matmul(F, D)
+    return np.matmul(lt, lt.T)

@@ -176,3 +176,28 @@ def test_constraints():
 
     # extremely high tolerance because the reference value are truncated floats
     assert np.allclose(Lc,  expectedLc,  atol = 1e-4)
+
+def test_linear_operator():
+    # just load reference solution and continue computing from that
+    refdir = os.path.join(os.path.dirname(__file__), 'derivs')
+    with np.load(os.path.join(refdir, 'linear-op-ref.npz')) as ref:
+        source1 = ref['source1']
+        source2 = ref['source2']
+        derived = ref['derived']
+        Lref    = ref['L']
+        traceno = 0
+
+    linelen  = source1.shape[1]
+    tracelen = source1.shape[0]
+    assert tracelen == 1501
+
+    bs = ts.bspline(tracelen, 0.05, 3)
+    omega = ts.angular_frequency(linelen, tracelen)
+
+    derived1 = ts.derive(source1, omega).T
+    derived2 = ts.derive(source2, omega).T
+
+    dd1 = (0.5 * (derived1[traceno] + derived2[traceno]))
+
+    L = ts.linear_operator(dd1, bs)
+    assert np.allclose(L, Lref, atol = 1e-8)
