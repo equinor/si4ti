@@ -90,6 +90,15 @@ def linear_operator(derived, spline):
     lt = np.matmul(F, D)
     return np.matmul(lt, lt.T)
 
+def solution(derived, delta, spline):
+    """ Solution (right-hand-side of the system)
+
+        N dimensional column vector (N = number of spline functions)
+    """
+    D = np.diag(derived)
+    B = spline
+    return np.matmul(B, D).dot(delta)
+
 def normalize_surveys(surveys):
     if len(surveys) < 2:
         raise ValueError('Must have at least 2 surveys to normalize')
