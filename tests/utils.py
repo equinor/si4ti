@@ -8,6 +8,8 @@ import numpy as np
 
 import simpli.timeshift as ts
 
+import scipy.sparse.linalg as linalg
+
 # reference frequencies are obtained by running the reference program with
 # various inputs and recording the outpud
 reference_freqs = {
