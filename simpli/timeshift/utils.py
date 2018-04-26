@@ -89,3 +89,32 @@ def linear_operator(derived, spline):
     F = spline
     lt = np.matmul(F, D)
     return np.matmul(lt, lt.T)
+
+def normalize_surveys(surveys):
+    if len(surveys) < 2:
+        raise ValueError('Must have at least 2 surveys to normalize')
+    ref_ilines, ref_xlines = surveys[0].ilines, surveys[0].xlines
+    for survey in surveys:
+        if not np.array_equal(survey.ilines, ref_ilines):
+            msg = [
+                'All surveys must have the same inlines.',
+                '{}.ilines: {},'.format(survey.filename, survey.ilines),
+                '{}.ilines: {}'.format(surveys[0].filename, ref_ilines),
+            ]
+            raise ValueError('\n'.join(msg))
+
+        if not np.array_equal(survey.xlines, ref_xlines):
+            msg = [
+                'All surveys must have the same crosslines.',
+                '{}.xlines: {},'.format(survey.filename, survey.xlines),
+                '{}.xlines: {}'.format(surveys[0].filename, ref_xlines),
+            ]
+            raise ValueError('\n'.join(msg))
+
+    acc = 0
+    for survey in surveys:
+        srv = np.abs(survey.trace.raw[:])
+        acc += srv.sum() / (srv != 0).sum()
+
+    # TODO: name/figure out why multiply-by-30
+    return (acc * 30) / len(surveys)
