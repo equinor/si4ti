@@ -75,34 +75,56 @@ def smal_system(filenames):
     return Lt, b, B
 
 def system(filenames):
-    L_01, b_01, B = smal_system([filenames[0], filenames[1]])
-    L_12, b_12, _ = smal_system([filenames[1], filenames[2]])
-    L_02, b_02, _ = smal_system([filenames[0], filenames[2]])
+    n_vintages = len(filenames)
 
-    M = L_01.shape[0]
-    N = L_01.shape[1]
+    f = enumerate(filenames)
+    combinations = itr.combinations(f, r = 2)
 
-    rows = np.concatenate([L_01.nonzero()[0],
-                                    L_12.nonzero()[0]+M,
-                                    L_02.nonzero()[0]+M,
-                                    L_02.nonzero()[0],
-                                    ])
-    cols = np.concatenate([
-                    L_01.nonzero()[1],
-                    L_12.nonzero()[1]+N,
-                    L_02.nonzero()[1]+N*2,
-                    L_02.nonzero()[1]+N*2,
-                 ])
+    rows = np.zeros([1])
+    cols = np.zeros([1])
+    data = np.zeros([1])
 
-    data = np.concatenate(np.concatenate([L_01.data,L_12.data,L_02.data,L_02.data]))
+    dummy = smal_system([filenames[0], filenames[0]])
 
-    L = bsr_matrix((data, (rows, cols)),
-                   shape = (M*2, N*3), dtype=np.float64
-                   )
+    M = dummy[0].shape[0]
 
-    b = np.concatenate([b_01,b_12,b_02])
+    B = dummy[2]
 
-    return L, b, B
+    b_in = np.zeros([(n_vintages-1)*M])
+
+    for vintage1, vintage2 in combinations:
+        mask_L = np.zeros([n_vintages-1, n_vintages-1])
+        mask_L[vintage1[0]:vintage2[0], vintage1[0]:vintage2[0]] = 1
+
+        mask_b = np.zeros([n_vintages-1])
+        mask_b[vintage1[0]:vintage2[0]] = 1
+
+        L, b, _ = smal_system([vintage1[1], vintage2[1]])
+        L2 = lil_matrix(L.dot(L.T))
+        b2 = L.dot(b)
+
+        r, c = L2.nonzero()
+        d = np.concatenate(L2.data)
+
+        for i, row in enumerate(mask_L):
+            for j, mask in enumerate(row):
+                if mask:
+                    rows = np.concatenate([ rows,  r + M*i ])
+                    cols = np.concatenate([ cols,  c + M*j ])
+                    data = np.concatenate([ data,  d       ])
+
+
+        for i, mask in enumerate(mask_b):
+            if mask: b_in[i*M: i*M + M] += b2
+
+
+    L_in = bsr_matrix(
+                      (data, (rows, cols)),
+                      shape = (M*(n_vintages-1), M*(n_vintages-1)),
+                      dtype = np.single
+                     )
+
+    return L_in, b_in, B
 
 def dump(c, srvs, spline):
     i = 0
@@ -138,10 +160,10 @@ def solve(L, b):
     import scipy.sparse.linalg as linalg
     print("solving...")
 
-    Lx = L.dot(L.T).tocsc()
+    Lx = L.tocsc()
     M_x = lambda x: linalg.spsolve(Lx, x)
     M = linalg.LinearOperator(Lx.shape, M_x)
-    return linalg.cg(Lx, L.dot(b), M = M, maxiter = 100)[0]
+    return linalg.cg(L, b, maxiter = 100)[0]
 
 if __name__ == '__main__':
     surveys = [
@@ -151,4 +173,4 @@ if __name__ == '__main__':
     ]
     L, b, spline = system(surveys)
     c = solve(L, b)
-    dump(c, surveys[0:2], spline)
+    dump(c, surveys[:-1], spline)
