@@ -7,6 +7,7 @@
 #include <bytesobject.h>
 
 #include <Eigen/Core>
+#include <unsupported/Eigen/FFT>
 
 namespace {
 
@@ -163,8 +164,91 @@ PyObject* bspline( PyObject*, PyObject* args ) {
     return output;
 }
 
+template< typename T >
+using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
+
+template< typename T >
+using matrix = Eigen::Matrix< T, Eigen::Dynamic, Eigen::Dynamic >;
+
+template< typename T >
+vector< T > derive( vector< T > signal,
+                    vector< T > omega
+                  ) {
+
+    /* 
+     * D = FFTI(iωFFT(signal))
+     * where D is the derivative of a signal (data trace)
+     *
+     * It takes the entire omeg an argument, in order to not recompute it on
+     * every invocation (it's shared across all derivations in this
+     * application).
+     */
+
+    vector< std::complex< T > > ff;
+    vector< T > result;
+
+    static Eigen::FFT< T > fft;
+    fft.fwd( ff, signal );
+    ff.array() *= std::complex< T >(0, 1) * omega.array();
+    fft.inv( result, ff );
+    return result;
+}
+
+PyObject* pyderive( PyObject*, PyObject* args ) {
+    PyObject* signal;
+    PyObject* omega;
+    PyObject* output;
+    Py_buffer sigbuf, omgbuf, outbuf;
+
+    if( !PyArg_ParseTuple( args, "OOO", &signal,
+                                        &omega,
+                                        &output ) )
+        return nullptr;
+
+    if( PyObject_GetBuffer( signal, &sigbuf, PyBUF_ANY_CONTIGUOUS
+                                           | PyBUF_ND
+                                           | PyBUF_FORMAT
+                          ) )
+        return nullptr;
+
+    buffer_guard g1( sigbuf );
+
+    if( PyObject_GetBuffer( omega, &omgbuf, PyBUF_ANY_CONTIGUOUS
+                                          | PyBUF_ND
+                                          | PyBUF_FORMAT
+                          ) )
+        return nullptr;
+
+    buffer_guard g2( omgbuf );
+
+    if( PyObject_GetBuffer( output, &outbuf, PyBUF_WRITABLE
+                                           | PyBUF_ANY_CONTIGUOUS
+                                           | PyBUF_ND
+                                           | PyBUF_FORMAT
+                          ) )
+        return nullptr;
+
+    buffer_guard g3( outbuf );
+
+    const auto cols = sigbuf.ndim == 1 ? 1 : sigbuf.shape[1];
+
+    Eigen::Map< matrix< float > > sig( (float*)sigbuf.buf, sigbuf.shape[0], cols );
+    Eigen::Map< matrix< float > > omg( (float*)omgbuf.buf, sigbuf.shape[0], cols );
+    Eigen::Map< matrix< float > > out( (float*)outbuf.buf, outbuf.shape[0], cols );
+
+    for( int i = 0; i < out.cols(); ++i ) {
+        vector< float > s = sig.col(i);
+        vector< float > o = omg.col(i);
+        out.col(i) = derive( s, o );
+    }
+
+    Py_INCREF( output );
+    return output;
+}
+
 PyMethodDef methods[] = {
-    { "bspline", (PyCFunction) bspline, METH_VARARGS, "B-spline as matrix." },
+    { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
+    { "derive",  (PyCFunction) pyderive, METH_VARARGS, "Derive with FFT." },
     { nullptr }
 };
 

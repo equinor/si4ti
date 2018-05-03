@@ -8,6 +8,7 @@ import numpy.fft as fft
 import segyio
 
 from .ts import bspline as bs
+from .ts import derive as deriv
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
@@ -62,8 +63,11 @@ def derive(signal, omega):
     # magnitude.  when the fft is done with double precision, both in numpy and
     # the reference program, this inaccuracy drops to 1e-14.
 
-    ff = 1j * omega * fft.fft(signal.T)
-    return fft.ifft(ff).real.T
+    signal = np.asarray(signal, dtype='single')
+    omega  = np.asarray(omega,  dtype='single')
+    output = np.zeros(signal.shape, order='F', dtype='single')
+
+    return deriv(signal, omega, output)
 
 def constraints(spline, vertical_smoothing, horizontal_smoothing):
     """ Smoothing constraints
