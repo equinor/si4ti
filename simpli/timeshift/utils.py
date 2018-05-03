@@ -23,12 +23,12 @@ def bspline(samples, density, degree):
     knots = np.asarray(knots, dtype='single')
 
     rows = len(knots) + degree + 1
-    output = np.zeros([rows, samples], dtype='single')
+    output = np.zeros([samples, rows], order = 'F', dtype='single')
 
-    bs(knots, output, samples, degree)
+    output = bs(knots, output, samples, degree)
 
     # normalise
-    output = output.T / (np.ones(output.shape[0]) * np.sum(output, axis=1))
+    output = output / (np.ones(output.shape[1]) * np.sum(output, axis=0))
     return output.T
 
 

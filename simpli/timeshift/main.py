@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import os
 import itertools as itr
+import argparse
 
 import numpy as np
 import segyio
@@ -163,14 +164,22 @@ def solve(L, b):
     Lx = L.tocsc()
     M_x = lambda x: linalg.spsolve(Lx, x)
     M = linalg.LinearOperator(Lx.shape, M_x)
-    return linalg.cg(L, b, maxiter = 100)[0]
+    return linalg.cg(L, b, M = M, maxiter = 100)[0]
 
-if __name__ == '__main__':
-    surveys = [
-        '92NmoUpd_8-16stkEps_985_1281-cropped.sgy',
-        '01NmoUpd_8-16stkEps_985_1281-cropped.sgy',
-        '06NmoUpd_8-16stkEps_985_1281-cropped.sgy',
-    ]
+def main():
+    parser = argparse.ArgumentParser('simpli.timeshift')
+    parser.add_argument('surveys', type=str, nargs='+')
+    parser.add_argument('--outdir', type=str, default=os.getcwd())
+
+    args = parser.parse_args()
+
+    print("surveys:", args.surveys)
+    print("outdir:", args.outdir)
+
+    surveys = args.surveys
     L, b, spline = system(surveys)
     c = solve(L, b)
     dump(c, surveys[:-1], spline)
+
+if __name__ == '__main__':
+    main()
