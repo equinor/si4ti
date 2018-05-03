@@ -171,11 +171,11 @@ PyMethodDef methods[] = {
 }
 
 #if PY_MAJOR_VERSION >= 3
-PyMODINIT_FUNC PyInit_bspline( void ) {
+PyMODINIT_FUNC PyInit_ts( void ) {
 
     static struct PyModuleDef bspline_module = {
             PyModuleDef_HEAD_INIT,
-            "bspline",   /* name of module */
+            "ts",   /* name of module */
             NULL, 
             -1,  
             methods,
@@ -185,8 +185,8 @@ PyMODINIT_FUNC PyInit_bspline( void ) {
 
 #else
 
-PyMODINIT_FUNC initbspline( void ) {
-    (void)Py_InitModule( "bspline", methods );
+PyMODINIT_FUNC initts( void ) {
+    (void)Py_InitModule( "ts", methods );
 }
 
 #endif // PY3

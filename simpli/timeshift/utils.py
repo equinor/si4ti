@@ -7,7 +7,7 @@ import numpy as np
 import numpy.fft as fft
 import segyio
 
-from .bspline import bspline as bs
+from .ts import bspline as bs
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
