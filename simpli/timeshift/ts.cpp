@@ -246,9 +246,57 @@ PyObject* pyderive( PyObject*, PyObject* args ) {
     return output;
 }
 
+template< typename T >
+vector< T > frequency_spectrum( int n, T dt = 1 ) {
+    /*
+     * Build the frequency spectrum for use in fft later
+     *
+     * f = [0, 1, ...,   n/2-1,     -n/2, ..., -1] / (d*n)   if n is even
+     * f = [0, 1, ..., (n-1)/2, -(n-1)/2, ..., -1] / (d*n)   if n is odd
+     *
+     * Basically a straight-up implementation based on the numpy docs
+     *
+     * https://docs.scipy.org/doc/numpy/reference/generated/numpy.fft.fftfreq.html
+     */
+    const auto even = n % 2 == 0;
+    const auto half = (even ? n : (n-1)) / 2;
+
+    vector< T > f( n );
+    f.head( half + 1 ).setLinSpaced( half + 1, 0, half );
+    f.tail( half + 0 ).setLinSpaced( half, -half, -1 );
+    f.array() /= dt * n;
+
+    return f;
+}
+
+PyObject* fftfreq( PyObject*, PyObject* args ) {
+    int n;
+    float dt;
+    PyObject* output;
+    Py_buffer out;
+
+    if( !PyArg_ParseTuple( args, "ifO", &n, &dt, &output ) ) return nullptr;
+
+    if( PyObject_GetBuffer( output, &out, PyBUF_WRITABLE
+                                        | PyBUF_ANY_CONTIGUOUS
+                                        | PyBUF_FORMAT
+                          ) )
+        return nullptr;
+
+    buffer_guard g( out );
+
+    auto f = frequency_spectrum( n, dt );
+    Eigen::Map< decltype( f ) >( (float*)out.buf, f.rows(), f.cols() ) = f;
+
+    Py_INCREF( output );
+    return output;
+}
+
+
 PyMethodDef methods[] = {
     { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
     { "derive",  (PyCFunction) pyderive, METH_VARARGS, "Derive with FFT." },
+    { "fftfreq", (PyCFunction) fftfreq,  METH_VARARGS, "Frequency spectrum." },
     { nullptr }
 };
 

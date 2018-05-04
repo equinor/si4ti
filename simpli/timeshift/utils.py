@@ -9,6 +9,7 @@ import segyio
 
 from .ts import bspline as bs
 from .ts import derive as deriv
+from .ts import fftfreq
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
@@ -34,7 +35,8 @@ def bspline(samples, density, degree):
 
 
 def frequency_spectrum(n, dt = 1):
-    return np.fft.fftfreq(n, dt)
+    output = np.zeros(n, dtype='single')
+    return fftfreq(n, dt, output)
 
 def angular_frequency(traces, samples, dt = 1):
     """ MxN angular frequency (M = traces-per-inline, N = samples-per-trace)
