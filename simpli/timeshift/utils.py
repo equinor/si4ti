@@ -10,6 +10,7 @@ import segyio
 from .ts import bspline as bs
 from .ts import derive as deriv
 from .ts import fftfreq
+from .ts import angfreq
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
@@ -47,7 +48,7 @@ def angular_frequency(traces, samples, dt = 1):
     of the signal (number-of-samples)
     """
     m, n = traces, samples
-    return np.tile(2 * np.pi * frequency_spectrum(n, dt), (m, 1))
+    return np.tile(angfreq(n, dt, np.zeros(samples, dtype='single')), (m, 1))
 
 def derive(signal, omega):
     """ D = iωF[d(t)]

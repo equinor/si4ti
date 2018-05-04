@@ -269,6 +269,14 @@ vector< T > frequency_spectrum( int n, T dt = 1 ) {
     return f;
 }
 
+template< typename T >
+vector< T > angular_frequency( int n, T dt = 1 ) {
+    constexpr static const float pi = 3.14159265358979323846f;
+    auto f = frequency_spectrum( n, dt );
+    f.array() *= 2 * pi;
+    return f;
+}
+
 PyObject* fftfreq( PyObject*, PyObject* args ) {
     int n;
     float dt;
@@ -292,11 +300,35 @@ PyObject* fftfreq( PyObject*, PyObject* args ) {
     return output;
 }
 
+PyObject* angfreq( PyObject*, PyObject* args ) {
+    int n;
+    float dt;
+    PyObject* output;
+    Py_buffer out;
+
+    if( !PyArg_ParseTuple( args, "ifO", &n, &dt, &output ) ) return nullptr;
+
+    if( PyObject_GetBuffer( output, &out, PyBUF_WRITABLE
+                                        | PyBUF_ANY_CONTIGUOUS
+                                        | PyBUF_FORMAT
+                          ) )
+        return nullptr;
+
+    buffer_guard g( out );
+
+    auto f = angular_frequency( n, dt );
+    Eigen::Map< decltype( f ) >( (float*)out.buf, f.rows(), f.cols() ) = f;
+
+    Py_INCREF( output );
+    return output;
+}
+
 
 PyMethodDef methods[] = {
     { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
     { "derive",  (PyCFunction) pyderive, METH_VARARGS, "Derive with FFT." },
     { "fftfreq", (PyCFunction) fftfreq,  METH_VARARGS, "Frequency spectrum." },
+    { "angfreq", (PyCFunction) angfreq,  METH_VARARGS, "Angular frequency." },
     { nullptr }
 };
 
