@@ -11,6 +11,8 @@ from .ts import bspline as bs
 from .ts import derive as deriv
 from .ts import fftfreq
 from .ts import angfreq
+from .ts import knotvec
+from .ts import spline
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
@@ -25,10 +27,12 @@ def bspline(samples, density, degree):
     knots = np.concatenate([fst, lst])
     knots = np.asarray(knots, dtype='single')
 
-    rows = len(knots) + degree + 1
-    output = np.zeros([samples, rows], order = 'F', dtype='single')
+    knots = knotvec(samples, density, np.zeros(len(knots), dtype='single'))
 
-    output = bs(knots, output, samples, degree)
+    rows = len(knots) + degree + 1
+
+    output = np.zeros([samples, rows], order = 'F', dtype='single')
+    return spline(samples, density, degree, output).T
 
     # normalise
     output = output / (np.ones(output.shape[1]) * np.sum(output, axis=0))

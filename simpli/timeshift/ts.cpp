@@ -323,12 +323,85 @@ PyObject* angfreq( PyObject*, PyObject* args ) {
     return output;
 }
 
+template< typename T >
+std::vector< T > knotvector( int samples, T density ) {
+    const auto step = T(1) / density;
+    const auto middle = T(samples + 1) / 2;
+
+    std::vector< T > knotv;
+
+    for( auto f = middle; f > 1 / density; f -= step )
+        knotv.push_back( f );
+
+    std::reverse( knotv.begin(), knotv.end() );
+
+    for( auto f = middle + step; f < (1+samples) - 1/density; f += step )
+        knotv.push_back( f );
+
+    return knotv;
+}
+
+PyObject* knotvec( PyObject*, PyObject* args ) {
+    int samples;
+    float density;
+    PyObject* output;
+    Py_buffer out;
+
+    if( !PyArg_ParseTuple( args, "ifO", &samples, &density, &output ) )
+        return nullptr;
+
+    if( PyObject_GetBuffer( output, &out, PyBUF_WRITABLE
+                                        | PyBUF_ANY_CONTIGUOUS
+                                        | PyBUF_FORMAT ) )
+        return nullptr;
+
+    buffer_guard g( out );
+
+    const auto knotv = knotvector( samples, density );
+    std::copy( knotv.begin(), knotv.end(), (float*)out.buf );
+
+    Py_INCREF( output );
+    return output;
+}
+
+PyObject* spline( PyObject*, PyObject* args ) {
+    int samples;
+    float density;
+    int degree;
+    PyObject* output;
+    Py_buffer out;
+
+    if( !PyArg_ParseTuple( args, "ifiO", &samples,
+                                         &density,
+                                         &degree,
+                                         &output ) )
+        return nullptr;
+
+    if( PyObject_GetBuffer( output, &out, PyBUF_WRITABLE
+                                        | PyBUF_ANY_CONTIGUOUS
+                                        | PyBUF_FORMAT ) )
+        return nullptr;
+
+    buffer_guard g( out );
+
+    const auto knotv = knotvector( samples, density );
+    auto m = bspline_matrix( samples, knotv.data(), knotv.size(), degree );
+    vector< float > colsums = m.colwise().sum();
+    colsums.array() = 1.0 / colsums.array();
+    m *= colsums.asDiagonal();
+    Eigen::Map< decltype( m ) >( (float*)out.buf, m.rows(), m.cols() ) = m;
+
+    Py_INCREF( output );
+    return output;
+}
 
 PyMethodDef methods[] = {
     { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
     { "derive",  (PyCFunction) pyderive, METH_VARARGS, "Derive with FFT." },
     { "fftfreq", (PyCFunction) fftfreq,  METH_VARARGS, "Frequency spectrum." },
     { "angfreq", (PyCFunction) angfreq,  METH_VARARGS, "Angular frequency." },
+    { "knotvec", (PyCFunction) knotvec,  METH_VARARGS, "Knot vector." },
+    { "spline",  (PyCFunction) spline,   METH_VARARGS, "Spline." },
     { nullptr }
 };
 
