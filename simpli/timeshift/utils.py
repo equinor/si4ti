@@ -9,10 +9,12 @@ import segyio
 
 from .ts import bspline as bs
 from .ts import derive as deriv
+
 from .ts import fftfreq
 from .ts import angfreq
 from .ts import knotvec
 from .ts import spline
+from .ts import constr
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
@@ -82,14 +84,10 @@ def constraints(spline, vertical_smoothing, horizontal_smoothing):
         MxM matrix (M = number of spline functions) containing the vertical
         smoothing and central component of the horizontal smoothing.
     """
-    Ipm = spline.dot(spline.T)
-    tracelen = spline.shape[1]
-
-    ones = np.ones(tracelen)
-    D = (-np.diag(ones) + np.diag(ones[:-1], k = 1))[:-1].T
-    Dpm = spline.dot(D.dot(D.T)).dot(spline.T)
-
-    return (horizontal_smoothing * Ipm) + (vertical_smoothing * Dpm)
+    nsplines = spline.shape[0]
+    output = np.zeros((nsplines, nsplines), order='F', dtype='single')
+    spline = np.asarray(spline, dtype='single')
+    return constr(spline, vertical_smoothing, horizontal_smoothing, output)
 
 def linear_operator(derived, spline):
     """ Compute the linear operator

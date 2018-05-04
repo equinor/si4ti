@@ -187,6 +187,8 @@ vector< T > derive( vector< T > signal,
     vector< std::complex< T > > ff;
     vector< T > result;
 
+
+    // TODO: MUST be initialised outside
     static Eigen::FFT< T > fft;
     fft.fwd( ff, signal );
     ff.array() *= std::complex< T >(0, 1) * omega.array();
@@ -395,6 +397,88 @@ PyObject* spline( PyObject*, PyObject* args ) {
     return output;
 }
 
+template< typename T >
+matrix< T > constraints( const matrix< T >& spline,
+                         T vertical_smoothing,
+                         T horizontal_smoothing ) {
+
+    /*
+     * Smoothing constraints
+     *
+     * MxM matrix (M = number of spline functions) containing the vertical
+     * smoothing and central component of the horizontal smoothing.
+     *
+     */
+
+    auto basis_squared = spline.transpose() * spline;
+    const auto tracelen = spline.rows();
+
+    /*
+     * The matrix D computes an array of differences d[n] - d[n+1] representing
+     * level of vertical smoothness.
+     *
+     * It is a tracelen-1 x tracelen matrix on the form:
+     *
+     *               1 -1  0 .. 0  0
+     *               0  1 -1 .. 0  0
+     *        D  =   .  .  . .. .  .
+     *               .  .  . .. .  .
+     *               0  0  0 .. 1 -1
+     */
+    matrix< T > D = matrix< T >::Identity( tracelen - 1, tracelen );
+    D.template diagonal< 1 >().fill( -1.0 );
+    matrix< T > Dpm = spline.transpose() * D.transpose() * D * spline;
+
+    return (horizontal_smoothing * basis_squared) + (vertical_smoothing * Dpm);
+}
+
+PyObject* pyconstr( PyObject*, PyObject* args ) {
+    PyObject* spline;
+    PyObject* output;
+    Py_buffer splinebuf, outbuf;
+    float vertical_smoothing;
+    float horizontal_smoothing;
+
+    if( !PyArg_ParseTuple( args, "OffO", &spline,
+                                         &vertical_smoothing,
+                                         &horizontal_smoothing,
+                                         &output ) )
+        return nullptr;
+
+    if( PyObject_GetBuffer( spline, &splinebuf, PyBUF_ANY_CONTIGUOUS
+                                              | PyBUF_ND
+                                              | PyBUF_FORMAT
+                          ) )
+        return nullptr;
+
+    buffer_guard g1( splinebuf );
+
+    if( PyObject_GetBuffer( output, &outbuf, PyBUF_WRITABLE
+                                           | PyBUF_ANY_CONTIGUOUS
+                                           | PyBUF_ND
+                                           | PyBUF_FORMAT
+                ) ) return nullptr;
+
+    buffer_guard g2( outbuf );
+
+    Eigen::Map< matrix< float > > sp( (float*)splinebuf.buf,
+                                        splinebuf.shape[1],
+                                        splinebuf.shape[0]
+                                      );
+
+    matrix< float > spli = sp;
+
+    Eigen::Map< matrix< float > > out( (float*)outbuf.buf,
+                                        outbuf.shape[0],
+                                        outbuf.shape[1]
+                                     );
+
+    out = constraints( spli, vertical_smoothing, horizontal_smoothing );
+
+    Py_INCREF( output );
+    return output;
+}
+
 PyMethodDef methods[] = {
     { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
     { "derive",  (PyCFunction) pyderive, METH_VARARGS, "Derive with FFT." },
@@ -402,6 +486,7 @@ PyMethodDef methods[] = {
     { "angfreq", (PyCFunction) angfreq,  METH_VARARGS, "Angular frequency." },
     { "knotvec", (PyCFunction) knotvec,  METH_VARARGS, "Knot vector." },
     { "spline",  (PyCFunction) spline,   METH_VARARGS, "Spline." },
+    { "constr",  (PyCFunction) pyconstr, METH_VARARGS, "Constraints matrix." },
     { nullptr }
 };
 
