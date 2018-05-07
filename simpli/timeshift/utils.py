@@ -16,6 +16,7 @@ from .ts import knotvec
 from .ts import spline
 from .ts import constr
 from .ts import linop
+from .ts import solu
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
@@ -110,6 +111,10 @@ def solution(derived, delta, spline):
 
         N dimensional column vector (N = number of spline functions)
     """
+
+    output = np.zeros(spline.shape[0], order='F', dtype='single')
+    return solu(derived, spline, delta, output)
+
     D = np.diag(derived)
     B = spline
     return np.matmul(B, D).dot(delta)

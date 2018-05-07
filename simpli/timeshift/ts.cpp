@@ -552,6 +552,92 @@ PyObject* linop( PyObject*, PyObject* args ) {
     return output;
 }
 
+template< typename T >
+vector< T > solution( const vector< T >& derived,
+                      const vector< T >& delta,
+                      const matrix< T >& spline ) {
+    /*
+     * Solution (right-hand-side of the system)
+     *
+     * Returns an N dimensional column vector, where N is number of spline
+     * functions
+     */
+    return (derived.asDiagonal() * spline).transpose() * delta;
+}
+
+PyObject* solu( PyObject*, PyObject* args ) {
+    PyObject* derived;
+    PyObject* spline;
+    PyObject* delta;
+    PyObject* output;
+    Py_buffer derivbuf, splinebuf, deltabuf, outbuf;
+
+    if( !PyArg_ParseTuple( args, "OOOO", &derived,
+                                         &spline,
+                                         &delta,
+                                         &output
+                                         ) )
+        return nullptr;
+
+    if( PyObject_GetBuffer( derived, &derivbuf, PyBUF_ANY_CONTIGUOUS
+                                              | PyBUF_ND
+                                              | PyBUF_FORMAT
+                                        ) )
+        return nullptr;
+
+    buffer_guard g1( derivbuf );
+
+    if( PyObject_GetBuffer( spline, &splinebuf, PyBUF_ANY_CONTIGUOUS
+                                              | PyBUF_ND
+                                              | PyBUF_FORMAT
+                                        ) )
+        return nullptr;
+
+    buffer_guard g2( splinebuf );
+
+    if( PyObject_GetBuffer( delta, &deltabuf, PyBUF_ANY_CONTIGUOUS
+                                            | PyBUF_ND
+                                            | PyBUF_FORMAT
+                                        ) )
+        return nullptr;
+
+    buffer_guard g3( deltabuf );
+
+    if( PyObject_GetBuffer( output, &outbuf, PyBUF_WRITABLE
+                                           | PyBUF_ANY_CONTIGUOUS
+                                           | PyBUF_ND
+                                           | PyBUF_FORMAT
+                ) )
+        return nullptr;
+
+    buffer_guard g4( outbuf );
+
+    Eigen::Map< vector< float > > dv( (float*)derivbuf.buf,
+                                        derivbuf.shape[0]
+                                    );
+
+    Eigen::Map< vector< float > > dt( (float*)deltabuf.buf,
+                                        deltabuf.shape[0]
+                                    );
+
+    Eigen::Map< matrix< float > > sp( (float*)splinebuf.buf,
+                                        splinebuf.shape[1],
+                                        splinebuf.shape[0]
+                                    );
+
+    vector< float > deriv = dv;
+    vector< float > delt = dt;
+    matrix< float > spli = sp;
+
+    Eigen::Map< vector< float > > out( (float*)outbuf.buf,
+                                        outbuf.shape[0]
+                                     );
+
+    out = solution( deriv, delt, spli );
+
+    Py_INCREF( output );
+    return output;
+}
 
 PyMethodDef methods[] = {
     { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
@@ -562,6 +648,7 @@ PyMethodDef methods[] = {
     { "spline",  (PyCFunction) spline,   METH_VARARGS, "Spline." },
     { "constr",  (PyCFunction) pyconstr, METH_VARARGS, "Constraints matrix." },
     { "linop",   (PyCFunction) linop,    METH_VARARGS, "Linear operator." },
+    { "solu",    (PyCFunction) solu,     METH_VARARGS, "Solution vector." },
     { nullptr }
 };
 
