@@ -175,7 +175,7 @@ vector< T > derive( vector< T > signal,
                     vector< T > omega
                   ) {
 
-    /* 
+    /*
      * D = FFTI(iωFFT(signal))
      * where D is the derivative of a signal (data trace)
      *
@@ -413,8 +413,8 @@ PyMODINIT_FUNC PyInit_ts( void ) {
     static struct PyModuleDef bspline_module = {
             PyModuleDef_HEAD_INIT,
             "ts",   /* name of module */
-            NULL, 
-            -1,  
+            NULL,
+            -1,
             methods,
     };
     return PyModule_Create( &bspline_module );
