@@ -479,6 +479,80 @@ PyObject* pyconstr( PyObject*, PyObject* args ) {
     return output;
 }
 
+template< typename T >
+matrix< T > linearoperator( const vector< T >& derived,
+                            const matrix< T >& spline ) {
+    /*
+     * Compute the linear operator
+     *
+     * Returns an MxM matrix, where M is number of spline functions
+     */
+    auto Lt = derived.asDiagonal() * spline;
+    return Lt.transpose() * Lt;
+}
+
+PyObject* linop( PyObject*, PyObject* args ) {
+    PyObject* derived;
+    PyObject* spline;
+    PyObject* output;
+    Py_buffer derivbuf, splinebuf, outbuf;
+
+    if( !PyArg_ParseTuple( args, "OOO", &derived,
+                                        &spline,
+                                        &output
+                                        ) )
+        return nullptr;
+
+    if( PyObject_GetBuffer( derived, &derivbuf, PyBUF_ANY_CONTIGUOUS
+                                              | PyBUF_ND
+                                              | PyBUF_FORMAT
+                                        ) )
+        return nullptr;
+
+    buffer_guard g1( derivbuf );
+
+    if( PyObject_GetBuffer( spline, &splinebuf, PyBUF_ANY_CONTIGUOUS
+                                              | PyBUF_ND
+                                              | PyBUF_FORMAT
+                                        ) )
+        return nullptr;
+
+    buffer_guard g2( splinebuf );
+
+    if( PyObject_GetBuffer( output, &outbuf, PyBUF_WRITABLE
+                                           | PyBUF_ANY_CONTIGUOUS
+                                           | PyBUF_ND
+                                           | PyBUF_FORMAT
+                ) )
+        return nullptr;
+
+    buffer_guard g3( outbuf );
+
+    Eigen::Map< vector< float > > dv( (float*)derivbuf.buf,
+                                        derivbuf.shape[0]
+                                    );
+
+
+    Eigen::Map< matrix< float > > sp( (float*)splinebuf.buf,
+                                        splinebuf.shape[1],
+                                        splinebuf.shape[0]
+                                    );
+
+    vector< float > deriv = dv;
+    matrix< float > spli = sp;
+
+    Eigen::Map< matrix< float > > out( (float*)outbuf.buf,
+                                        outbuf.shape[0],
+                                        outbuf.shape[1]
+                                     );
+
+    out = linearoperator( deriv, spli );
+
+    Py_INCREF( output );
+    return output;
+}
+
+
 PyMethodDef methods[] = {
     { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
     { "derive",  (PyCFunction) pyderive, METH_VARARGS, "Derive with FFT." },
@@ -487,6 +561,7 @@ PyMethodDef methods[] = {
     { "knotvec", (PyCFunction) knotvec,  METH_VARARGS, "Knot vector." },
     { "spline",  (PyCFunction) spline,   METH_VARARGS, "Spline." },
     { "constr",  (PyCFunction) pyconstr, METH_VARARGS, "Constraints matrix." },
+    { "linop",   (PyCFunction) linop,    METH_VARARGS, "Linear operator." },
     { nullptr }
 };
 

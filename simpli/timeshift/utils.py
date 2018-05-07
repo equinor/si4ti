@@ -15,6 +15,7 @@ from .ts import angfreq
 from .ts import knotvec
 from .ts import spline
 from .ts import constr
+from .ts import linop
 
 def bspline(samples, density, degree):
     """ bspline on matrix form
@@ -94,6 +95,11 @@ def linear_operator(derived, spline):
 
         MxM matrix (M = number of spline functions).
     """
+
+    shape = (spline.shape[0], spline.shape[0])
+    output = np.zeros((shape), order='F', dtype='single')
+    return linop(derived, spline, output)
+
     D = np.diag(derived)
     F = spline
     lt = np.matmul(F, D)
