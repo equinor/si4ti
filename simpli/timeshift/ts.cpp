@@ -7,6 +7,7 @@
 #include <bytesobject.h>
 
 #include <Eigen/Core>
+#include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
 
 namespace {
@@ -639,6 +640,172 @@ PyObject* solu( PyObject*, PyObject* args ) {
     return output;
 }
 
+template< typename T >
+std::vector< Eigen::Triplet< T > > getBnn( const matrix< T >& B ) {
+
+    Eigen::SparseMatrix< T > Bnn = (B.transpose() * B).sparseView();
+
+    decltype( getBnn( B ) ) triplets;
+    for( int k = 0; k < Bnn.outerSize(); ++k ) {
+        for( typename decltype( Bnn )::InnerIterator it( Bnn, k ); it; ++it ) {
+            const auto row = it.row();
+            const auto col = it.col();
+            const auto val = it.value() * -.25 * 0.01;
+            triplets.emplace_back( row, col, val );
+        }
+    }
+
+    return triplets;
+}
+
+PyObject* smallsys( PyObject*, PyObject* args ) {
+    PyObject* traceo;
+    float normalizer;
+    PyObject* outputoperator;
+    PyObject* outputsolution;
+    Py_buffer traces, js, ks, Js, Ks, outop, outsol;
+
+    if( !PyArg_ParseTuple( args, "Ofs*s*s*s*OO", &traceo,
+                                                 &normalizer,
+                                                 &js,
+                                                 &ks,
+                                                 &Js,
+                                                 &Ks,
+                                                 &outputoperator,
+                                                 &outputsolution
+                                                 ) )
+        return nullptr;
+
+    buffer_guard g1( js );
+    buffer_guard g2( ks );
+    buffer_guard g3( Js );
+    buffer_guard g7( Ks );
+
+    if( PyObject_GetBuffer( traceo, &traces, PyBUF_ANY_CONTIGUOUS
+                                           | PyBUF_ND
+                                           | PyBUF_FORMAT
+                ) )
+        return nullptr;
+
+    buffer_guard g4( traces );
+
+    if( PyObject_GetBuffer( outputoperator, &outop, PyBUF_WRITABLE
+                                                  | PyBUF_ANY_CONTIGUOUS
+                                                  | PyBUF_ND
+                                                  | PyBUF_FORMAT
+                ) )
+        return nullptr;
+
+    buffer_guard g5( outop );
+
+    if( PyObject_GetBuffer( outputsolution, &outsol, PyBUF_WRITABLE
+                                                   | PyBUF_ANY_CONTIGUOUS
+                                                   | PyBUF_ND
+                                                   | PyBUF_FORMAT
+                ) )
+        return nullptr;
+
+    buffer_guard g6( outsol );
+
+    const auto tracelen = traces.shape[2];
+    const auto samples = tracelen;
+
+    const auto density = 0.05f;
+    const auto degree = 3;
+
+    const auto knotv = knotvector( samples, density );
+    auto B = bspline_matrix( samples, knotv.data(), knotv.size(), degree );
+    vector< float > colsums = B.colwise().sum();
+    colsums.array() = 1.0 / colsums.array();
+    B *= colsums.asDiagonal();
+
+    const auto cstr = constraints( B, 0.1f, 0.01f );
+    const auto omega = angular_frequency( tracelen, 1.0f );
+
+    auto Bnn = getBnn( B );
+
+    const auto height = B.cols();
+    const auto Lsize = traces.shape[1] * height;
+    Eigen::SparseMatrix< float > Lt( Lsize, Lsize );
+    std::vector< Eigen::Triplet< float > > triplets;
+
+    std::vector< float > b;
+    b.reserve(6000);
+
+    std::ptrdiff_t cubesize = traces.shape[1] * traces.shape[2];
+
+    const int* jsb = (int*)js.buf;
+    const int jslen = js.len / sizeof( int );
+
+    const int* ksb = (int*)ks.buf;
+    const int kslen = ks.len / sizeof( int );
+
+    const int* Jsb = (int*)Js.buf;
+    const int* Ksb = (int*)Ks.buf;
+
+    vector< float > tr1, tr2;
+    for( auto i = 0; i < traces.shape[1]; ++i ) {
+        auto* tr1beg = (float*)traces.buf + 0 * cubesize + traces.shape[2] * i;
+        auto* tr2beg = (float*)traces.buf + 1 * cubesize + traces.shape[2] * i;
+        tr1 = Eigen::Map< decltype( tr1 ) >( tr1beg, tracelen );
+        tr2 = Eigen::Map< decltype( tr1 ) >( tr2beg, tracelen );
+
+        tr1 /= normalizer;
+        tr2 /= normalizer;
+
+        vector< float > D = derive( tr1, omega ) + derive( tr2, omega );
+        D.array() /= 2.0;
+
+        vector< float > delta = tr2.array() - tr1.array();
+
+        auto F = linearoperator( D, B );
+        Eigen::SparseMatrix< float > L = (F + cstr).sparseView();
+
+        for( int k = 0; k < L.outerSize(); ++k ) {
+            for( decltype( L )::InnerIterator it( L, k ); it; ++it ) {
+                const auto row = i*height + it.row();
+                const auto col = i*height + it.col();
+                triplets.emplace_back( row, col, it.value() );
+            }
+        }
+
+        const auto sol = solution(D, delta, B);
+        b.insert( b.end(), sol.data(), sol.data() + sol.rows() );
+
+        const auto j = std::distance( jsb, std::find( jsb, jsb + jslen, Jsb[ i ] ) );
+        const auto k = std::distance( ksb, std::find( ksb, ksb + kslen, Ksb[ i ] ) );
+
+        const auto i1 = k != 0 ? i - 1 : i;
+        const auto i2 = k != kslen - 1 ? i + 1 : i;
+        const auto i3 = j != 0 ? i - kslen : i;
+        const auto i4 = j < jslen - 1 ? i + kslen : i;
+
+        const int is[] = { i1, i2, i3, i4 };
+
+        for( int e = 0; e < 4; ++e ) {
+            for( const auto& it : Bnn ) {
+                const auto row = is[e]*height + it.row();
+                const auto col = i*height + it.col();
+                triplets.emplace_back( row, col, it.value() );
+            }
+        }
+    }
+
+    Lt.setFromTriplets( triplets.begin(), triplets.end() );
+
+    std::copy( b.begin(), b.end(), (float*)outsol.buf );
+    Eigen::Map< vector< float > > bvec( (float*)outsol.buf, b.size() );
+
+    bvec = Lt.transpose() * bvec;
+    Lt = Lt.transpose() * Lt;
+
+    Eigen::Map< matrix< float > >( (float*)outop.buf, Lsize, Lsize ) = Lt;
+
+    Py_INCREF( outputoperator );
+    Py_INCREF( outputsolution );
+    return Py_BuildValue( "OO", outputoperator, outputsolution );
+}
+
 PyMethodDef methods[] = {
     { "bspline", (PyCFunction) bspline,  METH_VARARGS, "B-spline as matrix." },
     { "derive",  (PyCFunction) pyderive, METH_VARARGS, "Derive with FFT." },
@@ -649,6 +816,7 @@ PyMethodDef methods[] = {
     { "constr",  (PyCFunction) pyconstr, METH_VARARGS, "Constraints matrix." },
     { "linop",   (PyCFunction) linop,    METH_VARARGS, "Linear operator." },
     { "solu",    (PyCFunction) solu,     METH_VARARGS, "Solution vector." },
+    { "smallsys",(PyCFunction) smallsys, METH_VARARGS, "Small system." },
     { nullptr }
 };
 

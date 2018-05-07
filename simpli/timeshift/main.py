@@ -12,8 +12,40 @@ import time
 from scipy.sparse import lil_matrix
 from scipy.sparse import bsr_matrix
 
+from .ts import smallsys
+
 def lpos(i, height):
     return slice(i * height, (i + 1) * height)
+
+def small_system(filenames, num_basis):
+    root = './'
+    filenames = [os.path.join(root, fname) for fname in filenames]
+    surveys = [segyio.open(fname, iline = 5, xline = 21)
+               for fname in filenames
+              ]
+
+    vintage1, vintage2 = surveys[0], surveys[1]
+
+    cube1 = vintage1.trace.raw[:]
+    cube2 = vintage2.trace.raw[:]
+
+    normalizer = ts.normalize_surveys(surveys)
+    traces = np.stack([cube1, cube2])
+
+    ilines, xlines = list(vintage1.ilines), list(vintage1.xlines)
+    jks = list(itr.product(ilines, xlines))
+    jmax, kmax = len(ilines), len(xlines)
+
+    Js, Ks = zip(*jks)
+    Js, Ks = np.asarray(Js, dtype='int32'), np.asarray(Ks, dtype='int32')
+
+    sol = np.zeros(num_basis * vintage1.tracecount, dtype='single')
+    opt = np.zeros([len(sol), len(sol)], dtype='single')
+
+    return smallsys(traces, normalizer,
+            vintage1.ilines, vintage1.xlines,
+            Js, Ks,
+            opt, sol)
 
 def smal_system(filenames):
     root = './'
@@ -100,9 +132,9 @@ def system(filenames):
         mask_b = np.zeros([n_vintages-1])
         mask_b[vintage1[0]:vintage2[0]] = 1
 
-        L, b, _ = smal_system([vintage1[1], vintage2[1]])
-        L2 = lil_matrix(L.dot(L.T))
-        b2 = L.dot(b)
+        L, b = small_system([vintage1[1], vintage2[1]], B.shape[0])
+        L2 = lil_matrix(L)
+        b2 = b
 
         r, c = L2.nonzero()
         d = np.concatenate(L2.data)
