@@ -5,6 +5,7 @@ include(CTest)
 include(GNUInstallDirs)
 
 find_package(Eigen3 REQUIRED)
+find_package(segyio REQUIRED)
 find_library(fftw3f NAMES fftw3f REQUIRED)
 
 enable_testing()
