@@ -4,12 +4,14 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <getopt.h>
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
+#include <unsupported/Eigen/FFT>
 
 #include <segyio/segy.h>
 
@@ -210,9 +212,11 @@ struct geometry {
     int traces;
     int trace_bsize;
     long trace0;
+    int ilines;
+    int xlines;
 };
 
-geometry findgeometry( segy_file* fp ) {
+geometry findgeometry( segy_file* fp, int ilbyte, int xlbyte ) {
     // TODO: proper error handling other than throw exceptions without checking
     // what went wrong
     char header[ SEGY_BINARY_HEADER_SIZE ] = {};
@@ -229,6 +233,18 @@ geometry findgeometry( segy_file* fp ) {
 
     if( err != SEGY_OK )
         throw std::runtime_error( "Could not compute trace count" );
+
+    err = segy_lines_count( fp,
+                            ilbyte, xlbyte,
+                            SEGY_INLINE_SORTING,
+                            1, // offsets
+                            &geo.ilines,
+                            &geo.xlines,
+                            geo.trace0,
+                            geo.trace_bsize );
+
+    if( err != SEGY_OK )
+        throw std::runtime_error( "Could not count lines" );
 
     return geo;
 }
@@ -300,6 +316,8 @@ template< typename T >
 using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
 template< typename T >
 using matrix = Eigen::Matrix< T, Eigen::Dynamic, Eigen::Dynamic >;
+template< typename T >
+using sparse = Eigen::SparseMatrix< T >;
 
 template< typename T >
 std::vector< T > knotvector( int samples, T density ) {
@@ -389,6 +407,201 @@ vector< T > angular_frequency( int n, T dt = 1 ) {
     return 2 * pi * frequency_spectrum( n, dt );
 }
 
+template< typename T >
+vector< T >& derive( vector< T >& signal, const vector< T >& omega ) {
+
+    /*
+     * D = FFTI(iωFFT(signal))
+     * where D is the derivative of a signal (data trace)
+     *
+     * It takes the entire omeg an argument, in order to not recompute it on
+     * every invocation (it's shared across all derivations in this
+     * application).
+     */
+
+    // TODO: MUST be initialised outside
+    static Eigen::FFT< T > fft;
+    vector< std::complex< T > > ff;
+
+    fft.fwd( ff, signal );
+    ff.array() *= std::complex< T >(0, 1) * omega.array();
+    fft.inv( signal , ff );
+    return signal;
+}
+
+template< typename T >
+matrix< T > linearoperator( const vector< T >& derived,
+                            const matrix< T >& spline ) {
+    /*
+     * Compute the linear operator
+     *
+     * Returns an MxM matrix, where M is number of spline functions
+     */
+    auto Lt = derived.asDiagonal() * spline;
+    return Lt.transpose() * Lt;
+}
+
+template< typename T >
+auto solution( const vector< T >& derived,
+               const vector< T >& delta,
+               const matrix< T >& spline )
+    -> decltype( (derived.asDiagonal() * spline).transpose() * delta ) {
+    /*
+     * Solution (right-hand-side of the system)
+     *
+     * Returns an N dimensional column vector, where N is number of spline
+     * functions
+     *
+     * TODO: remove allocation, do inline
+     */
+    return (derived.asDiagonal() * spline).transpose() * delta;
+}
+
+
+template< typename Vector >
+Vector& gettr( segy_file* vintage,
+               int traceno,
+               const geometry& geo,
+               Vector& buffer ) {
+
+    int err = 0;
+    std::vector< float > trbuf( geo.samples );
+
+    err = segy_readtrace( vintage,
+                          traceno,
+                          trbuf.data(),
+                          geo.trace0,
+                          geo.trace_bsize );
+
+    if( err != SEGY_OK )
+        throw std::runtime_error( "Unable to read trace "
+                                + std::to_string( traceno ) );
+
+    segy_to_native( SEGY_IBM_FLOAT_4_BYTE,
+                    geo.samples,
+                    trbuf.data() );
+
+    std::copy( trbuf.begin(), trbuf.end(), buffer.data() );
+
+    return buffer;
+}
+
+template< typename T >
+std::vector< Eigen::Triplet< T > > getBnn( const matrix< T >& B,
+                                           T horizontal_smoothing ) {
+
+    sparse< T > Bnn = (B.transpose() * B).sparseView();
+
+    decltype( getBnn( B, horizontal_smoothing ) ) triplets;
+    for( int k = 0; k < Bnn.outerSize(); ++k ) {
+        for( typename decltype( Bnn )::InnerIterator it( Bnn, k ); it; ++it ) {
+            const auto row = it.row();
+            const auto col = it.col();
+            const auto val = it.value() * -.25 * horizontal_smoothing;
+            triplets.emplace_back( row, col, val );
+        }
+    }
+
+    return triplets;
+}
+
+template< typename T >
+std::pair< sparse< T >, vector< T > >
+L_ij( segy_file* vintage1,
+                               segy_file* vintage2,
+                               const geometry& geo,
+                               const matrix< T >& B,
+                               const matrix< T >& C,
+                               const std::vector< Eigen::Triplet< T > >& Bnn,
+                               const vector< T >& omega,
+                               T normalizer ) {
+
+    const auto dims = B.cols();
+
+    int err = 0;
+
+    /* reuse a bunch of vectors, as they're the same size throughout and
+     * constructing them is expensive
+     */
+    vector< T > tr1( geo.samples );
+    vector< T > tr2( geo.samples );
+    vector< T > delta( geo.samples );
+    vector< T > D( geo.samples );
+    matrix< T > Lt( dims, dims );
+    sparse< T > picoL( dims, dims );
+    sparse< T > L( dims * geo.traces, dims * geo.traces );
+    vector< T > b( dims * geo.traces );
+
+    using inneritr = typename decltype( picoL )::InnerIterator;
+
+    // TODO: evaluate triplets-then-insert vs. reserve-and-insert per trace and
+    // reserve-and-insert per vintage pair (full-file)
+    std::vector< Eigen::Triplet< T > > triplets;
+
+    int j = 0, k = 0;
+    for( auto traceno = 0; traceno < geo.traces; ++traceno ) {
+        tr1 = gettr( vintage1, traceno, geo, tr1 ) / normalizer;
+        tr2 = gettr( vintage2, traceno, geo, tr2 ) / normalizer;
+
+        // derive works in-place and will overwrite its input argument
+        // signal, so delta must be computed first
+        delta = tr2.array() - tr1.array();
+
+        D = 0.5 * (derive( tr1, omega ) + derive( tr2, omega ));
+        Lt = linearoperator( D, B );
+        picoL = (Lt + C).sparseView();
+
+        for( int i = 0; i < picoL.outerSize(); ++i ) {
+            for( inneritr it( picoL, i ); it; ++it ) {
+                /*
+                 * position each sample into the linear operator based on the
+                 * two vintages, by simply shifting them along the diagonal of
+                 * the larger system
+                 */
+                const auto row = traceno*dims + it.row();
+                const auto col = traceno*dims + it.col();
+                triplets.emplace_back( row, col, it.value() );
+            }
+        }
+
+        b.segment( traceno * dims, dims ) = solution( D, delta, B );
+
+
+        const auto i = traceno;
+        // C(j-1, k)
+        const auto i1 = k == 0 ? i : i - 1;
+        // C(j+1, k)
+        const auto i2 = k == geo.xlines - 1 ? i : i + 1;
+        // C(j, k-1)
+        const auto i3 = j == 0 ? i : i - geo.xlines;
+        // C(j, k+1)
+        const auto i4 = j == geo.ilines - 1 ? i : i + geo.ilines;
+
+        // move one xline forward, unless we're at the last xline in this
+        // inline, then wrap around to zero again
+        k = k + 1 >= geo.xlines ? 0 : k + 1;
+        // move the ilines forwards every time xlines wrap around
+        if( k == 0 ) ++j;
+
+        for( auto is : { i1, i2, i3, i4 } ) {
+            for( const auto& it : Bnn ) {
+                // TODO: consider extraction to emphasise that rows does not
+                // move as much as cols
+                const auto row = is*dims + it.row();
+                const auto col = traceno*dims + it.col();
+                triplets.emplace_back( row, col, it.value() );
+            }
+        }
+    }
+
+    L.setFromTriplets( triplets.begin(), triplets.end() );
+
+    b = L.transpose() * b;
+    L = L.transpose() * L;
+
+    return { L, b };
+}
+
 }
 
 int main( int argc, char** argv ) {
@@ -398,7 +611,10 @@ int main( int argc, char** argv ) {
     std::vector< geometry > geometries;
     for( const auto& file : opts.files ) {
         filehandles.push_back( openfile( file ) );
-        geometries.push_back( findgeometry( filehandles.back().get() ) );
+        geometries.push_back( findgeometry( filehandles.back().get(),
+                                            opts.ilbyte,
+                                            opts.xlbyte )
+                            );
     }
 
     const auto samples = geometries.back().samples;
@@ -411,5 +627,54 @@ int main( int argc, char** argv ) {
                                 opts.vertical_smoothing,
                                 opts.horizontal_smoothing );
 
-    const auto omega = angular_frequency( samples, 1.0f );
+    const auto Bnn = getBnn( B, opts.horizontal_smoothing );
+
+    const auto omega = angular_frequency( samples, 1.0 );
+
+    sparse< double > L_in;
+
+    struct combination {
+        segy_file* base;
+        segy_file* monitor;
+        int baseindex;
+        int monindex;
+    };
+    std::vector< combination > vintagepairs;
+    int baseindex = 0;
+    for( const auto& base : filehandles ) {
+        int monitorindex = baseindex + 1;
+        auto monitr = filehandles.begin() + monitorindex;
+        for( ; monitr != filehandles.end(); ++monitr ) {
+            vintagepairs.push_back( {
+                base.get(),
+                monitr->get(),
+                baseindex,
+                monitorindex,
+            } );
+            ++monitorindex;
+        }
+        ++baseindex;
+    }
+
+    for( const auto& vp : vintagepairs ) {
+        auto pair = L_ij( vp.base,
+                          vp.monitor,
+                          geometries.back(),
+                          B,
+                          C,
+                          Bnn,
+                          omega,
+                          opts.normalizer );
+
+        //auto& Lsquared = pair.first;
+        //auto& bsquared = pair.second;
+
+        matrix< int > maskL(filehandles.size() - 1, filehandles.size() - 1);
+        maskL.setZero();
+        maskL.block( vp.baseindex, vp.baseindex,
+                     vp.monindex - vp.baseindex, vp.monindex - vp.baseindex )
+                    .setOnes();
+
+        // TODO: extract triplets from Lsquared; insert in L_in
+    }
 }

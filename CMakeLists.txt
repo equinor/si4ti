@@ -6,7 +6,7 @@ include(GNUInstallDirs)
 
 find_package(Eigen3 REQUIRED)
 find_package(segyio REQUIRED)
-find_library(fftw3f NAMES fftw3f REQUIRED)
+find_library(fftw3 NAMES fftw3 REQUIRED)
 
 enable_testing()
 add_subdirectory(timeshift)
