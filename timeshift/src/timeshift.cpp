@@ -25,7 +25,7 @@ struct options {
     int    solver_max_iter      = 100;
     bool   double_precision     = false;
     bool   correct_4d_noise     = false;
-    double normalizer           = 30;
+    double normalizer           = 9.58692019926;
     int    verbosity            = 0;
     int    ilbyte               = SEGY_TR_INLINE;
     int    xlbyte               = SEGY_TR_CROSSLINE;
@@ -61,7 +61,7 @@ options parseopts( int argc, char** argv ) {
             case 'r': break;
             case 'H': break;
             case 'V': break;
-            case 'm': break;
+            case 'm': opts.solver_max_iter = std::stoi( optarg ); break;
             case 'd': break;
             case 'c': break;
             case 'n': break;
@@ -277,6 +277,8 @@ void writefile( segy_file* basefile,
         throw std::runtime_error( "Unable to write binary header" );
 
     auto buf = v.data();
+
+    std::vector< float > trace( geo.samples );
     for( int traceno = 0; traceno < geo.traces; ++traceno ) {
         err = segy_traceheader( basefile,
                                 traceno,
@@ -286,7 +288,7 @@ void writefile( segy_file* basefile,
 
         if( err != SEGY_OK )
             throw std::runtime_error( "Unable to read trace header "
-                                    + std::string( traceno ) );
+                                    + std::to_string( traceno ) );
 
         err = segy_write_traceheader( fp.get(),
                                       traceno,
@@ -296,17 +298,20 @@ void writefile( segy_file* basefile,
 
         if( err != SEGY_OK )
             throw std::runtime_error( "Unable to write trace header "
-                                    + std::string( traceno ) );
+                                    + std::to_string( traceno ) );
+
+        std::copy( buf, buf + geo.samples, trace.begin() );
+        segy_from_native( SEGY_IBM_FLOAT_4_BYTE, geo.samples, trace.data() );
 
         err = segy_writetrace( fp.get(),
                                traceno,
-                               buf,
+                               trace.data(),
                                geo.trace0,
                                geo.trace_bsize );
 
         if( err != SEGY_OK )
             throw std::runtime_error( "Unable to write trace "
-                                    + std::string( traceno ) );
+                                    + std::to_string( traceno ) );
 
         buf += geo.samples;
     }
@@ -345,8 +350,8 @@ matrix< T > normalized_bspline( int samples, T density, int degree ) {
 
 template< typename T >
 matrix< T > constraints( const matrix< T >& spline,
-                         T vertical_smoothing,
-                         T horizontal_smoothing ) {
+                         double vertical_smoothing,
+                         double horizontal_smoothing ) {
 
     /*
      * Smoothing constraints
@@ -444,8 +449,7 @@ matrix< T > linearoperator( const vector< T >& derived,
 template< typename T >
 auto solution( const vector< T >& derived,
                const vector< T >& delta,
-               const matrix< T >& spline )
-    -> decltype( (derived.asDiagonal() * spline).transpose() * delta ) {
+               const matrix< T >& spline ) -> vector< T > {
     /*
      * Solution (right-hand-side of the system)
      *
@@ -488,7 +492,7 @@ Vector& gettr( segy_file* vintage,
 
 template< typename T >
 std::vector< Eigen::Triplet< T > > getBnn( const matrix< T >& B,
-                                           T horizontal_smoothing ) {
+                                           double horizontal_smoothing ) {
 
     sparse< T > Bnn = (B.transpose() * B).sparseView();
 
@@ -514,7 +518,7 @@ L_ij( segy_file* vintage1,
                                const matrix< T >& C,
                                const std::vector< Eigen::Triplet< T > >& Bnn,
                                const vector< T >& omega,
-                               T normalizer ) {
+                               double normalizer ) {
 
     const auto dims = B.cols();
 
@@ -575,7 +579,7 @@ L_ij( segy_file* vintage1,
         // C(j, k-1)
         const auto i3 = j == 0 ? i : i - geo.xlines;
         // C(j, k+1)
-        const auto i4 = j == geo.ilines - 1 ? i : i + geo.ilines;
+        const auto i4 = j == geo.ilines - 1 ? i : i + geo.xlines;
 
         // move one xline forward, unless we're at the last xline in this
         // inline, then wrap around to zero again
@@ -617,10 +621,12 @@ int main( int argc, char** argv ) {
                             );
     }
 
+    using T = float;
+
     const auto samples = geometries.back().samples;
 
     const auto B = normalized_bspline( samples,
-                                       opts.timeshift_resolution,
+                                       T( opts.timeshift_resolution ),
                                        3 );
 
     const auto C = constraints( B,
@@ -629,9 +635,12 @@ int main( int argc, char** argv ) {
 
     const auto Bnn = getBnn( B, opts.horizontal_smoothing );
 
-    const auto omega = angular_frequency( samples, 1.0 );
+    const auto omega = angular_frequency( samples, T( 1.0 ) );
 
-    sparse< double > L_in;
+    const auto solsize = B.cols() * geometries.front().traces * (filehandles.size() - 1);
+    sparse< T > L_in( solsize, solsize );
+    vector< T > b_in( solsize );
+    b_in.setZero();
 
     struct combination {
         segy_file* base;
@@ -656,6 +665,9 @@ int main( int argc, char** argv ) {
         ++baseindex;
     }
 
+    const int vintages = filehandles.size();
+    int M = 0;
+    std::vector< Eigen::Triplet< T > > triplets;
     for( const auto& vp : vintagepairs ) {
         auto pair = L_ij( vp.base,
                           vp.monitor,
@@ -666,15 +678,72 @@ int main( int argc, char** argv ) {
                           omega,
                           opts.normalizer );
 
-        //auto& Lsquared = pair.first;
-        //auto& bsquared = pair.second;
+        const auto& Lsquared = pair.first;
+        const auto& bsquared = pair.second;
 
-        matrix< int > maskL(filehandles.size() - 1, filehandles.size() - 1);
+        matrix< int > maskL( vintages - 1, vintages - 1 );
+
+        const auto masksize = vp.monindex - vp.baseindex;
         maskL.setZero();
-        maskL.block( vp.baseindex, vp.baseindex,
-                     vp.monindex - vp.baseindex, vp.monindex - vp.baseindex )
-                    .setOnes();
+        maskL.block( vp.baseindex, vp.baseindex, masksize, masksize )
+             .setOnes();
 
-        // TODO: extract triplets from Lsquared; insert in L_in
+        vector< int > maskb( vintages - 1 );
+        maskb.setZero();
+        maskb.segment( vp.baseindex, masksize )
+             .setOnes();
+
+        M = Lsquared.rows();
+        using inneritr = decltype( pair.first )::InnerIterator;
+
+        for( int i = 0; i < maskL.cols(); ++i ) {
+            for( int j = 0; j < maskL.rows(); ++j ) {
+                if( !maskL(j, i) ) continue;
+
+                for( int k = 0; k < Lsquared.outerSize(); ++k ) {
+                    for( inneritr it( Lsquared, k ); it; ++it ) {
+                        const auto row = j * M + it.row();
+                        const auto col = i * M + it.col();
+                        triplets.emplace_back( row, col, it.value() );
+                    }
+                }
+            }
+        }
+
+        for( int i = 0; i < maskb.rows(); ++i ) {
+            if( !maskb( i ) ) continue;
+            b_in.segment( i * M, M ) += bsquared;
+        }
+    }
+
+    L_in.setFromTriplets( triplets.begin(), triplets.end() );
+
+    Eigen::ConjugateGradient< decltype( L_in ), Eigen::Lower | Eigen::Upper > cg;
+    cg.setMaxIterations(opts.solver_max_iter);
+    cg.compute( L_in );
+    vector< T > x = cg.solve( b_in );
+
+    auto reconstruct = [&]( vector< T > seg ) {
+        const auto scale = 4.0;
+        const auto samples = geometries.front().samples;
+        const auto M = B.cols();
+
+        vector< T > reconstructed( geometries.front().traces * samples );
+        for( int i = 0; i < geometries.front().traces; ++i ) {
+            reconstructed.segment( i * samples, samples ) = scale * B * seg.segment( i * M, M );
+        }
+
+        return reconstructed;
+    };
+
+    for( int i = 0; i < vintages - 1; ++i ) {
+        T scale = 4;
+        vector< T > seg = x.segment( i * M, M );
+        auto timeshift = reconstruct( seg );
+        writefile( filehandles.front().get(),
+                   timeshift,
+                   "timeshift-" + std::to_string( i ) + ".sgy",
+                   geometries.back() );
+
     }
 }
