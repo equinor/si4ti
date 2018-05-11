@@ -10,4 +10,5 @@ find_library(fftw3 NAMES fftw3 REQUIRED)
 find_library(fftw3f NAMES fftw3f REQUIRED)
 
 enable_testing()
+add_subdirectory(external/catch2)
 add_subdirectory(timeshift)
