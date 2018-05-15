@@ -210,6 +210,27 @@ def main():
 
     surveys = args.surveys
     L, b, spline = system(surveys)
+    #b = np.load('timeshift-0.npy')
+    L = bsr_matrix(L)
+    L = L.todense()
+
+    import matplotlib.pyplot as plt
+    #plt.spy(L)
+    #plt.show()
+
+    L = bsr_matrix(L)
+
+    bl = np.load('timeshift-0.npy')
+    ll = np.load('timeshift-1.npy')
+
+    #plt.spy(ll)
+    #plt.show()
+
+    #L = bsr_matrix(ll)
+
+    #plt.plot(b - bl)
+    #plt.show()
+
     c = solve(L, b)
     dump(c, surveys[:-1], spline)
 

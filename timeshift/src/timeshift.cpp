@@ -606,6 +606,49 @@ L_ij( segy_file* vintage1,
     return { L, b };
 }
 
+struct combination {
+    segy_file* base;
+    segy_file* monitor;
+    int baseindex;
+    int monindex;
+};
+
+std::vector< combination >
+pair_vintages( const std::vector< filehandle >& fh ) {
+    /*
+     *  | 1  2  3  4
+     * -+-----------
+     * 1| -  a  b  c
+     * 2| -  -  d  e
+     * 3| -  -  -  f
+     * 4| -  -  -  -
+     *
+     * Combine the vintages 1..4 in the order a, b..f
+     *
+     * Additionally, compute the base-monitor distances, which is needed to
+     * distribute the resulting equations in the larger linear system.
+     */
+    std::vector< combination > vintagepairs;
+    int baseindex = 0;
+    for( const auto& base : fh ) {
+        int monitorindex = baseindex + 1;
+        auto monitr = fh.begin() + monitorindex;
+        while( monitr != fh.end() ) {
+            vintagepairs.push_back( {
+                base.get(),
+                monitr->get(),
+                baseindex,
+                monitorindex,
+            } );
+            ++monitorindex;
+            ++monitr;
+        }
+        ++baseindex;
+    }
+
+    return vintagepairs;
+}
+
 }
 
 #ifndef TEST
@@ -644,28 +687,7 @@ int main( int argc, char** argv ) {
     vector< T > b_in( solsize );
     b_in.setZero();
 
-    struct combination {
-        segy_file* base;
-        segy_file* monitor;
-        int baseindex;
-        int monindex;
-    };
-    std::vector< combination > vintagepairs;
-    int baseindex = 0;
-    for( const auto& base : filehandles ) {
-        int monitorindex = baseindex + 1;
-        auto monitr = filehandles.begin() + monitorindex;
-        for( ; monitr != filehandles.end(); ++monitr ) {
-            vintagepairs.push_back( {
-                base.get(),
-                monitr->get(),
-                baseindex,
-                monitorindex,
-            } );
-            ++monitorindex;
-        }
-        ++baseindex;
-    }
+    const auto vintagepairs = pair_vintages( filehandles );
 
     const int vintages = filehandles.size();
     int M = 0;
