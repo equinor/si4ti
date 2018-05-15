@@ -9,7 +9,8 @@ target_link_libraries(timeshift ${fftw3}
 )
 target_compile_definitions(timeshift PRIVATE EIGEN_FFTW_DEFAULT=1)
 
-add_executable(tests test/testsuite.cpp)
-target_include_directories(tests PRIVATE include)
-target_link_libraries(tests catch2)
+add_executable(tests test/testsuite.cpp
+                     test/timeshift.cpp)
+target_include_directories(tests PRIVATE src)
+target_link_libraries(tests catch2 Eigen3::Eigen)
 add_test(NAME test COMMAND tests)

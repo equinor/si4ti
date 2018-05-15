@@ -608,6 +608,8 @@ L_ij( segy_file* vintage1,
 
 }
 
+#ifndef TEST
+
 int main( int argc, char** argv ) {
     auto opts = parseopts( argc, argv );
 
@@ -747,3 +749,5 @@ int main( int argc, char** argv ) {
 
     }
 }
+
+#endif
