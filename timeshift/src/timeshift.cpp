@@ -649,6 +649,25 @@ pair_vintages( const std::vector< filehandle >& fh ) {
     return vintagepairs;
 }
 
+matrix< int > mask_linear( int vintages, int baseindex, int monindex ) {
+    // TODO: doc masks
+    matrix< int > maskL( vintages - 1, vintages - 1 );
+    maskL.setZero();
+
+    const auto masksize = monindex - baseindex;
+    maskL.block( baseindex, baseindex, masksize, masksize ).setOnes();
+    return maskL;
+}
+
+vector< int > mask_solution( int vintages, int baseindex, int monindex ) {
+    vector< int > maskb( vintages - 1 );
+    maskb.setZero();
+
+    const auto masksize = monindex - baseindex;
+    maskb.segment( baseindex, masksize ).setOnes();
+    return maskb;
+}
+
 }
 
 #ifndef TEST
@@ -691,6 +710,7 @@ int main( int argc, char** argv ) {
 
     const int vintages = filehandles.size();
     int M = 0;
+
     std::vector< Eigen::Triplet< T > > triplets;
     for( const auto& vp : vintagepairs ) {
         auto pair = L_ij( vp.base,
@@ -705,17 +725,8 @@ int main( int argc, char** argv ) {
         const auto& Lsquared = pair.first;
         const auto& bsquared = pair.second;
 
-        matrix< int > maskL( vintages - 1, vintages - 1 );
-
-        const auto masksize = vp.monindex - vp.baseindex;
-        maskL.setZero();
-        maskL.block( vp.baseindex, vp.baseindex, masksize, masksize )
-             .setOnes();
-
-        vector< int > maskb( vintages - 1 );
-        maskb.setZero();
-        maskb.segment( vp.baseindex, masksize )
-             .setOnes();
+        const auto maskL = mask_linear( vintages, vp.baseindex, vp.monindex );
+        const auto maskb = mask_solution( vintages, vp.baseindex, vp.monindex );
 
         M = Lsquared.rows();
         using inneritr = decltype( pair.first )::InnerIterator;
