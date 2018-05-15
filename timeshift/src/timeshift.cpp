@@ -335,7 +335,7 @@ std::vector< T > knotvector( int samples, T density ) {
 
     std::reverse( knotv.begin(), knotv.end() );
 
-    for( auto f = middle + step; f < (1+samples) - 1/density; f += step )
+    for( auto f = middle + step; f <= samples - 1/density; f += step )
         knotv.push_back( f );
 
     return knotv;
