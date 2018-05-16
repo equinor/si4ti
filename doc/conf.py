@@ -20,8 +20,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'simpli'
-copyright = '2018, Sveinung Styve Rundhovde, Jørgen Kvalsvik'
-author = 'Sveinung Styve Rundhovde, Jørgen Kvalsvik'
+copyright = '2018, Sveinung Styve Rundhovde and Jørgen Kvalsvik'
+author = 'Sveinung Styve Rundhovde and Jørgen Kvalsvik'
 
 # The short X.Y version
 version = ''
@@ -39,9 +39,7 @@ release = '0.0.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.imgmath',
-    'sphinx.ext.viewcode',
+    'sphinx.ext.mathjax',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -132,7 +130,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'simpli.tex', 'simpli Documentation',
-     'Sveinung Styve Rundhovde, Jørgen Kvalsvik', 'manual'),
+     'Sveinung Styve Rundhovde and Jørgen Kvalsvik', 'manual'),
 ]
 
 
