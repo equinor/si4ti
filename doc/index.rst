@@ -7,8 +7,10 @@ Welcome to simpli's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
+
+   theory.rst
 
 Indices and tables
 ==================
