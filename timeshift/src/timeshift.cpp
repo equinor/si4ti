@@ -59,8 +59,8 @@ options parseopts( int argc, char** argv ) {
 
         switch( c ) {
             case 'r': break;
-            case 'H': break;
-            case 'V': break;
+            case 'H': opts.horizontal_smoothing = std::stod( optarg ); break;
+            case 'V': opts.vertical_smoothing   = std::stod( optarg ); break;
             case 'm': opts.solver_max_iter = std::stoi( optarg ); break;
             case 'd': break;
             case 'c': break;
@@ -491,22 +491,9 @@ Vector& gettr( segy_file* vintage,
 }
 
 template< typename T >
-std::vector< Eigen::Triplet< T > > getBnn( const matrix< T >& B,
-                                           double horizontal_smoothing ) {
-
-    sparse< T > Bnn = (B.transpose() * B).sparseView();
-
-    decltype( getBnn( B, horizontal_smoothing ) ) triplets;
-    for( int k = 0; k < Bnn.outerSize(); ++k ) {
-        for( typename decltype( Bnn )::InnerIterator it( Bnn, k ); it; ++it ) {
-            const auto row = it.row();
-            const auto col = it.col();
-            const auto val = it.value() * -.25 * horizontal_smoothing;
-            triplets.emplace_back( row, col, val );
-        }
-    }
-
-    return triplets;
+matrix< T > getBnn( const matrix< T >& B,
+                    double horizontal_smoothing ) {
+    return (B.transpose() * B) * .25 * horizontal_smoothing;
 }
 
 template< typename T >
@@ -516,7 +503,6 @@ L_ij( segy_file* vintage1,
                                const geometry& geo,
                                const matrix< T >& B,
                                const matrix< T >& C,
-                               const std::vector< Eigen::Triplet< T > >& Bnn,
                                const vector< T >& omega,
                                double normalizer ) {
 
@@ -570,38 +556,9 @@ L_ij( segy_file* vintage1,
 
         b.segment( traceno * dims, dims ) = solution( D, delta, B );
 
-
-        const auto i = traceno;
-        // C(j-1, k)
-        const auto i1 = k == 0 ? i : i - 1;
-        // C(j+1, k)
-        const auto i2 = k == geo.xlines - 1 ? i : i + 1;
-        // C(j, k-1)
-        const auto i3 = j == 0 ? i : i - geo.xlines;
-        // C(j, k+1)
-        const auto i4 = j == geo.ilines - 1 ? i : i + geo.xlines;
-
-        // move one xline forward, unless we're at the last xline in this
-        // inline, then wrap around to zero again
-        k = k + 1 >= geo.xlines ? 0 : k + 1;
-        // move the ilines forwards every time xlines wrap around
-        if( k == 0 ) ++j;
-
-        for( auto is : { i1, i2, i3, i4 } ) {
-            for( const auto& it : Bnn ) {
-                // TODO: consider extraction to emphasise that rows does not
-                // move as much as cols
-                const auto row = is*dims + it.row();
-                const auto col = traceno*dims + it.col();
-                triplets.emplace_back( row, col, it.value() );
-            }
-        }
     }
 
     L.setFromTriplets( triplets.begin(), triplets.end() );
-
-    b = L.transpose() * b;
-    L = L.transpose() * L;
 
     return { L, b };
 }
@@ -668,7 +625,160 @@ vector< int > mask_solution( int vintages, int baseindex, int monindex ) {
     return maskb;
 }
 
+template< typename T > class SuperMatrix;
+
+template< typename T >
+struct SuperMatrix : public Eigen::EigenBase< SuperMatrix< T > > {
+    using Scalar = T;
+    using RealScalar = T;
+    using StorageIndex = std::ptrdiff_t;
+    using Index = typename Eigen::EigenBase< SuperMatrix >::Index;
+
+    enum {
+        ColsAtCompileTime = Eigen::Dynamic,
+        MaxColsAtCompileTime = Eigen::Dynamic,
+        IsRowMajor = false
+    };
+
+    SuperMatrix( sparse< T > m,
+                 sparse< T > bnn,
+                 matrix< int > cmb,
+                 int vints,
+                 int inlines,
+                 int crosslines ) :
+        mat( std::move( m ) ),
+        Bnn( std::move( bnn ) ),
+        comb( std::move( cmb ) ),
+        vintages( vints ),
+        ilines( inlines ),
+        xlines( crosslines )
+    {}
+
+    Index rows() const { return this->mat.rows(); }
+    Index cols() const { return this->mat.cols(); }
+
+    template< typename Rhs >
+    Eigen::Product< SuperMatrix, Rhs, Eigen::AliasFreeProduct >
+    operator*( const Eigen::MatrixBase< Rhs >& x ) const {
+        return { *this, x.derived() };
+    }
+
+    sparse< T > mat;
+    sparse< T > Bnn;
+    matrix< int > comb;
+    int vintages;
+    int ilines, xlines;
+};
+
+template< typename T >
+struct SuperPreconditioner : public T {
+
+    SuperPreconditioner() = default;
+
+    template<typename MatrixType>
+    explicit SuperPreconditioner(const MatrixType& m ) : T( m.mat ) {}
+
+    template<typename MatrixType>
+    SuperPreconditioner& analyzePattern( const MatrixType& m ) {
+        this->T::analyzePattern( m.mat );
+        return *this;
+    }
+
+    template<typename MatrixType>
+    SuperPreconditioner& factorize( const MatrixType& m ) {
+        this->T::factorize( m.mat );
+        return *this;
+    }
+
+    template<typename MatrixType>
+    SuperPreconditioner& compute( const MatrixType& m ) {
+        this->T::compute( m.mat );
+        return *this;
+    }
+
+    template<typename Rhs>
+    inline auto solve(const Rhs& b) const -> decltype( this->T::solve( b ) ) {
+        return this->T::solve( b );
+    }
+
+    Eigen::ComputationInfo info() { return this->T::info(); }
+};
+
 }
+
+namespace Eigen { namespace internal {
+
+template<>
+template< typename T >
+struct traits< SuperMatrix< T > > :
+    public Eigen::internal::traits< Eigen::SparseMatrix< T > >
+{};
+
+template< typename T, typename Rhs >
+struct generic_product_impl< SuperMatrix< T >,
+                             Rhs,
+                             SparseShape,
+                             DenseShape,
+                             GemvProduct // GEMV stands for matrix-vector
+                           >
+     : generic_product_impl_base< SuperMatrix< T >,
+                                  Rhs,
+                                  generic_product_impl< SuperMatrix< T >, Rhs >
+                                >
+{
+    using Scalar = typename Product< SuperMatrix< T >, Rhs >::Scalar;
+    template< typename Dest >
+    static void scaleAndAddTo( Dest& dst,
+                               const SuperMatrix< T >& lhs,
+                               const Rhs& rhs,
+                               const Scalar& alpha ) {
+
+        dst += lhs.mat * rhs * alpha;
+
+        const auto vintages = lhs.vintages;
+        const auto dims     = lhs.Bnn.rows();
+        const auto ilines   = lhs.ilines;
+        const auto xlines   = lhs.xlines;
+        const auto traces   = ilines * xlines;
+        const auto vintsize = dims * traces;
+        const auto& comb    = lhs.comb;
+
+        for( int vint1 = 0; vint1 < vintages - 1; ++vint1 ) {
+        for( int vint2 = 0; vint2 < vintages - 1; ++vint2 ) {
+
+        int j = 0, k = 0;
+        for( int i = 0; i < traces; ++i ) {
+            const std::ptrdiff_t iss[] = {
+                // C(j-1, k)
+                k == 0 ? i : i - 1,
+                // C(j+1, k)
+                k == xlines - 1 ? i : i + 1,
+                // C(j, k-1)
+                j == 0 ? i : i - xlines,
+                // C(j, k+1)
+                j == ilines - 1 ? i : i + xlines,
+            };
+
+            // move one xline forward, unless we're at the last xline in this
+            // inline, then wrap around to zero again
+            k = k + 1 >= xlines ? 0 : k + 1;
+            // move the ilines forwards every time xlines wrap around
+            if( k == 0 ) ++j;
+
+            const auto col = (vint1 * vintsize) + i * dims;
+            for( const auto is : iss ) {
+                const auto row = (vint2 * vintsize) + is * dims;
+                vector< T > x = rhs.segment( row, dims );
+                vector< T > smoothing = comb(vint1, vint2) * (lhs.Bnn * x).eval();
+                dst.segment(col, dims).array() -= smoothing.array();
+            }
+        }
+
+        }}
+    }
+};
+
+} }
 
 #ifndef TEST
 
@@ -711,6 +821,9 @@ int main( int argc, char** argv ) {
     const int vintages = filehandles.size();
     int M = 0;
 
+    matrix< int > comb( vintages - 1, vintages - 1 );
+    comb.setZero();
+
     std::vector< Eigen::Triplet< T > > triplets;
     for( const auto& vp : vintagepairs ) {
         auto pair = L_ij( vp.base,
@@ -718,7 +831,6 @@ int main( int argc, char** argv ) {
                           geometries.back(),
                           B,
                           C,
-                          Bnn,
                           omega,
                           opts.normalizer );
 
@@ -727,6 +839,8 @@ int main( int argc, char** argv ) {
 
         const auto maskL = mask_linear( vintages, vp.baseindex, vp.monindex );
         const auto maskb = mask_solution( vintages, vp.baseindex, vp.monindex );
+
+        comb += maskL;
 
         M = Lsquared.rows();
         using inneritr = decltype( pair.first )::InnerIterator;
@@ -753,9 +867,17 @@ int main( int argc, char** argv ) {
 
     L_in.setFromTriplets( triplets.begin(), triplets.end() );
 
-    Eigen::ConjugateGradient< decltype( L_in ), Eigen::Lower | Eigen::Upper > cg;
-    cg.setMaxIterations(opts.solver_max_iter);
-    cg.compute( L_in );
+    const auto& geo = geometries.back();
+    SuperMatrix< T > rep( L_in, Bnn.sparseView(), comb, vintages, geo.ilines, geo.xlines );
+
+
+    Eigen::ConjugateGradient<
+        decltype( rep ),
+        Eigen::Lower | Eigen::Upper,
+        SuperPreconditioner< Eigen::DiagonalPreconditioner< T > >
+    > cg;
+    cg.setMaxIterations( opts.solver_max_iter );
+    cg.compute( rep );
     vector< T > x = cg.solve( b_in );
 
     auto reconstruct = [&]( vector< T > seg ) {
