@@ -61,3 +61,33 @@ add_custom_target(diff-cropped
 )
 
 add_dependencies(diff diff-cropped)
+
+find_program(valgrind valgrind)
+if(NOT valgrind)
+    message(WARNING "Could not find valgrind, memcheck/callgrind not built")
+    return()
+endif()
+
+add_custom_target(memcheck
+    COMMAND ${valgrind} --leak-check=full
+        $<TARGET_FILE:timeshift> -i 5 -x 21 ${cropped-files}
+    COMMENT "Running memcheck"
+    DEPENDS timeshift ${cropped-files}
+)
+
+add_custom_command(
+    OUTPUT callgrind.out.timeshift
+    COMMAND ${valgrind} --tool=callgrind
+                        --callgrind-out-file=callgrind.out.timeshift
+        $<TARGET_FILE:timeshift> -i 5 -x 21 ${cropped-files}
+        COMMENT "Running callgrind"
+    DEPENDS timeshift ${cropped-files}
+)
+
+add_custom_target(callgrind DEPENDS callgrind.out.timeshift)
+
+find_program(kcachegrind kcachegrind)
+add_custom_target(showgrind
+    COMMAND ${kcachegrind} callgrind.out.timeshift
+    DEPENDS callgrind
+)
