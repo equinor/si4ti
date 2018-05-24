@@ -782,6 +782,82 @@ struct generic_product_impl< SuperMatrix< T >,
 
 #ifndef TEST
 
+template< typename T >
+struct problem {
+    sparse< T > L;
+    vector< T > b;
+    matrix< int > multiplier;
+};
+
+template< typename T >
+problem< T > mkstuff( const matrix< T >& basis,
+                      const matrix< T >& constraints,
+                      const vector< T >& omega,
+                      double normalizer,
+                      const std::vector< filehandle >& filehandles,
+                      const geometry& geo ) {
+
+    const int vintages = filehandles.size();
+    const int solutionsize = basis.cols() * geo.traces * (vintages - 1);
+
+    const int M = basis.cols() * geo.traces;
+
+    problem< T > p = {
+        sparse< T >( solutionsize, solutionsize ),
+        vector< T >( solutionsize ),
+        matrix< int >( vintages - 1, vintages - 1 ),
+    };
+
+    p.b.setZero();
+    p.multiplier.setZero();
+
+    const auto vintagepairs = pair_vintages( filehandles );
+
+    std::vector< Eigen::Triplet< T > > triplets;
+    for( const auto& vp : vintagepairs ) {
+        auto pair = L_ij( vp.base,
+                          vp.monitor,
+                          geo,
+                          basis,
+                          constraints,
+                          omega,
+                          normalizer );
+
+        const auto& localL = pair.first;
+        const auto& localb = pair.second;
+
+        const auto maskL = mask_linear( vintages, vp.baseindex, vp.monindex );
+        const auto maskb = mask_solution( vintages, vp.baseindex, vp.monindex );
+
+        p.multiplier += maskL;
+
+        using inneritr = typename decltype( pair.first )::InnerIterator;
+
+        for( int i = 0; i < maskL.cols(); ++i ) {
+            for( int j = 0; j < maskL.rows(); ++j ) {
+                if( !maskL(j, i) ) continue;
+
+                for( int k = 0; k < localL.outerSize(); ++k ) {
+                    for( inneritr it( localL, k ); it; ++it ) {
+                        const auto row = j * M + it.row();
+                        const auto col = i * M + it.col();
+                        triplets.emplace_back( row, col, it.value() );
+                    }
+                }
+            }
+        }
+
+        for( int i = 0; i < maskb.rows(); ++i ) {
+            if( !maskb( i ) ) continue;
+            p.b.segment( i * M, M ) += localb;
+        }
+    }
+
+    p.L.setFromTriplets( triplets.begin(), triplets.end() );
+    return p;
+}
+
+
 int main( int argc, char** argv ) {
     auto opts = parseopts( argc, argv );
 
@@ -812,64 +888,18 @@ int main( int argc, char** argv ) {
     const auto omega = angular_frequency( samples, T( 1.0 ) );
 
     const auto solsize = B.cols() * geometries.front().traces * (filehandles.size() - 1);
-    sparse< T > L_in( solsize, solsize );
-    vector< T > b_in( solsize );
-    b_in.setZero();
-
-    const auto vintagepairs = pair_vintages( filehandles );
-
-    const int vintages = filehandles.size();
-    int M = 0;
-
-    matrix< int > comb( vintages - 1, vintages - 1 );
-    comb.setZero();
-
-    std::vector< Eigen::Triplet< T > > triplets;
-    for( const auto& vp : vintagepairs ) {
-        auto pair = L_ij( vp.base,
-                          vp.monitor,
-                          geometries.back(),
-                          B,
-                          C,
-                          omega,
-                          opts.normalizer );
-
-        const auto& Lsquared = pair.first;
-        const auto& bsquared = pair.second;
-
-        const auto maskL = mask_linear( vintages, vp.baseindex, vp.monindex );
-        const auto maskb = mask_solution( vintages, vp.baseindex, vp.monindex );
-
-        comb += maskL;
-
-        M = Lsquared.rows();
-        using inneritr = decltype( pair.first )::InnerIterator;
-
-        for( int i = 0; i < maskL.cols(); ++i ) {
-            for( int j = 0; j < maskL.rows(); ++j ) {
-                if( !maskL(j, i) ) continue;
-
-                for( int k = 0; k < Lsquared.outerSize(); ++k ) {
-                    for( inneritr it( Lsquared, k ); it; ++it ) {
-                        const auto row = j * M + it.row();
-                        const auto col = i * M + it.col();
-                        triplets.emplace_back( row, col, it.value() );
-                    }
-                }
-            }
-        }
-
-        for( int i = 0; i < maskb.rows(); ++i ) {
-            if( !maskb( i ) ) continue;
-            b_in.segment( i * M, M ) += bsquared;
-        }
-    }
-
-    L_in.setFromTriplets( triplets.begin(), triplets.end() );
 
     const auto& geo = geometries.back();
-    SuperMatrix< T > rep( L_in, Bnn.sparseView(), comb, vintages, geo.ilines, geo.xlines );
 
+    auto stuff = mkstuff( B, C, omega, opts.normalizer, filehandles, geo );
+    const auto vintages = filehandles.size();
+    const auto M = B.cols() * geometries.front().traces * (vintages - 1);
+    SuperMatrix< T > rep( std::move( stuff.L ),
+                          Bnn.sparseView(),
+                          stuff.multiplier,
+                          vintages,
+                          geo.ilines,
+                          geo.xlines );
 
     Eigen::ConjugateGradient<
         decltype( rep ),
@@ -878,7 +908,7 @@ int main( int argc, char** argv ) {
     > cg;
     cg.setMaxIterations( opts.solver_max_iter );
     cg.compute( rep );
-    vector< T > x = cg.solve( b_in );
+    vector< T > x = cg.solve( stuff.b );
 
     auto reconstruct = [&]( vector< T > seg ) {
         const auto scale = 4.0;
