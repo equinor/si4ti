@@ -496,73 +496,6 @@ matrix< T > getBnn( const matrix< T >& B,
     return (B.transpose() * B) * .25 * horizontal_smoothing;
 }
 
-template< typename T >
-std::pair< sparse< T >, vector< T > >
-L_ij( segy_file* vintage1,
-                               segy_file* vintage2,
-                               const geometry& geo,
-                               const matrix< T >& B,
-                               const matrix< T >& C,
-                               const vector< T >& omega,
-                               double normalizer ) {
-
-    const auto dims = B.cols();
-
-    int err = 0;
-
-    /* reuse a bunch of vectors, as they're the same size throughout and
-     * constructing them is expensive
-     */
-    vector< T > tr1( geo.samples );
-    vector< T > tr2( geo.samples );
-    vector< T > delta( geo.samples );
-    vector< T > D( geo.samples );
-    matrix< T > Lt( dims, dims );
-    sparse< T > picoL( dims, dims );
-    sparse< T > L( dims * geo.traces, dims * geo.traces );
-    vector< T > b( dims * geo.traces );
-
-    using inneritr = typename decltype( picoL )::InnerIterator;
-
-    // TODO: evaluate triplets-then-insert vs. reserve-and-insert per trace and
-    // reserve-and-insert per vintage pair (full-file)
-    std::vector< Eigen::Triplet< T > > triplets;
-
-    int j = 0, k = 0;
-    for( auto traceno = 0; traceno < geo.traces; ++traceno ) {
-        tr1 = gettr( vintage1, traceno, geo, tr1 ) / normalizer;
-        tr2 = gettr( vintage2, traceno, geo, tr2 ) / normalizer;
-
-        // derive works in-place and will overwrite its input argument
-        // signal, so delta must be computed first
-        delta = tr2.array() - tr1.array();
-
-        D = 0.5 * (derive( tr1, omega ) + derive( tr2, omega ));
-        Lt = linearoperator( D, B );
-        picoL = (Lt + C).sparseView();
-
-        for( int i = 0; i < picoL.outerSize(); ++i ) {
-            for( inneritr it( picoL, i ); it; ++it ) {
-                /*
-                 * position each sample into the linear operator based on the
-                 * two vintages, by simply shifting them along the diagonal of
-                 * the larger system
-                 */
-                const auto row = traceno*dims + it.row();
-                const auto col = traceno*dims + it.col();
-                triplets.emplace_back( row, col, it.value() );
-            }
-        }
-
-        b.segment( traceno * dims, dims ) = solution( D, delta, B );
-
-    }
-
-    L.setFromTriplets( triplets.begin(), triplets.end() );
-
-    return { L, b };
-}
-
 struct combination {
     segy_file* base;
     segy_file* monitor;
@@ -640,13 +573,15 @@ struct SuperMatrix : public Eigen::EigenBase< SuperMatrix< T > > {
         IsRowMajor = false
     };
 
-    SuperMatrix( sparse< T > m,
+    SuperMatrix( matrix< T > m,
+                 int diagonals,
                  sparse< T > bnn,
                  matrix< int > cmb,
                  int vints,
                  int inlines,
                  int crosslines ) :
         mat( std::move( m ) ),
+        diagonals( diagonals ),
         Bnn( std::move( bnn ) ),
         comb( std::move( cmb ) ),
         vintages( vints ),
@@ -655,7 +590,7 @@ struct SuperMatrix : public Eigen::EigenBase< SuperMatrix< T > > {
     {}
 
     Index rows() const { return this->mat.rows(); }
-    Index cols() const { return this->mat.cols(); }
+    Index cols() const { return this->mat.rows(); }
 
     template< typename Rhs >
     Eigen::Product< SuperMatrix, Rhs, Eigen::AliasFreeProduct >
@@ -663,7 +598,8 @@ struct SuperMatrix : public Eigen::EigenBase< SuperMatrix< T > > {
         return { *this, x.derived() };
     }
 
-    sparse< T > mat;
+    matrix< T > mat;
+    int diagonals;
     sparse< T > Bnn;
     matrix< int > comb;
     int vintages;
@@ -671,37 +607,59 @@ struct SuperMatrix : public Eigen::EigenBase< SuperMatrix< T > > {
 };
 
 template< typename T >
-struct SuperPreconditioner : public T {
+struct SuperPreconditioner {
 
     SuperPreconditioner() = default;
 
     template<typename MatrixType>
-    explicit SuperPreconditioner(const MatrixType& m ) : T( m.mat ) {}
+    void initialize( const MatrixType& m ) {
+        this->mat = &m.mat;
+        this->vintages = m.vintages;
+        this->diagonals = m.diagonals;
+    }
 
     template<typename MatrixType>
     SuperPreconditioner& analyzePattern( const MatrixType& m ) {
-        this->T::analyzePattern( m.mat );
         return *this;
     }
 
     template<typename MatrixType>
     SuperPreconditioner& factorize( const MatrixType& m ) {
-        this->T::factorize( m.mat );
         return *this;
     }
 
     template<typename MatrixType>
     SuperPreconditioner& compute( const MatrixType& m ) {
-        this->T::compute( m.mat );
         return *this;
     }
 
     template<typename Rhs>
-    inline auto solve(const Rhs& b) const -> decltype( this->T::solve( b ) ) {
-        return this->T::solve( b );
+    inline const Rhs solve(const Eigen::MatrixBase<Rhs>& b) const {
+        eigen_assert( !mat
+                   && "SuperPreconditioner is not initialized.");
+        vector< T > v( b.rows() );
+        v.setZero();
+        const int len = b.rows() / (vintages - 1);
+
+        for( int i = 0; i < vintages - 1; ++i ){
+            const auto col = i * diagonals;
+            const auto row = i * len;
+            v.segment( row, len ).array()
+              += this->mat->col( col )
+                          .segment( row, len )
+                          .cwiseInverse()
+                          .array()
+               * b.segment( row, len )
+                  .array();
+        }
+        return v;
     }
 
-    Eigen::ComputationInfo info() { return this->T::info(); }
+    Eigen::ComputationInfo info() { return Eigen::Success; }
+
+    const matrix< T >* mat = nullptr;
+    int vintages;
+    int diagonals;
 };
 
 }
@@ -733,9 +691,36 @@ struct generic_product_impl< SuperMatrix< T >,
                                const Rhs& rhs,
                                const Scalar& alpha ) {
 
-        dst += lhs.mat * rhs * alpha;
-
         const auto vintages = lhs.vintages;
+        const auto diagonals = lhs.diagonals;
+        const auto vintpairsize = lhs.mat.rows() / (vintages - 1);
+
+        for( int mvrow = 0; mvrow < vintages-1 ; ++mvrow ) {
+        for( int mvcol = 0; mvcol < vintages-1 ; ++mvcol ) {
+        for( int diag = 0; diag < diagonals; ++diag ) {
+            const auto lhs_col   = mvcol * diagonals + diag;
+            const auto lhs_start = mvrow * vintpairsize;
+            const auto dst_start = mvrow * vintpairsize;
+            const auto len       = vintpairsize - diag;
+            const auto rhs_start = diag + mvcol * vintpairsize;
+
+            dst.segment( dst_start, len )
+               .array()
+                += alpha * (lhs.mat.col( lhs_col ).segment( lhs_start, len )
+                                                  .array()
+                         * rhs.segment( rhs_start, len )
+                              .array());
+
+            if( diag > 0 )
+                dst.segment( rhs_start, len )
+                   .array()
+                    += alpha * (lhs.mat.col( lhs_col ).segment( lhs_start, len )
+                                                      .array()
+                             * rhs.segment( dst_start, len )
+                                  .array());
+
+        }}}
+
         const auto dims     = lhs.Bnn.rows();
         const auto ilines   = lhs.ilines;
         const auto xlines   = lhs.xlines;
@@ -783,77 +768,135 @@ struct generic_product_impl< SuperMatrix< T >,
 #ifndef TEST
 
 template< typename T >
-struct problem {
-    sparse< T > L;
+struct linear_system {
+    matrix< T > L;
     vector< T > b;
     matrix< int > multiplier;
 };
 
 template< typename T >
-problem< T > mkstuff( const matrix< T >& basis,
-                      const matrix< T >& constraints,
-                      const vector< T >& omega,
-                      double normalizer,
-                      const std::vector< filehandle >& filehandles,
-                      const geometry& geo ) {
+void build_vintpair_system( linear_system< T >& linsys,
+                            const combination& vintpair,
+                            const int vintages,
+                            const geometry& geo,
+                            const matrix< T >& B,
+                            const matrix< T >& C,
+                            const vector< T >& omega,
+                            const double normalizer ) {
+    /*
+     * Builds the linear system for a vintage pair and adds it into the
+     * blocks of the multi-vintage system according to the masks. See
+     * documentation for more details on this.
+     */
+
+    const int localsize = B.cols();
+    const int vintpairsize = localsize * geo.traces;
+    const int ndiagonals = linsys.L.cols() / (vintages - 1);
+
+    const auto maskL = mask_linear( vintages,
+                                    vintpair.baseindex,
+                                    vintpair.monindex );
+    const auto maskb = mask_solution( vintages,
+                                      vintpair.baseindex,
+                                      vintpair.monindex );
+
+    linsys.multiplier += maskL;
+
+    /* reuse a bunch of vectors, as they're the same size throughout and
+     * constructing them is expensive
+     */
+    vector< T > tr1( geo.samples );
+    vector< T > tr2( geo.samples );
+    vector< T > delta( geo.samples );
+    vector< T > D( geo.samples );
+    matrix< T > localL( localsize, localsize );
+    vector< T > localb( localsize );
+
+    for( auto traceno = 0; traceno < geo.traces; ++traceno ) {
+        tr1 = gettr( vintpair.base, traceno, geo, tr1 ) / normalizer;
+        tr2 = gettr( vintpair.monitor, traceno, geo, tr2 ) / normalizer;
+
+        // derive works in-place and will overwrite its input argument
+        // signal, so delta must be computed first
+        delta = tr2.array() - tr1.array();
+
+        D = 0.5 * (derive( tr1, omega ) + derive( tr2, omega ));
+        localL = linearoperator( D, B ) + C;
+
+        for( int mvrow = 0; mvrow < vintages - 1; ++mvrow) {
+            int row = (mvrow * vintpairsize) + (traceno * localsize);
+            linsys.b.segment( row, localsize )
+                += solution( D, delta, B ) * maskb(mvrow);
+
+            for( int mvcol = 0; mvcol < vintages - 1; ++mvcol) {
+                if( maskL( mvrow, mvcol ) ){
+                    for( int diag = 0; diag < ndiagonals; ++diag ) {
+
+                        int col_size = localsize - diag;
+                        int col = (mvcol * ndiagonals) + diag;
+
+                        linsys.L.block( row, col, col_size, 1 )
+                            += localL.diagonal(diag);
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+template< typename T >
+linear_system< T > build_system( const matrix< T >& basis,
+                                 const matrix< T >& constraints,
+                                 const vector< T >& omega,
+                                 double normalizer,
+                                 const std::vector< filehandle >& filehandles,
+                                 const geometry& geo,
+                                 const int ndiagonals) {
+
+    /*
+     * Builds the linear system (L, b and multiplier).
+     *
+     * The matrix L consists of banded, symmetric matrix blocks and can thus be
+     * stored very efficiently by only storing the uppermpost non-zero
+     * diagonals.
+     *
+     *   a b 0 0 .. c d 0 0       a b .. c d
+     *   b e f 0 .. d g h 0       e f .. g h
+     *   0 f i j .. 0 h k l       i j .. k l
+     *   0 0 j m .. 0 0 l n       m 0 .. n 0
+     *   : : : : :: : : : :  -->  : : :: : :
+     *   o p 0 0 .. q r 0 0       o p .. q r
+     *   n s t 0 .. r u v 0       s t .. u v
+     *   0 t w x .. 0 v y z       w x .. y z
+     *   0 0 x æ .. 0 0 z ø       æ 0 .. ø 0
+     */
 
     const int vintages = filehandles.size();
     const int solutionsize = basis.cols() * geo.traces * (vintages - 1);
 
-    const int M = basis.cols() * geo.traces;
-
-    problem< T > p = {
-        sparse< T >( solutionsize, solutionsize ),
+    linear_system< T > p = {
+        matrix< T >( solutionsize, ndiagonals * (vintages - 1) ),
         vector< T >( solutionsize ),
         matrix< int >( vintages - 1, vintages - 1 ),
     };
 
+    p.L.setZero();
     p.b.setZero();
     p.multiplier.setZero();
 
     const auto vintagepairs = pair_vintages( filehandles );
 
-    std::vector< Eigen::Triplet< T > > triplets;
     for( const auto& vp : vintagepairs ) {
-        auto pair = L_ij( vp.base,
-                          vp.monitor,
-                          geo,
-                          basis,
-                          constraints,
-                          omega,
-                          normalizer );
-
-        const auto& localL = pair.first;
-        const auto& localb = pair.second;
-
-        const auto maskL = mask_linear( vintages, vp.baseindex, vp.monindex );
-        const auto maskb = mask_solution( vintages, vp.baseindex, vp.monindex );
-
-        p.multiplier += maskL;
-
-        using inneritr = typename decltype( pair.first )::InnerIterator;
-
-        for( int i = 0; i < maskL.cols(); ++i ) {
-            for( int j = 0; j < maskL.rows(); ++j ) {
-                if( !maskL(j, i) ) continue;
-
-                for( int k = 0; k < localL.outerSize(); ++k ) {
-                    for( inneritr it( localL, k ); it; ++it ) {
-                        const auto row = j * M + it.row();
-                        const auto col = i * M + it.col();
-                        triplets.emplace_back( row, col, it.value() );
-                    }
-                }
-            }
-        }
-
-        for( int i = 0; i < maskb.rows(); ++i ) {
-            if( !maskb( i ) ) continue;
-            p.b.segment( i * M, M ) += localb;
-        }
+        build_vintpair_system( p,
+                               vp,
+                               vintages,
+                               geo,
+                               basis,
+                               constraints,
+                               omega,
+                               normalizer );
     }
-
-    p.L.setFromTriplets( triplets.begin(), triplets.end() );
     return p;
 }
 
@@ -875,9 +918,10 @@ int main( int argc, char** argv ) {
 
     const auto samples = geometries.back().samples;
 
+    const int splineord = 3;
     const auto B = normalized_bspline( samples,
                                        T( opts.timeshift_resolution ),
-                                       3 );
+                                       splineord );
 
     const auto C = constraints( B,
                                 opts.vertical_smoothing,
@@ -891,12 +935,21 @@ int main( int argc, char** argv ) {
 
     const auto& geo = geometries.back();
 
-    auto stuff = mkstuff( B, C, omega, opts.normalizer, filehandles, geo );
+    const int ndiagonals = splineord + 1;
+
+    auto linear_system = build_system( B,
+                                       C,
+                                       omega,
+                                       opts.normalizer,
+                                       filehandles,
+                                       geo,
+                                       ndiagonals);
+
     const auto vintages = filehandles.size();
-    const auto M = B.cols() * geometries.front().traces * (vintages - 1);
-    SuperMatrix< T > rep( std::move( stuff.L ),
+    SuperMatrix< T > rep( std::move( linear_system.L ),
+                          ndiagonals,
                           Bnn.sparseView(),
-                          stuff.multiplier,
+                          linear_system.multiplier,
                           vintages,
                           geo.ilines,
                           geo.xlines );
@@ -904,11 +957,12 @@ int main( int argc, char** argv ) {
     Eigen::ConjugateGradient<
         decltype( rep ),
         Eigen::Lower | Eigen::Upper,
-        SuperPreconditioner< Eigen::DiagonalPreconditioner< T > >
+        SuperPreconditioner<T>
     > cg;
+    cg.preconditioner().initialize( rep );
     cg.setMaxIterations( opts.solver_max_iter );
     cg.compute( rep );
-    vector< T > x = cg.solve( stuff.b );
+    vector< T > x = cg.solve( linear_system.b );
 
     auto reconstruct = [&]( vector< T > seg ) {
         const auto scale = 4.0;
@@ -922,6 +976,8 @@ int main( int argc, char** argv ) {
 
         return reconstructed;
     };
+
+    const auto M = B.cols() * geometries.front().traces;
 
     for( int i = 0; i < vintages - 1; ++i ) {
         T scale = 4;
