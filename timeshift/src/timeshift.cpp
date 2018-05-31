@@ -342,14 +342,14 @@ std::vector< T > knotvector( int samples, T density ) {
 }
 
 template< typename T >
-matrix< T > normalized_bspline( int samples, T density, int degree ) {
+sparse< T > normalized_bspline( int samples, T density, int degree ) {
     const auto knotv = knotvector( samples, density );
     auto B = bspline_matrix( samples, knotv.data(), knotv.size(), degree );
-    return B * B.colwise().sum().cwiseInverse().asDiagonal();
+    return (B * B.colwise().sum().cwiseInverse().asDiagonal()).sparseView();
 }
 
 template< typename T >
-matrix< T > constraints( const matrix< T >& spline,
+sparse< T > constraints( const sparse< T >& spline,
                          double vertical_smoothing,
                          double horizontal_smoothing ) {
 
@@ -380,7 +380,7 @@ matrix< T > constraints( const matrix< T >& spline,
      */
     matrix< T > D = matrix< T >::Identity( tracelen - 1, tracelen );
     D.template diagonal< 1 >().fill( -1.0 );
-    matrix< T > Dpm = spline.transpose() * D.transpose() * D * spline;
+    sparse< T > Dpm = (spline.transpose() * D.transpose() * D * spline).sparseView();
 
     return (horizontal_smoothing * basis_squared) + (vertical_smoothing * Dpm);
 }
@@ -435,8 +435,8 @@ vector< T >& derive( vector< T >& signal, const vector< T >& omega ) {
 }
 
 template< typename T >
-matrix< T > linearoperator( const vector< T >& derived,
-                            const matrix< T >& spline ) {
+sparse< T > linearoperator( const vector< T >& derived,
+                            const sparse< T >& spline ) {
     /*
      * Compute the linear operator
      *
@@ -449,7 +449,7 @@ matrix< T > linearoperator( const vector< T >& derived,
 template< typename T >
 auto solution( const vector< T >& derived,
                const vector< T >& delta,
-               const matrix< T >& spline ) -> vector< T > {
+               const sparse< T >& spline ) -> vector< T > {
     /*
      * Solution (right-hand-side of the system)
      *
@@ -491,7 +491,7 @@ Vector& gettr( segy_file* vintage,
 }
 
 template< typename T >
-matrix< T > getBnn( const matrix< T >& B,
+sparse< T > getBnn( const sparse< T >& B,
                     double horizontal_smoothing ) {
     return (B.transpose() * B) * .25 * horizontal_smoothing;
 }
@@ -779,8 +779,8 @@ void build_vintpair_system( linear_system< T >& linsys,
                             const combination& vintpair,
                             const int vintages,
                             const geometry& geo,
-                            const matrix< T >& B,
-                            const matrix< T >& C,
+                            const sparse< T >& B,
+                            const sparse< T >& C,
                             const vector< T >& omega,
                             const double normalizer ) {
     /*
@@ -846,8 +846,8 @@ void build_vintpair_system( linear_system< T >& linsys,
 }
 
 template< typename T >
-linear_system< T > build_system( const matrix< T >& basis,
-                                 const matrix< T >& constraints,
+linear_system< T > build_system( const sparse< T >& basis,
+                                 const sparse< T >& constraints,
                                  const vector< T >& omega,
                                  double normalizer,
                                  const std::vector< filehandle >& filehandles,
@@ -948,7 +948,7 @@ int main( int argc, char** argv ) {
     const auto vintages = filehandles.size();
     SuperMatrix< T > rep( std::move( linear_system.L ),
                           ndiagonals,
-                          Bnn.sparseView(),
+                          Bnn,
                           linear_system.multiplier,
                           vintages,
                           geo.ilines,
