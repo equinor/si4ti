@@ -900,28 +900,17 @@ linear_system< T > build_system( const sparse< T >& basis,
     return p;
 }
 
+template< typename T >
+vector< T > compute_timeshift( const sparse< T >& B,
+                               int splineord,
+                               const std::vector< filehandle >& filehandles,
+                               const  std::vector< geometry >& geometries,
+                               const options& opts ) {
 
-int main( int argc, char** argv ) {
-    auto opts = parseopts( argc, argv );
-
-    std::vector< filehandle > filehandles;
-    std::vector< geometry > geometries;
-    for( const auto& file : opts.files ) {
-        filehandles.push_back( openfile( file ) );
-        geometries.push_back( findgeometry( filehandles.back().get(),
-                                            opts.ilbyte,
-                                            opts.xlbyte )
-                            );
-    }
-
-    using T = float;
-
-    const auto samples = geometries.back().samples;
-
-    const int splineord = 3;
-    const auto B = normalized_bspline( samples,
-                                       T( opts.timeshift_resolution ),
-                                       splineord );
+    /* The reason for separating this part in a function is to trigger implicit
+     * cleanup of objects. This signifficantly reduces the maximum memory
+     * consumption.
+     */
 
     const auto C = constraints( B,
                                 opts.vertical_smoothing,
@@ -929,13 +918,15 @@ int main( int argc, char** argv ) {
 
     const auto Bnn = getBnn( B, opts.horizontal_smoothing );
 
+    const auto samples = geometries.back().samples;
     const auto omega = angular_frequency( samples, T( 1.0 ) );
 
-    const auto solsize = B.cols() * geometries.front().traces * (filehandles.size() - 1);
+    const auto solsize =
+        B.cols() * geometries.front().traces * (filehandles.size() - 1);
 
     const auto& geo = geometries.back();
-
     const int ndiagonals = splineord + 1;
+    const auto vintages = filehandles.size();
 
     auto linear_system = build_system( B,
                                        C,
@@ -945,7 +936,6 @@ int main( int argc, char** argv ) {
                                        geo,
                                        ndiagonals);
 
-    const auto vintages = filehandles.size();
     SuperMatrix< T > rep( std::move( linear_system.L ),
                           ndiagonals,
                           Bnn,
@@ -963,6 +953,32 @@ int main( int argc, char** argv ) {
     cg.setMaxIterations( opts.solver_max_iter );
     cg.compute( rep );
     vector< T > x = cg.solve( linear_system.b );
+    return x;
+}
+
+int main( int argc, char** argv ) {
+    auto opts = parseopts( argc, argv );
+
+    std::vector< filehandle > filehandles;
+    std::vector< geometry > geometries;
+    for( const auto& file : opts.files ) {
+        filehandles.push_back( openfile( file ) );
+        geometries.push_back( findgeometry( filehandles.back().get(),
+                                            opts.ilbyte,
+                                            opts.xlbyte )
+                            );
+    }
+
+    using T = float;
+
+    const auto vintages = filehandles.size();
+    const auto samples = geometries.back().samples;
+    const int splineord = 3;
+    const auto B = normalized_bspline( samples,
+                                       T( opts.timeshift_resolution ),
+                                       splineord );
+
+    auto x = compute_timeshift( B, splineord, filehandles, geometries, opts );
 
     auto reconstruct = [&]( vector< T > seg ) {
         const auto scale = 4.0;
@@ -971,7 +987,8 @@ int main( int argc, char** argv ) {
 
         vector< T > reconstructed( geometries.front().traces * samples );
         for( int i = 0; i < geometries.front().traces; ++i ) {
-            reconstructed.segment( i * samples, samples ) = scale * B * seg.segment( i * M, M );
+            reconstructed.segment( i * samples, samples )
+                = scale * B * seg.segment( i * M, M );
         }
 
         return reconstructed;
