@@ -6,12 +6,15 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <mutex>
 
 #include <getopt.h>
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
+
+#define EIGEN_DONT_PARALLELIZE
 
 #include <segyio/segy.h>
 
@@ -616,6 +619,8 @@ struct SuperPreconditioner {
         this->mat = &m.mat;
         this->vintages = m.vintages;
         this->diagonals = m.diagonals;
+        this->traces = m.xlines*m.ilines;
+        this->dims = m.Bnn.rows();
     }
 
     template<typename MatrixType>
@@ -639,11 +644,22 @@ struct SuperPreconditioner {
                    && "SuperPreconditioner is not initialized.");
         vector< T > v( b.rows() );
         v.setZero();
-        const int len = b.rows() / (vintages - 1);
+        const int vintpairsize = b.rows() / (vintages - 1);
+
+        # pragma omp parallel
+        {
+        const int nthreads = omp_get_num_threads();
+        const int tnr = omp_get_thread_num();
+
+        const int start = tnr * (traces/nthreads);
+        const int end = (tnr+1) == nthreads ? traces
+                                            : (tnr+1) * (traces/nthreads);
+
+        const int len = (end-start)*dims;
 
         for( int i = 0; i < vintages - 1; ++i ){
             const auto col = i * diagonals;
-            const auto row = i * len;
+            const auto row = i * vintpairsize + start*dims;
             v.segment( row, len ).array()
               += this->mat->col( col )
                           .segment( row, len )
@@ -651,6 +667,7 @@ struct SuperPreconditioner {
                           .array()
                * b.segment( row, len )
                   .array();
+        }
         }
         return v;
     }
@@ -660,6 +677,8 @@ struct SuperPreconditioner {
     const matrix< T >* mat = nullptr;
     int vintages;
     int diagonals;
+    int traces;
+    int dims;
 };
 
 }
@@ -691,6 +710,20 @@ struct generic_product_impl< SuperMatrix< T >,
                                const Rhs& rhs,
                                const Scalar& alpha ) {
 
+        const auto ilines     = lhs.ilines;
+        const auto xlines     = lhs.xlines;
+        const auto traces     = ilines * xlines;
+        const auto localsize  = lhs.Bnn.rows();
+
+        # pragma omp parallel
+        {
+        const int nthreads = omp_get_num_threads( );
+        const int tnr = omp_get_thread_num( );
+
+        const int start = tnr * (traces/nthreads);
+        const int end = (tnr+1) == nthreads ? traces
+                                            : (tnr+1) * (traces/nthreads);
+
         const auto vintages = lhs.vintages;
         const auto diagonals = lhs.diagonals;
         const auto vintpairsize = lhs.mat.rows() / (vintages - 1);
@@ -699,10 +732,13 @@ struct generic_product_impl< SuperMatrix< T >,
         for( int mvcol = 0; mvcol < vintages-1 ; ++mvcol ) {
         for( int diag = 0; diag < diagonals; ++diag ) {
             const auto lhs_col   = mvcol * diagonals + diag;
-            const auto lhs_start = mvrow * vintpairsize;
-            const auto dst_start = mvrow * vintpairsize;
-            const auto len       = vintpairsize - diag;
-            const auto rhs_start = diag + mvcol * vintpairsize;
+            const auto lhs_start = mvrow * vintpairsize + start*localsize;
+            const auto dst_start = mvrow * vintpairsize + start*localsize;
+            const auto len       =
+                (tnr+1) == nthreads ? (end-start)*localsize - diag
+                                    : (end-start)*localsize;
+            const auto rhs_start =
+                diag + mvcol * vintpairsize + start*localsize;
 
             dst.segment( dst_start, len )
                .array()
@@ -710,7 +746,7 @@ struct generic_product_impl< SuperMatrix< T >,
                                                   .array()
                          * rhs.segment( rhs_start, len )
                               .array());
-
+            #pragma omp barrier
             if( diag > 0 )
                 dst.segment( rhs_start, len )
                    .array()
@@ -718,21 +754,19 @@ struct generic_product_impl< SuperMatrix< T >,
                                                       .array()
                              * rhs.segment( dst_start, len )
                                   .array());
+            #pragma omp barrier
 
         }}}
 
-        const auto dims     = lhs.Bnn.rows();
-        const auto ilines   = lhs.ilines;
-        const auto xlines   = lhs.xlines;
-        const auto traces   = ilines * xlines;
-        const auto vintsize = dims * traces;
+        const auto vintsize = localsize * traces;
         const auto& comb    = lhs.comb;
 
         for( int vint1 = 0; vint1 < vintages - 1; ++vint1 ) {
         for( int vint2 = 0; vint2 < vintages - 1; ++vint2 ) {
 
-        int j = 0, k = 0;
-        for( int i = 0; i < traces; ++i ) {
+        int j = start / xlines;
+        int k = start % xlines;
+        for( int i = start; i < end; ++i ) {
             const std::ptrdiff_t iss[] = {
                 // C(j-1, k)
                 k == 0 ? i : i - 1,
@@ -750,16 +784,17 @@ struct generic_product_impl< SuperMatrix< T >,
             // move the ilines forwards every time xlines wrap around
             if( k == 0 ) ++j;
 
-            const auto col = (vint1 * vintsize) + i * dims;
+            const auto col = (vint1 * vintsize) + i * localsize;
             for( const auto is : iss ) {
-                const auto row = (vint2 * vintsize) + is * dims;
-                vector< T > x = rhs.segment( row, dims );
+                const auto row = (vint2 * vintsize) + is * localsize;
+                vector< T > x = rhs.segment( row, localsize );
                 vector< T > smoothing = comb(vint1, vint2) * (lhs.Bnn * x).eval();
-                dst.segment(col, dims).array() -= smoothing.array();
+                dst.segment(col, localsize).array() -= smoothing.array();
             }
         }
 
         }}
+        }
     }
 };
 
@@ -802,6 +837,14 @@ void build_vintpair_system( linear_system< T >& linsys,
 
     linsys.multiplier += maskL;
 
+    std::mutex lock1;
+    std::mutex lock2;
+    std::mutex lock3;
+
+    int nthreads = 2;
+    #pragma omp parallel for
+    for (int tnr = 0; tnr < nthreads; ++tnr) {
+
     /* reuse a bunch of vectors, as they're the same size throughout and
      * constructing them is expensive
      */
@@ -812,15 +855,25 @@ void build_vintpair_system( linear_system< T >& linsys,
     matrix< T > localL( localsize, localsize );
     vector< T > localb( localsize );
 
-    for( auto traceno = 0; traceno < geo.traces; ++traceno ) {
+    const int start = tnr * (geo.traces/nthreads);
+    const int end = (tnr+1) == nthreads ? geo.traces
+                                        : (tnr+1) * (geo.traces/nthreads);
+
+    for( auto traceno = start; traceno < end; ++traceno ) {
+        lock1.lock();
         tr1 = gettr( vintpair.base, traceno, geo, tr1 ) / normalizer;
+        lock1.unlock();
+        lock2.lock();
         tr2 = gettr( vintpair.monitor, traceno, geo, tr2 ) / normalizer;
+        lock2.unlock();
 
         // derive works in-place and will overwrite its input argument
         // signal, so delta must be computed first
         delta = tr2.array() - tr1.array();
 
+        lock3.lock();
         D = 0.5 * (derive( tr1, omega ) + derive( tr2, omega ));
+        lock3.unlock();
         localL = linearoperator( D, B ) + C;
 
         for( int mvrow = 0; mvrow < vintages - 1; ++mvrow) {
@@ -842,7 +895,7 @@ void build_vintpair_system( linear_system< T >& linsys,
             }
         }
     }
-
+    }
 }
 
 template< typename T >
@@ -904,7 +957,7 @@ template< typename T >
 vector< T > compute_timeshift( const sparse< T >& B,
                                int splineord,
                                const std::vector< filehandle >& filehandles,
-                               const  std::vector< geometry >& geometries,
+                               const std::vector< geometry >& geometries,
                                const options& opts ) {
 
     /* The reason for separating this part in a function is to trigger implicit
@@ -957,6 +1010,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
 }
 
 int main( int argc, char** argv ) {
+    Eigen::initParallel();
     auto opts = parseopts( argc, argv );
 
     std::vector< filehandle > filehandles;
