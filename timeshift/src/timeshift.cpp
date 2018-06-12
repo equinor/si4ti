@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <numeric>
@@ -16,7 +17,7 @@
 
 #define EIGEN_DONT_PARALLELIZE
 
-#include <segyio/segy.h>
+#include <segyio/segyio.hpp>
 
 namespace {
 
@@ -199,125 +200,40 @@ bspline_matrix( int n, const Numeric* knotv, int knotlen, int order ) {
     return P.block( row, col, rowsz, colsz );
 }
 
-using filehandle = std::unique_ptr< segy_file, decltype( &segy_close ) >;
-
-filehandle openfile( const std::string& fname, std::string mode = "rb" ) {
-    if( mode.back() != 'b' ) mode.push_back( 'b' );
-
-    filehandle fp( segy_open( fname.c_str(), mode.c_str() ), &segy_close );
-    if( !fp ) throw std::invalid_argument( "Unable to open file " + fname );
-
-    return fp;
-}
-
 struct geometry {
     int samples;
     int traces;
-    int trace_bsize;
-    long trace0;
     int ilines;
     int xlines;
 };
 
-geometry findgeometry( segy_file* fp, int ilbyte, int xlbyte ) {
-    // TODO: proper error handling other than throw exceptions without checking
-    // what went wrong
-    char header[ SEGY_BINARY_HEADER_SIZE ] = {};
-
-    auto err = segy_binheader( fp, header );
-    if( err != SEGY_OK ) throw std::runtime_error( "Unable to read header" );
-
+geometry findgeometry( sio::simple_file f ) {
     geometry geo;
-    geo.samples     = segy_samples( header );
-    geo.trace0      = segy_trace0( header );
-    geo.trace_bsize = segy_trace_bsize( geo.samples );
 
-    err = segy_traces( fp, &geo.traces, geo.trace0, geo.trace_bsize );
-
-    if( err != SEGY_OK )
-        throw std::runtime_error( "Could not compute trace count" );
-
-    err = segy_lines_count( fp,
-                            ilbyte, xlbyte,
-                            SEGY_INLINE_SORTING,
-                            1, // offsets
-                            &geo.ilines,
-                            &geo.xlines,
-                            geo.trace0,
-                            geo.trace_bsize );
-
-    if( err != SEGY_OK )
-        throw std::runtime_error( "Could not count lines" );
+    geo.samples = f.read(0).size();
+    geo.ilines  = f.inlines().size();
+    geo.xlines  = f.crosslines().size();
+    geo.traces  = geo.ilines*geo.xlines;
 
     return geo;
 }
 
 template< typename Vector >
-void writefile( segy_file* basefile,
+void writefile( const std::string& basefile,
                 const Vector& v,
                 const std::string& fname,
                 const geometry& geo ) {
 
-    char textheader[ SEGY_TEXT_HEADER_SIZE ];
-    char binaryheader[ SEGY_BINARY_HEADER_SIZE ];
-    char traceheader[ SEGY_TRACE_HEADER_SIZE ];
-    int err = 0;
+    std::ifstream in( basefile );
+    std::ofstream dst( fname );
+    dst << in.rdbuf();
+    dst.close();
 
-    auto fp = openfile( fname.c_str(), "w+b" );
+    sio::simple_file f( fname, sio::config().readwrite() );
 
-    err = segy_read_textheader( basefile, textheader );
-    if( err != SEGY_OK )
-        throw std::runtime_error( "Unable to read text header" );
-    err = segy_write_textheader( fp.get(), 0, textheader );
-    if( err != SEGY_OK )
-        throw std::runtime_error( "Unable to write text header" );
-
-    err = segy_binheader( basefile, binaryheader );
-    if( err != SEGY_OK )
-        throw std::runtime_error( "Unable to read binary header" );
-    err = segy_write_binheader( fp.get(), binaryheader );
-    if( err != SEGY_OK )
-        throw std::runtime_error( "Unable to write binary header" );
-
-    auto buf = v.data();
-
-    std::vector< float > trace( geo.samples );
-    for( int traceno = 0; traceno < geo.traces; ++traceno ) {
-        err = segy_traceheader( basefile,
-                                traceno,
-                                traceheader,
-                                geo.trace0,
-                                geo.trace_bsize );
-
-        if( err != SEGY_OK )
-            throw std::runtime_error( "Unable to read trace header "
-                                    + std::to_string( traceno ) );
-
-        err = segy_write_traceheader( fp.get(),
-                                      traceno,
-                                      traceheader,
-                                      geo.trace0,
-                                      geo.trace_bsize );
-
-        if( err != SEGY_OK )
-            throw std::runtime_error( "Unable to write trace header "
-                                    + std::to_string( traceno ) );
-
-        std::copy( buf, buf + geo.samples, trace.begin() );
-        segy_from_native( SEGY_IBM_FLOAT_4_BYTE, geo.samples, trace.data() );
-
-        err = segy_writetrace( fp.get(),
-                               traceno,
-                               trace.data(),
-                               geo.trace0,
-                               geo.trace_bsize );
-
-        if( err != SEGY_OK )
-            throw std::runtime_error( "Unable to write trace "
-                                    + std::to_string( traceno ) );
-
-        buf += geo.samples;
-    }
+    auto itr = v.data();
+    for( int traceno = 0; traceno < geo.traces; ++traceno )
+        itr = f.put( traceno, itr );
 }
 
 template< typename T >
@@ -464,35 +380,6 @@ auto solution( const vector< T >& derived,
     return (derived.asDiagonal() * spline).transpose() * delta;
 }
 
-
-template< typename Vector >
-Vector& gettr( segy_file* vintage,
-               int traceno,
-               const geometry& geo,
-               Vector& buffer ) {
-
-    int err = 0;
-    std::vector< float > trbuf( geo.samples );
-
-    err = segy_readtrace( vintage,
-                          traceno,
-                          trbuf.data(),
-                          geo.trace0,
-                          geo.trace_bsize );
-
-    if( err != SEGY_OK )
-        throw std::runtime_error( "Unable to read trace "
-                                + std::to_string( traceno ) );
-
-    segy_to_native( SEGY_IBM_FLOAT_4_BYTE,
-                    geo.samples,
-                    trbuf.data() );
-
-    std::copy( trbuf.begin(), trbuf.end(), buffer.data() );
-
-    return buffer;
-}
-
 template< typename T >
 sparse< T > getBnn( const sparse< T >& B,
                     double horizontal_smoothing ) {
@@ -500,14 +387,14 @@ sparse< T > getBnn( const sparse< T >& B,
 }
 
 struct combination {
-    segy_file* base;
-    segy_file* monitor;
+    sio::simple_file base;
+    sio::simple_file monitor;
     int baseindex;
     int monindex;
 };
 
 std::vector< combination >
-pair_vintages( const std::vector< filehandle >& fh ) {
+pair_vintages( const std::vector< sio::simple_file >& files ) {
     /*
      *  | 1  2  3  4
      * -+-----------
@@ -523,13 +410,13 @@ pair_vintages( const std::vector< filehandle >& fh ) {
      */
     std::vector< combination > vintagepairs;
     int baseindex = 0;
-    for( const auto& base : fh ) {
+    for( const auto& base : files ) {
         int monitorindex = baseindex + 1;
-        auto monitr = fh.begin() + monitorindex;
-        while( monitr != fh.end() ) {
+        auto monitr = files.begin() + monitorindex;
+        while( monitr != files.end() ) {
             vintagepairs.push_back( {
-                base.get(),
-                monitr->get(),
+                std::move(base),
+                std::move(*monitr),
                 baseindex,
                 monitorindex,
             } );
@@ -811,7 +698,7 @@ struct linear_system {
 
 template< typename T >
 void build_vintpair_system( linear_system< T >& linsys,
-                            const combination& vintpair,
+                            combination& vintpair,
                             const int vintages,
                             const geometry& geo,
                             const sparse< T >& B,
@@ -837,13 +724,14 @@ void build_vintpair_system( linear_system< T >& linsys,
 
     linsys.multiplier += maskL;
 
-    std::mutex lock1;
-    std::mutex lock2;
-    std::mutex lock3;
+    std::mutex derive_lock;
 
     int nthreads = 2;
     #pragma omp parallel for
     for (int tnr = 0; tnr < nthreads; ++tnr) {
+
+    sio::simple_file base = vintpair.base;
+    sio::simple_file monitor = vintpair.monitor;
 
     /* reuse a bunch of vectors, as they're the same size throughout and
      * constructing them is expensive
@@ -860,20 +748,18 @@ void build_vintpair_system( linear_system< T >& linsys,
                                         : (tnr+1) * (geo.traces/nthreads);
 
     for( auto traceno = start; traceno < end; ++traceno ) {
-        lock1.lock();
-        tr1 = gettr( vintpair.base, traceno, geo, tr1 ) / normalizer;
-        lock1.unlock();
-        lock2.lock();
-        tr2 = gettr( vintpair.monitor, traceno, geo, tr2 ) / normalizer;
-        lock2.unlock();
+        base.read( traceno, tr1.data() );
+        tr1 /= normalizer;
+        monitor.read( traceno, tr2.data() );
+        tr2 /= normalizer;
 
         // derive works in-place and will overwrite its input argument
         // signal, so delta must be computed first
         delta = tr2.array() - tr1.array();
 
-        lock3.lock();
+        derive_lock.lock();
         D = 0.5 * (derive( tr1, omega ) + derive( tr2, omega ));
-        lock3.unlock();
+        derive_lock.unlock();
         localL = linearoperator( D, B ) + C;
 
         for( int mvrow = 0; mvrow < vintages - 1; ++mvrow) {
@@ -903,7 +789,7 @@ linear_system< T > build_system( const sparse< T >& basis,
                                  const sparse< T >& constraints,
                                  const vector< T >& omega,
                                  double normalizer,
-                                 const std::vector< filehandle >& filehandles,
+                                 const std::vector< sio::simple_file >& files,
                                  const geometry& geo,
                                  const int ndiagonals) {
 
@@ -925,7 +811,7 @@ linear_system< T > build_system( const sparse< T >& basis,
      *   0 0 x æ .. 0 0 z ø       æ 0 .. ø 0
      */
 
-    const int vintages = filehandles.size();
+    const int vintages = files.size();
     const int solutionsize = basis.cols() * geo.traces * (vintages - 1);
 
     linear_system< T > p = {
@@ -938,9 +824,9 @@ linear_system< T > build_system( const sparse< T >& basis,
     p.b.setZero();
     p.multiplier.setZero();
 
-    const auto vintagepairs = pair_vintages( filehandles );
+    auto vintagepairs = pair_vintages( files );
 
-    for( const auto& vp : vintagepairs ) {
+    for( auto& vp : vintagepairs ) {
         build_vintpair_system( p,
                                vp,
                                vintages,
@@ -956,7 +842,7 @@ linear_system< T > build_system( const sparse< T >& basis,
 template< typename T >
 vector< T > compute_timeshift( const sparse< T >& B,
                                int splineord,
-                               const std::vector< filehandle >& filehandles,
+                               const std::vector< sio::simple_file >& files,
                                const std::vector< geometry >& geometries,
                                const options& opts ) {
 
@@ -975,17 +861,17 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const auto omega = angular_frequency( samples, T( 1.0 ) );
 
     const auto solsize =
-        B.cols() * geometries.front().traces * (filehandles.size() - 1);
+        B.cols() * geometries.front().traces * (files.size() - 1);
 
     const auto& geo = geometries.back();
     const int ndiagonals = splineord + 1;
-    const auto vintages = filehandles.size();
+    const auto vintages = files.size();
 
     auto linear_system = build_system( B,
                                        C,
                                        omega,
                                        opts.normalizer,
-                                       filehandles,
+                                       files,
                                        geo,
                                        ndiagonals);
 
@@ -1010,29 +896,30 @@ vector< T > compute_timeshift( const sparse< T >& B,
 }
 
 int main( int argc, char** argv ) {
+    //std::cout << EIGEN_WORLD_VERSION << "." << EIGEN_MAJOR_VERSION << "." << EIGEN_MINOR_VERSION << "\n";
     Eigen::initParallel();
     auto opts = parseopts( argc, argv );
 
-    std::vector< filehandle > filehandles;
+    std::vector< sio::simple_file > files;
     std::vector< geometry > geometries;
     for( const auto& file : opts.files ) {
-        filehandles.push_back( openfile( file ) );
-        geometries.push_back( findgeometry( filehandles.back().get(),
-                                            opts.ilbyte,
-                                            opts.xlbyte )
+        files.push_back( { file, sio::config().ilbyte( opts.ilbyte )
+                                              .xlbyte( opts.xlbyte ) }  );
+
+        geometries.push_back( findgeometry( files.back() )
                             );
     }
 
     using T = float;
 
-    const auto vintages = filehandles.size();
+    const auto vintages = files.size();
     const auto samples = geometries.back().samples;
     const int splineord = 3;
     const auto B = normalized_bspline( samples,
                                        T( opts.timeshift_resolution ),
                                        splineord );
 
-    auto x = compute_timeshift( B, splineord, filehandles, geometries, opts );
+    auto x = compute_timeshift( B, splineord, files, geometries, opts );
 
     auto reconstruct = [&]( vector< T > seg ) {
         const auto scale = 4.0;
@@ -1054,7 +941,7 @@ int main( int argc, char** argv ) {
         T scale = 4;
         vector< T > seg = x.segment( i * M, M );
         auto timeshift = reconstruct( seg );
-        writefile( filehandles.front().get(),
+        writefile( opts.files.front(),
                    timeshift,
                    "timeshift-" + std::to_string( i ) + ".sgy",
                    geometries.back() );
