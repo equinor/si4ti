@@ -29,7 +29,7 @@ struct options {
     int    solver_max_iter      = 100;
     bool   double_precision     = false;
     bool   correct_4d_noise     = false;
-    double normalizer           = 9.58692019926;
+    double datascaling          = 30;
     int    verbosity            = 0;
     int    ilbyte               = SEGY_TR_INLINE;
     int    xlbyte               = SEGY_TR_CROSSLINE;
@@ -216,6 +216,25 @@ geometry findgeometry( sio::simple_file f ) {
     geo.traces  = geo.ilines*geo.xlines;
 
     return geo;
+}
+
+template< typename T >
+T normalize_surveys( const T x,
+                     std::vector< sio::simple_file >& surveys ) {
+    T acc = 0;
+    std::vector< T > trace;
+    for( auto& survey : surveys ) {
+        T sum = 0, count = 0;
+        for( int trc = 0; trc < survey.size(); ++trc ) {
+            survey.read( trc, trace );
+            std::transform(trace.begin(), trace.end(), trace.begin(), fabs);
+            sum   += std::accumulate(trace.begin(), trace.end(), 0.0);
+            count += std::count_if( trace.begin(), trace.end(),
+                                    []( T i ) { return i > 0; });
+        }
+        acc += sum / count;
+    }
+    return (acc * x) / surveys.size();
 }
 
 template< typename Vector >
@@ -842,7 +861,7 @@ linear_system< T > build_system( const sparse< T >& basis,
 template< typename T >
 vector< T > compute_timeshift( const sparse< T >& B,
                                int splineord,
-                               const std::vector< sio::simple_file >& files,
+                               std::vector< sio::simple_file >& files,
                                const std::vector< geometry >& geometries,
                                const options& opts ) {
 
@@ -867,10 +886,13 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const int ndiagonals = splineord + 1;
     const auto vintages = files.size();
 
+    auto vintagepairs = pair_vintages( files );
+    const T normalizer = normalize_surveys( opts.datascaling, files );
+
     auto linear_system = build_system( B,
                                        C,
                                        omega,
-                                       opts.normalizer,
+                                       normalizer,
                                        files,
                                        geo,
                                        ndiagonals);
