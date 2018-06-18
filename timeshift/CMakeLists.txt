@@ -43,8 +43,7 @@ list(APPEND cropped-files
     ${CMAKE_CURRENT_SOURCE_DIR}/../06NmoUpd_8-16stkEps_985_1281-cropped.sgy
 )
 
-add_custom_command(
-    OUTPUT timeshift-0.sgy timeshift-1.sgy
+add_custom_target(ts-cropped
     COMMENT "Running timeshift (cropped)"
     COMMAND timeshift -i 5 -x 21 ${cropped-files}
     DEPENDS timeshift
@@ -55,12 +54,26 @@ add_custom_target(diff-cropped
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy timeshift-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy timeshift-1.sgy
     COMMENT "Analysing cropped diff image"
-    DEPENDS timeshift-0.sgy
-            timeshift-1.sgy
+    DEPENDS ts-cropped
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_dependencies(diff diff-cropped)
+add_custom_target(ts-cropped-4Dcorr
+    COMMENT "Running 4D corrected timeshift (cropped)"
+    COMMAND timeshift -c -i 5 -x 21 ${cropped-files}
+    DEPENDS timeshift
+)
+
+add_custom_target(diff-cropped-4Dcorr
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-0.sgy timeshift-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-1.sgy timeshift-1.sgy
+    COMMENT "Analysing 4D corrected cropped diff image"
+    DEPENDS ts-cropped-4Dcorr
+            ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+)
+
+add_dependencies(diff diff-cropped diff-cropped-4Dcorr)
 
 find_program(valgrind valgrind)
 if(NOT valgrind)

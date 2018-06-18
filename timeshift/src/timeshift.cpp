@@ -14,6 +14,7 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
+#include "spline.h"
 
 #define EIGEN_DONT_PARALLELIZE
 
@@ -65,9 +66,9 @@ options parseopts( int argc, char** argv ) {
             case 'r': break;
             case 'H': opts.horizontal_smoothing = std::stod( optarg ); break;
             case 'V': opts.vertical_smoothing   = std::stod( optarg ); break;
-            case 'm': opts.solver_max_iter = std::stoi( optarg ); break;
+            case 'm': opts.solver_max_iter      = std::stoi( optarg ); break;
             case 'd': break;
-            case 'c': break;
+            case 'c': opts.correct_4d_noise     = true; break;
             case 'n': break;
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
@@ -467,6 +468,96 @@ vector< int > mask_solution( int vintages, int baseindex, int monindex ) {
     return maskb;
 }
 
+template< typename T >
+vector< T >& shift_data( vector< T >& d, const vector< T >& corr ) {
+    vector< T > linspace = vector< T >::LinSpaced( d.size(), 0, d.size() - 1 );
+
+    std::vector< double > ls( linspace.data(), linspace.data() + linspace.size());
+    std::vector< double > dd( d.data(), d.data() + d.size());
+    tk::spline s;
+    s.set_points( ls, dd );
+
+    linspace -= corr;
+
+    for( int i = 0; i < d.size(); ++i )
+        d(i) = s( linspace(i) );
+    return d;
+}
+
+template< typename T >
+vector< T > timeshift_4D_correction( const vector< T >& x,
+                                     std::vector< combination >& vintagepairs,
+                                     const sparse< T >& spline,
+                                     const geometry& geo,
+                                     const vector< T >& omega,
+                                     const double normalizer ) {
+
+    const int vintages = vintagepairs.back().monindex + 1;
+    const int localsize = spline.cols();
+    const int vintpairsize = localsize * geo.traces;
+
+    vector< T > corr( x.size() );
+    corr.setZero();
+
+    vector< T > trc1( geo.samples );
+    vector< T > trc2( geo.samples );
+    vector< T > trc1_tmp( geo.samples );
+    vector< T > trc2_tmp( geo.samples );
+    vector< T > sol( localsize );
+    vector< T > deriv( geo.samples );
+    vector< T > corr1( geo.samples );
+    vector< T > corr2( geo.samples );
+    vector< T > mean( geo.samples );
+
+    for( auto& vintpair : vintagepairs ) {
+
+        const auto maskb = mask_solution( vintages,
+                                          vintpair.baseindex,
+                                          vintpair.monindex );
+
+        for( int t = 0; t < geo.traces; ++t ) {
+            vintpair.base.read( t, trc1.data() );
+            trc1 /= normalizer;
+            vintpair.monitor.read( t, trc2.data() );
+            trc2 /= normalizer;
+            trc1_tmp = trc1;
+            trc2_tmp = trc2;
+            deriv = 0.5 * ( derive( trc1_tmp, omega ) + derive( trc2_tmp, omega ) );
+
+            corr1.setZero();
+            for( int i = 0; i < vintpair.baseindex; ++i ) {
+                const int r = (t * localsize) + (i * vintpairsize);
+                corr1 += spline * x.segment( r, localsize );
+            }
+            corr2.setZero();
+            for( int i = 0; i < vintpair.monindex; ++i ) {
+                const int r = (t * localsize) + (i * vintpairsize);
+                corr2 += spline * x.segment( r, localsize );
+            }
+            mean.setZero();
+            for( int i = 0; i < vintages-1; ++i ) {
+                const int r = (t * localsize) + (i * vintpairsize);
+                mean += mean + spline * x.segment( r, localsize );
+            }
+            mean /= vintages-1;
+
+            corr1 -= mean;
+            corr2 -= mean;
+            shift_data( trc1, corr1 );
+            shift_data( trc2, corr2 );
+            trc2 -= trc1;
+            sol = solution( deriv, trc2, spline );
+
+            for( int mvrow = 0; mvrow < vintages - 1; ++mvrow ) {
+                const int row = (mvrow * vintpairsize) + (t * localsize);
+                corr.segment( row, localsize )
+                    += sol * maskb(mvrow);
+            }
+        }
+    }
+    return corr;
+}
+
 template< typename T > class SuperMatrix;
 
 template< typename T >
@@ -808,7 +899,7 @@ linear_system< T > build_system( const sparse< T >& basis,
                                  const sparse< T >& constraints,
                                  const vector< T >& omega,
                                  double normalizer,
-                                 const std::vector< sio::simple_file >& files,
+                                 std::vector< combination >& vintagepairs,
                                  const geometry& geo,
                                  const int ndiagonals) {
 
@@ -830,7 +921,7 @@ linear_system< T > build_system( const sparse< T >& basis,
      *   0 0 x æ .. 0 0 z ø       æ 0 .. ø 0
      */
 
-    const int vintages = files.size();
+    const int vintages = vintagepairs.back().monindex + 1;
     const int solutionsize = basis.cols() * geo.traces * (vintages - 1);
 
     linear_system< T > p = {
@@ -842,8 +933,6 @@ linear_system< T > build_system( const sparse< T >& basis,
     p.L.setZero();
     p.b.setZero();
     p.multiplier.setZero();
-
-    auto vintagepairs = pair_vintages( files );
 
     for( auto& vp : vintagepairs ) {
         build_vintpair_system( p,
@@ -886,14 +975,15 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const int ndiagonals = splineord + 1;
     const auto vintages = files.size();
 
-    auto vintagepairs = pair_vintages( files );
     const T normalizer = normalize_surveys( opts.datascaling, files );
+
+    auto vintagepairs = pair_vintages( files );
 
     auto linear_system = build_system( B,
                                        C,
                                        omega,
                                        normalizer,
-                                       files,
+                                       vintagepairs,
                                        geo,
                                        ndiagonals);
 
@@ -914,6 +1004,12 @@ vector< T > compute_timeshift( const sparse< T >& B,
     cg.setMaxIterations( opts.solver_max_iter );
     cg.compute( rep );
     vector< T > x = cg.solve( linear_system.b );
+
+    if( opts.correct_4d_noise ) {
+        linear_system.b = timeshift_4D_correction( x, vintagepairs, B, geo, omega, normalizer );
+        x -= cg.solve( linear_system.b );
+    }
+
     return x;
 }
 

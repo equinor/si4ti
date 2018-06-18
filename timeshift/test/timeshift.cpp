@@ -5,6 +5,7 @@
 #include <timeshift.cpp>
 
 #include "matrices.hpp"
+#include "matchers.hpp"
 
 TEST_CASE("Regression test") {
 
@@ -90,5 +91,16 @@ TEST_CASE("Regression test") {
         const auto result = solution( derived, delta, spline );
 
         CHECK( result.isApprox(expected, 1e-6) );
+    }
+
+    SECTION("Shift data") {
+        Eigen::VectorXd x(10);
+        x << 0,1,2,3,4,5,6,7,8,9;
+        Eigen::VectorXd expected(10);
+        expected << -0.5,0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5;
+        Eigen::VectorXd corr(10);
+        corr << 0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5;
+        shift_data( x, corr );
+        CHECK_THAT( expected.transpose().eval(), ApproxRange(x.transpose().eval()) );
     }
 }
