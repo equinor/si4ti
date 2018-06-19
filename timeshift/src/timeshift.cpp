@@ -30,6 +30,7 @@ struct options {
     int    solver_max_iter      = 100;
     bool   double_precision     = false;
     bool   correct_4d_noise     = false;
+    bool   cumulative           = false;
     double datascaling          = 30;
     int    verbosity            = 0;
     int    ilbyte               = SEGY_TR_INLINE;
@@ -44,6 +45,7 @@ options parseopts( int argc, char** argv ) {
         { "max-iter",             required_argument, 0, 'm' },
         { "double-precision",     no_argument,       0, 'd' },
         { "correct-4D",           no_argument,       0, 'c' },
+        { "cumulative",           no_argument,       0, 's' },
         { "normalizer",           required_argument, 0, 'n' },
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
@@ -57,7 +59,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcn:i:x:v",
+                             "r:H:V:m:dcsn:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -69,6 +71,7 @@ options parseopts( int argc, char** argv ) {
             case 'm': opts.solver_max_iter      = std::stoi( optarg ); break;
             case 'd': break;
             case 'c': opts.correct_4d_noise     = true; break;
+            case 's': opts.cumulative           = true; break;
             case 'n': break;
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
@@ -948,6 +951,13 @@ linear_system< T > build_system( const sparse< T >& basis,
 }
 
 template< typename T >
+void accumulate_timeshifts( vector< T >& x, int vintages ) {
+    int sz = x.size() / (vintages-1);
+    for( int i = 1; i < vintages-1; ++i )
+        x.segment( i*sz, sz ) += x.segment( (i-1)*sz, sz );
+}
+
+template< typename T >
 vector< T > compute_timeshift( const sparse< T >& B,
                                int splineord,
                                std::vector< sio::simple_file >& files,
@@ -1038,6 +1048,9 @@ int main( int argc, char** argv ) {
                                        splineord );
 
     auto x = compute_timeshift( B, splineord, files, geometries, opts );
+
+    if( opts.cumulative )
+        accumulate_timeshifts( x, vintages );
 
     auto reconstruct = [&]( vector< T > seg ) {
         const auto scale = 4.0;

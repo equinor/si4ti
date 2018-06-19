@@ -73,7 +73,24 @@ add_custom_target(diff-cropped-4Dcorr
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_dependencies(diff diff-cropped diff-cropped-4Dcorr)
+add_custom_target(ts-cropped-cumulative
+    COMMENT "Running cumulative timeshift (cropped)"
+    COMMAND timeshift -s -i 5 -x 21 ${cropped-files}
+    DEPENDS timeshift
+)
+
+add_custom_target(diff-cropped-cumulative
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-0.sgy timeshift-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-1.sgy timeshift-1.sgy
+    COMMENT "Analysing cumulative cropped diff image"
+    DEPENDS ts-cropped-cumulative
+            ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+)
+
+add_dependencies(diff-cropped-4Dcorr diff-cropped-cumulative)
+add_dependencies(diff-cropped diff-cropped-4Dcorr)
+add_dependencies(diff diff-cropped)
 
 find_program(valgrind valgrind)
 if(NOT valgrind)
