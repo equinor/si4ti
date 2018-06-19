@@ -409,49 +409,6 @@ sparse< T > getBnn( const sparse< T >& B,
     return (B.transpose() * B) * .25 * horizontal_smoothing;
 }
 
-struct combination {
-    sio::simple_file base;
-    sio::simple_file monitor;
-    int baseindex;
-    int monindex;
-};
-
-std::vector< combination >
-pair_vintages( const std::vector< sio::simple_file >& files ) {
-    /*
-     *  | 1  2  3  4
-     * -+-----------
-     * 1| -  a  b  c
-     * 2| -  -  d  e
-     * 3| -  -  -  f
-     * 4| -  -  -  -
-     *
-     * Combine the vintages 1..4 in the order a, b..f
-     *
-     * Additionally, compute the base-monitor distances, which is needed to
-     * distribute the resulting equations in the larger linear system.
-     */
-    std::vector< combination > vintagepairs;
-    int baseindex = 0;
-    for( const auto& base : files ) {
-        int monitorindex = baseindex + 1;
-        auto monitr = files.begin() + monitorindex;
-        while( monitr != files.end() ) {
-            vintagepairs.push_back( {
-                std::move(base),
-                std::move(*monitr),
-                baseindex,
-                monitorindex,
-            } );
-            ++monitorindex;
-            ++monitr;
-        }
-        ++baseindex;
-    }
-
-    return vintagepairs;
-}
-
 matrix< int > mask_linear( int vintages, int baseindex, int monindex ) {
     // TODO: doc masks
     matrix< int > maskL( vintages - 1, vintages - 1 );
@@ -460,6 +417,18 @@ matrix< int > mask_linear( int vintages, int baseindex, int monindex ) {
     const auto masksize = monindex - baseindex;
     maskL.block( baseindex, baseindex, masksize, masksize ).setOnes();
     return maskL;
+}
+
+matrix< int > multiplier( int vintages ) {
+    matrix< int > mp( vintages - 1, vintages - 1 );
+    mp.setZero();
+
+    for( int i = 0;   i < vintages; ++i ) {
+    for( int j = i+1; j < vintages; ++j ) {
+        mp += mask_linear( vintages, i, j );
+    }}
+
+    return mp;
 }
 
 vector< int > mask_solution( int vintages, int baseindex, int monindex ) {
@@ -489,74 +458,84 @@ vector< T >& shift_data( vector< T >& d, const vector< T >& corr ) {
 
 template< typename T >
 vector< T > timeshift_4D_correction( const vector< T >& x,
-                                     std::vector< combination >& vintagepairs,
+                                     std::vector< sio::simple_file> files,
                                      const sparse< T >& spline,
                                      const geometry& geo,
                                      const vector< T >& omega,
                                      const double normalizer ) {
 
-    const int vintages = vintagepairs.back().monindex + 1;
+    const int vintages = files.size();
     const int localsize = spline.cols();
     const int vintpairsize = localsize * geo.traces;
 
     vector< T > corr( x.size() );
     corr.setZero();
 
-    vector< T > trc1( geo.samples );
-    vector< T > trc2( geo.samples );
-    vector< T > trc1_tmp( geo.samples );
-    vector< T > trc2_tmp( geo.samples );
+    std::mutex derive_lock;
+
+    int nthreads = 3;
+
+    # pragma omp parallel for
+    for( int tnr = 0; tnr < nthreads; ++tnr )
+    {
+    std::vector< sio::simple_file > f( files );
+
+    std::vector< vector< T > > trc( vintages, vector< T >( geo.samples ) );
+    std::vector< vector< T > > drv( vintages, vector< T >( geo.samples ) );
+
     vector< T > sol( localsize );
-    vector< T > deriv( geo.samples );
-    vector< T > corr1( geo.samples );
-    vector< T > corr2( geo.samples );
+    vector< T > D( geo.samples );
+    vector< T > delta( geo.samples );
     vector< T > mean( geo.samples );
+    vector< T > shift( geo.samples );
 
-    for( auto& vintpair : vintagepairs ) {
+    const int start = tnr * (geo.traces/nthreads);
+    const int end = (tnr+1) == nthreads ? geo.traces
+                                        : (tnr+1) * (geo.traces/nthreads);
 
-        const auto maskb = mask_solution( vintages,
-                                          vintpair.baseindex,
-                                          vintpair.monindex );
+    for( int t = start; t < end; ++t ) {
 
-        for( int t = 0; t < geo.traces; ++t ) {
-            vintpair.base.read( t, trc1.data() );
-            trc1 /= normalizer;
-            vintpair.monitor.read( t, trc2.data() );
-            trc2 /= normalizer;
-            trc1_tmp = trc1;
-            trc2_tmp = trc2;
-            deriv = 0.5 * ( derive( trc1_tmp, omega ) + derive( trc2_tmp, omega ) );
+        mean.setZero();
+        for( int i = 0; i < vintages-1; ++i ) {
+            const int r = (t * localsize) + (i * vintpairsize);
+            mean += mean + spline * x.segment( r, localsize );
+        }
+        mean /= vintages-1;
 
-            corr1.setZero();
-            for( int i = 0; i < vintpair.baseindex; ++i ) {
-                const int r = (t * localsize) + (i * vintpairsize);
-                corr1 += spline * x.segment( r, localsize );
+        for( int i = 0; i < vintages; ++i ){
+            f[i].read( t, trc[i].data() );
+            trc[i] /= normalizer;
+            D = trc[i];
+            derive_lock.lock();
+            drv[i] = derive( D, omega );
+            derive_lock.unlock();
+
+            shift.setZero();
+            for( int j = 0; j < i; ++j ) {
+                const int r = (t * localsize) + (j * vintpairsize);
+                shift += spline * x.segment( r, localsize );
             }
-            corr2.setZero();
-            for( int i = 0; i < vintpair.monindex; ++i ) {
-                const int r = (t * localsize) + (i * vintpairsize);
-                corr2 += spline * x.segment( r, localsize );
-            }
-            mean.setZero();
-            for( int i = 0; i < vintages-1; ++i ) {
-                const int r = (t * localsize) + (i * vintpairsize);
-                mean += mean + spline * x.segment( r, localsize );
-            }
-            mean /= vintages-1;
+            shift -= mean;
+            shift_data( trc[i], shift );
+        }
 
-            corr1 -= mean;
-            corr2 -= mean;
-            shift_data( trc1, corr1 );
-            shift_data( trc2, corr2 );
-            trc2 -= trc1;
-            sol = solution( deriv, trc2, spline );
+        for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
+        for( int vint2 = vint1+1; vint2 < vintages; ++vint2 ) {
+
+            const auto maskb = mask_solution( vintages, vint1, vint2 );
+
+            D = 0.5 * ( drv[vint1] + drv[vint2] );
+
+            delta = trc[vint2] - trc[vint1];
+            sol = solution( D, delta, spline );
 
             for( int mvrow = 0; mvrow < vintages - 1; ++mvrow ) {
                 const int row = (mvrow * vintpairsize) + (t * localsize);
                 corr.segment( row, localsize )
                     += sol * maskb(mvrow);
             }
-        }
+        }}
+    }
     }
     return corr;
 }
@@ -806,103 +785,14 @@ template< typename T >
 struct linear_system {
     matrix< T > L;
     vector< T > b;
-    matrix< int > multiplier;
 };
 
 template< typename T >
-void build_vintpair_system( linear_system< T >& linsys,
-                            combination& vintpair,
-                            const int vintages,
-                            const geometry& geo,
-                            const sparse< T >& B,
-                            const sparse< T >& C,
-                            const vector< T >& omega,
-                            const double normalizer ) {
-    /*
-     * Builds the linear system for a vintage pair and adds it into the
-     * blocks of the multi-vintage system according to the masks. See
-     * documentation for more details on this.
-     */
-
-    const int localsize = B.cols();
-    const int vintpairsize = localsize * geo.traces;
-    const int ndiagonals = linsys.L.cols() / (vintages - 1);
-
-    const auto maskL = mask_linear( vintages,
-                                    vintpair.baseindex,
-                                    vintpair.monindex );
-    const auto maskb = mask_solution( vintages,
-                                      vintpair.baseindex,
-                                      vintpair.monindex );
-
-    linsys.multiplier += maskL;
-
-    std::mutex derive_lock;
-
-    int nthreads = 2;
-    #pragma omp parallel for
-    for (int tnr = 0; tnr < nthreads; ++tnr) {
-
-    sio::simple_file base = vintpair.base;
-    sio::simple_file monitor = vintpair.monitor;
-
-    /* reuse a bunch of vectors, as they're the same size throughout and
-     * constructing them is expensive
-     */
-    vector< T > tr1( geo.samples );
-    vector< T > tr2( geo.samples );
-    vector< T > delta( geo.samples );
-    vector< T > D( geo.samples );
-    matrix< T > localL( localsize, localsize );
-    vector< T > localb( localsize );
-
-    const int start = tnr * (geo.traces/nthreads);
-    const int end = (tnr+1) == nthreads ? geo.traces
-                                        : (tnr+1) * (geo.traces/nthreads);
-
-    for( auto traceno = start; traceno < end; ++traceno ) {
-        base.read( traceno, tr1.data() );
-        tr1 /= normalizer;
-        monitor.read( traceno, tr2.data() );
-        tr2 /= normalizer;
-
-        // derive works in-place and will overwrite its input argument
-        // signal, so delta must be computed first
-        delta = tr2.array() - tr1.array();
-
-        derive_lock.lock();
-        D = 0.5 * (derive( tr1, omega ) + derive( tr2, omega ));
-        derive_lock.unlock();
-        localL = linearoperator( D, B ) + C;
-
-        for( int mvrow = 0; mvrow < vintages - 1; ++mvrow) {
-            int row = (mvrow * vintpairsize) + (traceno * localsize);
-            linsys.b.segment( row, localsize )
-                += solution( D, delta, B ) * maskb(mvrow);
-
-            for( int mvcol = 0; mvcol < vintages - 1; ++mvcol) {
-                if( maskL( mvrow, mvcol ) ){
-                    for( int diag = 0; diag < ndiagonals; ++diag ) {
-
-                        int col_size = localsize - diag;
-                        int col = (mvcol * ndiagonals) + diag;
-
-                        linsys.L.block( row, col, col_size, 1 )
-                            += localL.diagonal(diag);
-                    }
-                }
-            }
-        }
-    }
-    }
-}
-
-template< typename T >
-linear_system< T > build_system( const sparse< T >& basis,
-                                 const sparse< T >& constraints,
+linear_system< T > build_system( const sparse< T >& B,
+                                 const sparse< T >& C,
                                  const vector< T >& omega,
                                  double normalizer,
-                                 std::vector< combination >& vintagepairs,
+                                 std::vector< sio::simple_file >& files,
                                  const geometry& geo,
                                  const int ndiagonals) {
 
@@ -924,28 +814,87 @@ linear_system< T > build_system( const sparse< T >& basis,
      *   0 0 x æ .. 0 0 z ø       æ 0 .. ø 0
      */
 
-    const int vintages = vintagepairs.back().monindex + 1;
-    const int solutionsize = basis.cols() * geo.traces * (vintages - 1);
+    const int vintages = files.size();
+    const int localsize = B.cols();
+    const int vintpairsize = localsize * geo.traces;
+    const int solutionsize = vintpairsize * (vintages - 1);
 
     linear_system< T > p = {
         matrix< T >( solutionsize, ndiagonals * (vintages - 1) ),
-        vector< T >( solutionsize ),
-        matrix< int >( vintages - 1, vintages - 1 ),
+        vector< T >( solutionsize )
     };
 
     p.L.setZero();
     p.b.setZero();
-    p.multiplier.setZero();
 
-    for( auto& vp : vintagepairs ) {
-        build_vintpair_system( p,
-                               vp,
-                               vintages,
-                               geo,
-                               basis,
-                               constraints,
-                               omega,
-                               normalizer );
+    std::mutex derive_lock;
+
+    int nthreads = 3;
+
+    # pragma omp parallel for
+    for( int tnr = 0; tnr < nthreads; ++tnr )
+    {
+
+    std::vector< sio::simple_file > f( files );
+
+    std::vector< vector< T > > trc( vintages, vector< T >( geo.samples ) );
+    std::vector< vector< T > > drv( vintages, vector< T >( geo.samples ) );
+
+    vector< T > D( geo.samples );
+    vector< T > delta( geo.samples );
+    matrix< T > localL( localsize, localsize );
+    vector< T > localb( localsize );
+
+    const int start = tnr * (geo.traces/nthreads);
+    const int end = (tnr+1) == nthreads ? geo.traces
+                                        : (tnr+1) * (geo.traces/nthreads);
+
+    for( auto traceno = start; traceno < end; ++traceno ) {
+
+        for( int i = 0; i < vintages; ++i ){
+            f[i].read( traceno, trc[i].data() );
+            trc[i] /= normalizer;
+            D = trc[i];
+            derive_lock.lock();
+            drv[i] = derive( D, omega );
+            derive_lock.unlock();
+        }
+
+        for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
+        for( int vint2 = vint1+1; vint2 < vintages; ++vint2 ) {
+
+            const auto maskL = mask_linear( vintages,
+                                            vint1,
+                                            vint2 );
+            const auto maskb = mask_solution( vintages,
+                                              vint1,
+                                              vint2 );
+
+            delta = trc[vint2] - trc[vint1];
+            D = 0.5 * ( drv[vint1] + drv[vint2] );
+            localL = linearoperator( D, B ) + C;
+
+            for( int mvrow = 0; mvrow < vintages - 1; ++mvrow) {
+                int row = (mvrow * vintpairsize) + (traceno * localsize);
+                p.b.segment( row, localsize )
+                    += solution( D, delta, B ) * maskb(mvrow);
+
+                for( int mvcol = 0; mvcol < vintages - 1; ++mvcol) {
+                    if( maskL( mvrow, mvcol ) ){
+                        for( int diag = 0; diag < ndiagonals; ++diag ) {
+
+                            int col_size = localsize - diag;
+                            int col = (mvcol * ndiagonals) + diag;
+
+                            p.L.block( row, col, col_size, 1 )
+                                += localL.diagonal(diag);
+                        }
+                    }
+                }
+            }
+
+        }}
+    }
     }
     return p;
 }
@@ -987,20 +936,18 @@ vector< T > compute_timeshift( const sparse< T >& B,
 
     const T normalizer = normalize_surveys( opts.datascaling, files );
 
-    auto vintagepairs = pair_vintages( files );
-
     auto linear_system = build_system( B,
                                        C,
                                        omega,
                                        normalizer,
-                                       vintagepairs,
+                                       files,
                                        geo,
                                        ndiagonals);
 
     SuperMatrix< T > rep( std::move( linear_system.L ),
                           ndiagonals,
                           Bnn,
-                          linear_system.multiplier,
+                          multiplier( vintages ),
                           vintages,
                           geo.ilines,
                           geo.xlines );
@@ -1016,7 +963,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
     vector< T > x = cg.solve( linear_system.b );
 
     if( opts.correct_4d_noise ) {
-        linear_system.b = timeshift_4D_correction( x, vintagepairs, B, geo, omega, normalizer );
+        linear_system.b = timeshift_4D_correction( x, files, B, geo, omega, normalizer );
         x -= cg.solve( linear_system.b );
     }
 
