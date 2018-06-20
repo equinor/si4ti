@@ -223,22 +223,25 @@ geometry findgeometry( sio::simple_file& f ) {
 }
 
 template< typename T >
-T normalize_surveys( const T x,
+T normalize_surveys( T scaling,
                      std::vector< sio::simple_file >& surveys ) {
+
+    const auto nonzero = []( T x ) { return x != 0.0; };
+    const auto abs = []( T x ) { return std::abs( x ); };
     T acc = 0;
     std::vector< T > trace;
     for( auto& survey : surveys ) {
-        T sum = 0, count = 0;
+        T sum = 0.0, count = 0.0;
         for( int trc = 0; trc < survey.size(); ++trc ) {
             survey.read( trc, trace );
-            std::transform(trace.begin(), trace.end(), trace.begin(), fabs);
-            sum   += std::accumulate(trace.begin(), trace.end(), 0.0);
-            count += std::count_if( trace.begin(), trace.end(),
-                                    []( T i ) { return i > 0; });
+            std::transform( trace.begin(), trace.end(), trace.begin(), abs );
+            sum   += std::accumulate( trace.begin(), trace.end(), 0.0 );
+            count += std::count_if( trace.begin(), trace.end(), nonzero );
         }
         acc += sum / count;
     }
-    return (acc * x) / surveys.size();
+
+    return (acc * scaling) / surveys.size();
 }
 
 template< typename Vector >
