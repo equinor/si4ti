@@ -121,14 +121,12 @@ using sparse = Eigen::SparseMatrix< T >;
  *
  * Please note the two padlens are different for samples and knots.
  */
-template< typename Numeric, int... Options >
-Eigen::Matrix< Numeric, Eigen::Dynamic, Eigen::Dynamic, Options... >
-bspline_matrix( int n, const Numeric* knotv, int knotlen, int order ) {
-    using array = Eigen::Array< Numeric, Eigen::Dynamic, 1 >;
-    using matrix = decltype( bspline_matrix( n, knotv, knotlen, order ) );
+template< typename T >
+matrix< T > bspline_matrix( int n, const T* knotv, int knotlen, int order ) {
+    using array = Eigen::Array< T, Eigen::Dynamic, 1 >;
 
     auto samples = []( int n, int order ) {
-        const Numeric interval = 1.0 / (n - 1.0);
+        const T interval = 1.0 / (n - 1.0);
         const auto padlen = 10 * order;
         array t( 2 * padlen + n );
 
@@ -144,11 +142,11 @@ bspline_matrix( int n, const Numeric* knotv, int knotlen, int order ) {
         return t;
     };
 
-    auto padknots = []( int n, const Numeric* knotv, int knotlen, int order ) {
-        const Numeric interval = 10.0 / (n - 1.0);
+    auto padknots = []( int n, const T* knotv, int knotlen, int order ) {
+        const T interval = 10.0 / (n - 1.0);
 
         const auto padlen = order + 1;
-        std::vector< Numeric > knots( knotlen + 2*padlen );
+        std::vector< T > knots( knotlen + 2*padlen );
 
         for( int i = 0; i <= padlen; ++i )
             knots[i] = -interval * (order - i);
@@ -157,7 +155,7 @@ bspline_matrix( int n, const Numeric* knotv, int knotlen, int order ) {
             knotv,
             knotv + knotlen,
             false,
-            []( bool acc, Numeric x ) { return acc or x <= 0 or 1 <= x; }
+            []( bool acc, T x ) { return acc or x <= 0 or 1 <= x; }
         );
 
         const auto denom = scale ? n + 1 : 1;
@@ -165,7 +163,7 @@ bspline_matrix( int n, const Numeric* knotv, int knotlen, int order ) {
         std::transform( knotv,
                         knotv + knotlen,
                         knots.begin() + padlen,
-                        [=]( Numeric x ) { return x / denom; }
+                        [=]( T x ) { return x / denom; }
         );
 
         for( int i = 0; i < padlen; ++i )
@@ -177,12 +175,12 @@ bspline_matrix( int n, const Numeric* knotv, int knotlen, int order ) {
     const auto t = samples( n, order );
     const auto knots = padknots( n, knotv, knotlen, order );
 
-    matrix P = matrix::Zero( t.size(), knots.size() - 1 );
+    matrix< T > P = matrix< T >::Zero( t.size(), knots.size() - 1 );
 
     for( int i = 0; i < int(knots.size()) - 1; ++i ) {
         const auto low = knots[ i ];
         const auto high = knots[ i + 1 ];
-        P.col(i) = (low <= t && t < high).template cast< Numeric >();
+        P.col(i) = (low <= t && t < high).template cast< T >();
     }
 
     array P1, P2;
