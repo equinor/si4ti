@@ -368,8 +368,11 @@ vector< T >& derive( vector< T >& signal, const vector< T >& omega ) {
      */
 
     // TODO: MUST be initialised outside
+    static std::mutex lock;
+    std::lock_guard< std::mutex > guard( lock );
+
     static Eigen::FFT< T > fft;
-    vector< std::complex< T > > ff;
+    static vector< std::complex< T > > ff;
 
     fft.fwd( ff, signal );
     ff.array() *= std::complex< T >(0, 1) * omega.array();
@@ -493,8 +496,6 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
     vector< T > corr( x.size() );
     corr.setZero();
 
-    std::mutex derive_lock;
-
     int nthreads = 3;
 
     # pragma omp parallel for
@@ -528,9 +529,7 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
             f[i].read( t, trc[i].data() );
             trc[i] /= normalizer;
             D = trc[i];
-            derive_lock.lock();
             drv[i] = derive( D, omega );
-            derive_lock.unlock();
 
             shift.setZero();
             for( int j = 0; j < i; ++j ) {
@@ -849,8 +848,6 @@ linear_system< T > build_system( const sparse< T >& B,
     p.L.setZero();
     p.b.setZero();
 
-    std::mutex derive_lock;
-
     int nthreads = 3;
 
     # pragma omp parallel for
@@ -877,9 +874,7 @@ linear_system< T > build_system( const sparse< T >& B,
             f[i].read( traceno, trc[i].data() );
             trc[i] /= normalizer;
             D = trc[i];
-            derive_lock.lock();
             drv[i] = derive( D, omega );
-            derive_lock.unlock();
         }
 
         for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
