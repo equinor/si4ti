@@ -442,6 +442,25 @@ vector< int > mask_solution( int vintages, int baseindex, int monindex ) {
 }
 
 template< typename T >
+T* begin( vector< T >& xs ) {
+    return xs.data();
+}
+
+template< typename T >
+const T* begin( const vector< T >& xs ) {
+    return xs.data();
+}
+
+template< typename T >
+T* end( vector< T >& xs ) {
+    return xs.data() + xs.size();
+}
+template< typename T >
+const T* end( const vector< T >& xs ) {
+    return xs.data() + xs.size();
+}
+
+template< typename T >
 vector< T >& shift_data( vector< T >& d, const vector< T >& corr ) {
     vector< T > linspace = vector< T >::LinSpaced( d.size(), 0, d.size() - 1 );
 
