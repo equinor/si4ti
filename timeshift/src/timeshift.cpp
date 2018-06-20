@@ -211,7 +211,7 @@ struct geometry {
     int xlines;
 };
 
-geometry findgeometry( sio::simple_file f ) {
+geometry findgeometry( sio::simple_file& f ) {
     geometry geo;
 
     geo.samples = f.read(0).size();
