@@ -464,15 +464,17 @@ template< typename T >
 vector< T >& shift_data( vector< T >& d, const vector< T >& corr ) {
     vector< T > linspace = vector< T >::LinSpaced( d.size(), 0, d.size() - 1 );
 
-    std::vector< double > ls( linspace.data(), linspace.data() + linspace.size());
+    std::vector< double > ls( begin( linspace ), end( linspace ) );
     std::vector< double > dd( d.data(), d.data() + d.size());
     tk::spline s;
     s.set_points( ls, dd );
 
     linspace -= corr;
 
-    for( int i = 0; i < d.size(); ++i )
-        d(i) = s( linspace(i) );
+    std::transform( begin( linspace ), end( linspace ), begin( d ),
+                    [&]( T x ) { return s( x ); }
+    );
+
     return d;
 }
 
