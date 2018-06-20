@@ -11,9 +11,6 @@
 
 #include <getopt.h>
 
-#define EIGEN_DONT_PARALLELIZE
-
-#include "linalg.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
@@ -21,6 +18,10 @@
 #include "spline.h"
 
 #include <segyio/segyio.hpp>
+
+#include "linalg.hpp"
+
+#define EIGEN_DONT_PARALLELIZE
 
 namespace {
 
@@ -625,26 +626,18 @@ struct SuperPreconditioner {
         v.setZero();
         const int vintpairsize = b.rows() / (vintages - 1);
 
-        # pragma omp parallel
-        {
-        const int nthreads = omp_get_num_threads();
-        const int tnr = omp_get_thread_num();
-
-        const int start = tnr * (traces/nthreads);
-        const int end = (tnr+1) == nthreads ? traces
-                                            : (tnr+1) * (traces/nthreads);
-
-        const int len = (end-start)*dims;
+        # pragma omp parallel for schedule(guided)
+        for( int trace = 0; trace < traces; ++trace ) {
 
         for( int i = 0; i < vintages - 1; ++i ){
             const auto col = i * diagonals;
-            const auto row = i * vintpairsize + start*dims;
-            v.segment( row, len ).array()
+            const auto row = i * vintpairsize + trace*dims;
+            v.segment( row, dims ).array()
               += this->mat->col( col )
-                          .segment( row, len )
+                          .segment( row, dims )
                           .cwiseInverse()
                           .array()
-               * b.segment( row, len )
+               * b.segment( row, dims )
                   .array();
         }
         }

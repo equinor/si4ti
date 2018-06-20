@@ -1,8 +1,3 @@
-#include <Eigen/Core>
-#include <Eigen/Sparse>
-
-#include <omp.h>
-
 namespace {
 
 template< typename T >
@@ -83,69 +78,111 @@ struct generic_product_impl< BlockBandedMatrix< T >,
        >
 {
     using Scalar = typename Product< BlockBandedMatrix< T >, Rhs >::Scalar;
+
     template< typename Dest >
-    static void scaleAndAddTo( Dest& dst,
-                               const BlockBandedMatrix< T >& lhs,
-                               const Rhs& rhs,
-                               const Scalar& alpha ) {
+    static void upper_triangle( Dest& dst,
+                                const BlockBandedMatrix< T >& lhs,
+                                const Rhs& rhs,
+                                const Scalar& alpha ) {
+
+        const auto traces       = lhs.ilines * lhs.xlines;
+        const auto localsize    = lhs.Bnn.rows();
+        const auto timeshifts   = lhs.vintages - 1;
+        const auto diagonals    = lhs.diagonals;
+        const auto vintpairsize = lhs.mat.rows() / timeshifts;
+
+        # pragma omp parallel for schedule(guided)
+        for( int trace = 0; trace < traces; ++trace ) {
+
+        for( int mvrow = 0; mvrow < timeshifts; ++mvrow ) {
+        for( int mvcol = 0; mvcol < timeshifts; ++mvcol ) {
+        for( int diag = 0; diag < diagonals; ++diag ) {
+            const auto lhs_col   = mvcol * diagonals + diag;
+            const auto lhs_start = mvrow * vintpairsize + trace * localsize;
+            const auto dst_start = lhs_start;
+            const auto rhs_start = diag
+                                 + mvcol * vintpairsize
+                                 + trace * localsize;
+            const auto len       = localsize - diag;
+
+            dst.segment( dst_start, len ).array()
+                += alpha * lhs.mat
+                              .col( lhs_col )
+                              .segment( lhs_start, len )
+                              .array()
+                         * rhs.segment( rhs_start, len )
+                              .array()
+                         ;
+
+        }}}
+
+        }
+    }
+
+    template< typename Dest >
+    static void lower_triangle( Dest& dst,
+                                const BlockBandedMatrix< T >& lhs,
+                                const Rhs& rhs,
+                                const Scalar& alpha ) {
+
+        const auto traces       = lhs.ilines * lhs.xlines;
+        const auto localsize    = lhs.Bnn.rows();
+        const auto timeshifts   = lhs.vintages - 1;
+        const auto diagonals    = lhs.diagonals;
+        const auto vintpairsize = lhs.mat.rows() / timeshifts;
+
+        # pragma omp parallel for schedule(guided)
+        for( int trace = 0; trace < traces; ++trace ) {
+
+        for( int mvrow = 0; mvrow < timeshifts; ++mvrow ) {
+        for( int mvcol = 0; mvcol < timeshifts; ++mvcol ) {
+        // NOTE: diag starts at 1
+        for( int diag = 1; diag < diagonals; ++diag ) {
+
+            const auto lhs_col   = mvcol * diagonals + diag;
+            const auto lhs_start = mvrow * vintpairsize + trace * localsize;
+            const auto dst_start = lhs_start;
+            const auto rhs_start = diag
+                                 + mvcol * vintpairsize
+                                 + trace * localsize;
+            const auto len       = localsize - diag;
+
+            dst.segment( rhs_start, len ).array()
+                += alpha * lhs.mat
+                            .col( lhs_col )
+                            .segment( lhs_start, len )
+                            .array()
+                        * rhs.segment( dst_start, len )
+                            .array()
+                        ;
+        }}}
+
+        }
+    }
+
+    template< typename Dest >
+    static void apply_smoothing( Dest& dst,
+                                 const BlockBandedMatrix< T >& lhs,
+                                 const Rhs& rhs ) {
 
         const auto ilines     = lhs.ilines;
         const auto xlines     = lhs.xlines;
         const auto traces     = ilines * xlines;
         const auto localsize  = lhs.Bnn.rows();
+        const auto timeshifts = lhs.vintages - 1;
 
-        # pragma omp parallel
-        {
-        const int nthreads = omp_get_num_threads( );
-        const int tnr = omp_get_thread_num( );
-
-        const int start = tnr * (traces/nthreads);
-        const int end = (tnr+1) == nthreads ? traces
-                                            : (tnr+1) * (traces/nthreads);
-
-        const auto vintages = lhs.vintages;
-        const auto diagonals = lhs.diagonals;
-        const auto vintpairsize = lhs.mat.rows() / (vintages - 1);
-
-        for( int mvrow = 0; mvrow < vintages-1 ; ++mvrow ) {
-        for( int mvcol = 0; mvcol < vintages-1 ; ++mvcol ) {
-        for( int diag = 0; diag < diagonals; ++diag ) {
-            const auto lhs_col   = mvcol * diagonals + diag;
-            const auto lhs_start = mvrow * vintpairsize + start*localsize;
-            const auto dst_start = mvrow * vintpairsize + start*localsize;
-            const auto len       =
-                (tnr+1) == nthreads ? (end-start)*localsize - diag
-                                    : (end-start)*localsize;
-            const auto rhs_start =
-                diag + mvcol * vintpairsize + start*localsize;
-
-            dst.segment( dst_start, len )
-               .array()
-                += alpha * (lhs.mat.col( lhs_col ).segment( lhs_start, len )
-                                                  .array()
-                         * rhs.segment( rhs_start, len )
-                              .array());
-            #pragma omp barrier
-            if( diag > 0 )
-                dst.segment( rhs_start, len )
-                   .array()
-                    += alpha * (lhs.mat.col( lhs_col ).segment( lhs_start, len )
-                                                      .array()
-                             * rhs.segment( dst_start, len )
-                                  .array());
-            #pragma omp barrier
-
-        }}}
+        # pragma omp parallel for schedule(guided)
+        for( int trace = 0; trace < traces; ++trace ) {
 
         const auto vintsize = localsize * traces;
         const auto& comb    = lhs.comb;
 
-        for( int vint1 = 0; vint1 < vintages - 1; ++vint1 ) {
-        for( int vint2 = 0; vint2 < vintages - 1; ++vint2 ) {
+        for( int mvrow = 0; mvrow < timeshifts; ++mvrow ) {
+        for( int mvcol = 0; mvcol < timeshifts; ++mvcol ) {
 
-        int j = start / xlines;
-        int k = start % xlines;
-        for( int i = start; i < end; ++i ) {
+        int j = trace / xlines;
+        int k = trace % xlines;
+        int i = trace;
             const std::ptrdiff_t iss[] = {
                 // C(j-1, k)
                 k == 0 ? i : i - 1,
@@ -163,17 +200,38 @@ struct generic_product_impl< BlockBandedMatrix< T >,
             // move the ilines forwards every time xlines wrap around
             if( k == 0 ) ++j;
 
-            const auto col = (vint1 * vintsize) + i * localsize;
+            const auto col = (mvrow * vintsize) + i * localsize;
             for( const auto is : iss ) {
-                const auto row = (vint2 * vintsize) + is * localsize;
-                vector< T > x = rhs.segment( row, localsize );
-                vector< T > smoothing = comb(vint1, vint2) * (lhs.Bnn * x).eval();
-                dst.segment(col, localsize).array() -= smoothing.array();
+                const auto row = (mvcol * vintsize) + is * localsize;
+                const auto x = rhs.segment( row, localsize );
+                const auto smoothing = comb(mvrow, mvcol) * (lhs.Bnn * x);
+                dst.segment(col, localsize) -= smoothing;
             }
-        }
 
-        }}
         }
+        }
+    }
+    }
+
+    template< typename Dest >
+    static void scaleAndAddTo( Dest& dst,
+                               const BlockBandedMatrix< T >& lhs,
+                               const Rhs& rhs,
+                               const Scalar& alpha ) {
+
+        // TODO: draw segment -> system mapping
+        /*
+         * the different parts of this computation is split into functions for
+         * clarity, and to provide natural barriers, because the computation of
+         * upper overlaps with lower and nearest neighbours computations.
+         *
+         * TODO: try splitting on worker-pool and tasks, because race
+         * conditions only apply when two traces (same number) are computed at
+         * the same time
+         */
+        upper_triangle( dst, lhs, rhs, alpha );
+        lower_triangle( dst, lhs, rhs, alpha );
+        apply_smoothing( dst, lhs, rhs );
     }
 };
 
