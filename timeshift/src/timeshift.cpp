@@ -464,7 +464,7 @@ const T* end( const vector< T >& xs ) {
 }
 
 template< typename T >
-vector< T >& shift_data( vector< T >& d, const vector< T >& shift ) {
+vector< T >& apply_timeshift( vector< T >& d, const vector< T >& shift ) {
     vector< T > xs = vector< T >::LinSpaced( d.size(), 0, d.size() - 1 );
 
     std::vector< double > ls( begin( xs ), end( xs ) );
@@ -482,29 +482,30 @@ vector< T >& shift_data( vector< T >& d, const vector< T >& shift ) {
 }
 
 template< typename T >
-vector< T > timeshift_4D_correction( const vector< T >& x,
-                                     std::vector< sio::simple_file> files,
-                                     const sparse< T >& spline,
-                                     const geometry& geo,
-                                     const vector< T >& omega,
-                                     const double normalizer ) {
+void correct( int start, int end,
+              const vector< T >& x,
+              std::vector< sio::simple_file >& files,
+              const sparse< T >& spline,
+              const geometry& geo,
+              const vector< T >& omega,
+              double normalizer,
+              vector< T >& correction ) {
+
+    /*
+     * Do the correction. A lot of these functions take buffers and modify them
+     * in-place for performance reasons
+     *
+     * TODO: wordily describe 4D correction
+     */
 
     const int vintages = files.size();
     const int localsize = spline.cols();
     const int vintpairsize = localsize * geo.traces;
 
-    vector< T > corr( x.size() );
-    corr.setZero();
-
-    int nthreads = 3;
-
-    # pragma omp parallel for
-    for( int tnr = 0; tnr < nthreads; ++tnr )
-    {
-    std::vector< sio::simple_file > f( files );
-
     std::vector< vector< T > > trc( vintages, vector< T >( geo.samples ) );
     std::vector< vector< T > > drv( vintages, vector< T >( geo.samples ) );
+
+    const int timeshifts = vintages - 1;
 
     vector< T > sol( localsize );
     vector< T > D( geo.samples );
@@ -512,24 +513,25 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
     vector< T > mean( geo.samples );
     vector< T > shift( geo.samples );
 
-    const int start = tnr * (geo.traces/nthreads);
-    const int end = (tnr+1) == nthreads ? geo.traces
-                                        : (tnr+1) * (geo.traces/nthreads);
-
     for( int t = start; t < end; ++t ) {
 
         mean.setZero();
-        for( int i = 0; i < vintages-1; ++i ) {
+        for( int i = 0; i < timeshifts; ++i ) {
+            // TODO: comment on why
             const int r = (t * localsize) + (i * vintpairsize);
             mean += mean + spline * x.segment( r, localsize );
         }
-        mean /= vintages-1;
+        mean /= timeshifts;
 
         for( int i = 0; i < vintages; ++i ){
-            f[i].read( t, trc[i].data() );
-            trc[i] /= normalizer;
-            D = trc[i];
-            drv[i] = derive( D, omega );
+            auto& file = files[i];
+            auto& trace = trc[i];
+            auto& derived = drv[i];
+
+            file.read( t, begin( trace ) );
+            derived = (trace /= normalizer);
+            // derived is updated in-place
+            derived = derive( derived, omega );
 
             shift.setZero();
             for( int j = 0; j < i; ++j ) {
@@ -537,28 +539,58 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
                 shift += spline * x.segment( r, localsize );
             }
             shift -= mean;
-            shift_data( trc[i], shift );
+            // trace is updated in-place
+            trace = apply_timeshift( trace, shift );
         }
 
         for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
         for( int vint2 = vint1+1; vint2 < vintages; ++vint2 ) {
 
+            // TODO: alloc outside of loop
             const auto maskb = mask_solution( vintages, vint1, vint2 );
 
             D = 0.5 * ( drv[vint1] + drv[vint2] );
 
             delta = trc[vint2] - trc[vint1];
+            // TODO: alloc outside of solution
             sol = solution( D, delta, spline );
 
-            for( int mvrow = 0; mvrow < vintages - 1; ++mvrow ) {
+            // TODO: rename mvrow to indicate position (maybe) in system
+            for( int mvrow = 0; mvrow < timeshifts; ++mvrow ) {
                 const int row = (mvrow * vintpairsize) + (t * localsize);
-                corr.segment( row, localsize )
-                    += sol * maskb(mvrow);
+                correction.segment( row, localsize ) += sol * maskb( mvrow );
             }
         }}
     }
+
+}
+
+template< typename T >
+vector< T > timeshift_4D_correction( const vector< T >& x,
+                                     std::vector< sio::simple_file >& files,
+                                     const sparse< T >& spline,
+                                     const geometry& geo,
+                                     const vector< T >& omega,
+                                     double normalizer ) {
+
+    vector< T > cs( x.size() );
+    cs.setZero();
+
+    int nthreads = 3;
+
+    # pragma omp parallel for
+    for( int thread_id = 0; thread_id < nthreads; ++thread_id ) {
+        std::vector< sio::simple_file > f( files );
+
+        const int start = thread_id * (geo.traces/nthreads);
+        const int end = (thread_id+1) == nthreads
+                      ? geo.traces
+                      : (thread_id+1) * (geo.traces/nthreads);
+
+        correct( start, end, x, f, spline, geo, omega, normalizer, cs );
     }
-    return corr;
+
+    return cs;
 }
 
 template< typename T > class SuperMatrix;
