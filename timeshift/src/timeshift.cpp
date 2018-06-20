@@ -94,6 +94,13 @@ options parseopts( int argc, char** argv ) {
     return opts;
 }
 
+template< typename T >
+using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
+template< typename T >
+using matrix = Eigen::Matrix< T, Eigen::Dynamic, Eigen::Dynamic >;
+template< typename T >
+using sparse = Eigen::SparseMatrix< T >;
+
 /*
  * Analyse the B-spline with De Boor's algorithm as an n * basis-functions
  * matrix.
@@ -204,6 +211,30 @@ bspline_matrix( int n, const Numeric* knotv, int knotlen, int order ) {
     return P.block( row, col, rowsz, colsz );
 }
 
+template< typename T >
+std::vector< T > knotvector( int samples, T density ) {
+    const auto step = T(1) / density;
+    const auto middle = T(samples + 1) / 2;
+
+    std::vector< T > knotv;
+    for( auto f = middle; f > 1 / density; f -= step )
+        knotv.push_back( f );
+
+    std::reverse( knotv.begin(), knotv.end() );
+
+    for( auto f = middle + step; f <= samples - 1/density; f += step )
+        knotv.push_back( f );
+
+    return knotv;
+}
+
+template< typename T >
+sparse< T > normalized_bspline( int samples, T density, int degree ) {
+    const auto knotv = knotvector( samples, density );
+    auto B = bspline_matrix( samples, knotv.data(), knotv.size(), degree );
+    return (B * B.colwise().sum().cwiseInverse().asDiagonal()).sparseView();
+}
+
 struct geometry {
     int samples;
     int traces;
@@ -260,37 +291,6 @@ void writefile( const std::string& basefile,
     auto itr = v.data();
     for( int traceno = 0; traceno < geo.traces; ++traceno )
         itr = f.put( traceno, itr );
-}
-
-template< typename T >
-using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
-template< typename T >
-using matrix = Eigen::Matrix< T, Eigen::Dynamic, Eigen::Dynamic >;
-template< typename T >
-using sparse = Eigen::SparseMatrix< T >;
-
-template< typename T >
-std::vector< T > knotvector( int samples, T density ) {
-    const auto step = T(1) / density;
-    const auto middle = T(samples + 1) / 2;
-
-    std::vector< T > knotv;
-    for( auto f = middle; f > 1 / density; f -= step )
-        knotv.push_back( f );
-
-    std::reverse( knotv.begin(), knotv.end() );
-
-    for( auto f = middle + step; f <= samples - 1/density; f += step )
-        knotv.push_back( f );
-
-    return knotv;
-}
-
-template< typename T >
-sparse< T > normalized_bspline( int samples, T density, int degree ) {
-    const auto knotv = knotvector( samples, density );
-    auto B = bspline_matrix( samples, knotv.data(), knotv.size(), degree );
-    return (B * B.colwise().sum().cwiseInverse().asDiagonal()).sparseView();
 }
 
 template< typename T >
