@@ -688,6 +688,7 @@ linear_system< T > build_system( const sparse< T >& B,
      */
 
     const int vintages = files.size();
+    const int timeshifts = vintages - 1;
     const int localsize = B.cols();
     const int vintpairsize = localsize * geo.traces;
     const int solutionsize = vintpairsize * (vintages - 1);
@@ -700,12 +701,6 @@ linear_system< T > build_system( const sparse< T >& B,
     p.L.setZero();
     p.b.setZero();
 
-    int nthreads = 3;
-
-    # pragma omp parallel for
-    for( int tnr = 0; tnr < nthreads; ++tnr )
-    {
-
     std::vector< sio::simple_file > f( files );
 
     std::vector< vector< T > > trc( vintages, vector< T >( geo.samples ) );
@@ -713,58 +708,57 @@ linear_system< T > build_system( const sparse< T >& B,
 
     vector< T > D( geo.samples );
     vector< T > delta( geo.samples );
+    // TODO: sparse localL?
     matrix< T > localL( localsize, localsize );
-    vector< T > localb( localsize );
 
-    const int start = tnr * (geo.traces/nthreads);
-    const int end = (tnr+1) == nthreads ? geo.traces
-                                        : (tnr+1) * (geo.traces/nthreads);
-
-    for( auto traceno = start; traceno < end; ++traceno ) {
+    # pragma omp parallel for schedule(guided) \
+                 firstprivate(f, trc, drv, D, delta, localL)
+    for( auto traceno = 0; traceno < geo.traces; ++traceno ) {
 
         for( int i = 0; i < vintages; ++i ){
             f[i].read( traceno, trc[i].data() );
-            trc[i] /= normalizer;
-            D = trc[i];
-            drv[i] = derive( D, omega );
+            drv[i] = trc[i] /= normalizer;
+            drv[i] = derive( drv[i], omega );
         }
 
-        for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
+        // combinations(0..vintages)
+        for( int vint1 = 0;       vint1 < vintages; ++vint1 )
         for( int vint2 = vint1+1; vint2 < vintages; ++vint2 ) {
 
-            const auto maskL = mask_linear( vintages,
-                                            vint1,
-                                            vint2 );
-            const auto maskb = mask_solution( vintages,
-                                              vint1,
-                                              vint2 );
+            const auto maskL = mask_linear( vintages, vint1, vint2 );
+            const auto maskb = mask_solution( vintages, vint1, vint2 );
 
             delta = trc[vint2] - trc[vint1];
             D = 0.5 * ( drv[vint1] + drv[vint2] );
+            // TODO: if C and linearoperator(D,B) always share non-zero
+            // pattern, this is reduced to an element-wise sum, and there's no
+            // need to allocate on every iteration
             localL = linearoperator( D, B ) + C;
 
-            for( int mvrow = 0; mvrow < vintages - 1; ++mvrow) {
-                int row = (mvrow * vintpairsize) + (traceno * localsize);
+            for( int mvrow = 0; mvrow < timeshifts; ++mvrow) {
+                const int row = (mvrow * vintpairsize) + (traceno * localsize);
                 p.b.segment( row, localsize )
                     += solution( D, delta, B ) * maskb(mvrow);
+            }
 
-                for( int mvcol = 0; mvcol < vintages - 1; ++mvcol) {
-                    if( maskL( mvrow, mvcol ) ){
-                        for( int diag = 0; diag < ndiagonals; ++diag ) {
+            for( int mvrow = 0; mvrow < timeshifts; ++mvrow) {
+                const int row = (mvrow * vintpairsize) + (traceno * localsize);
 
-                            int col_size = localsize - diag;
-                            int col = (mvcol * ndiagonals) + diag;
+                for( int mvcol = 0; mvcol < timeshifts; ++mvcol) {
+                    if( not maskL( mvrow, mvcol ) ) continue;
 
-                            p.L.block( row, col, col_size, 1 )
-                                += localL.diagonal(diag);
-                        }
+                    for( int diag = 0; diag < ndiagonals; ++diag ) {
+                        int col_size = localsize - diag;
+                        int col = (mvcol * ndiagonals) + diag;
+
+                        p.L.block( row, col, col_size, 1 )
+                            += localL.diagonal(diag);
                     }
                 }
             }
+        }
+    }
 
-        }}
-    }
-    }
     return p;
 }
 
