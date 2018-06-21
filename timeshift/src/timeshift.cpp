@@ -590,9 +590,9 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
 }
 
 template< typename T >
-struct SuperPreconditioner {
+struct SimpliPreconditioner {
 
-    SuperPreconditioner() = default;
+    SimpliPreconditioner() = default;
 
     template<typename MatrixType>
     void initialize( const MatrixType& m ) {
@@ -604,41 +604,40 @@ struct SuperPreconditioner {
     }
 
     template<typename MatrixType>
-    SuperPreconditioner& analyzePattern( const MatrixType& m ) {
+    SimpliPreconditioner& analyzePattern( const MatrixType& ) {
         return *this;
     }
 
     template<typename MatrixType>
-    SuperPreconditioner& factorize( const MatrixType& m ) {
+    SimpliPreconditioner& factorize( const MatrixType& ) {
         return *this;
     }
 
     template<typename MatrixType>
-    SuperPreconditioner& compute( const MatrixType& m ) {
+    SimpliPreconditioner& compute( const MatrixType& ) {
         return *this;
     }
 
     template<typename Rhs>
     inline const Rhs solve(const Eigen::MatrixBase<Rhs>& b) const {
         eigen_assert( !mat
-                   && "SuperPreconditioner is not initialized.");
-        vector< T > v( b.rows() );
+                   && "SimpliPreconditioner is not initialized.");
+        Rhs v( b.rows() );
         v.setZero();
-        const int vintpairsize = b.rows() / (vintages - 1);
+        const int timeshifts = vintages - 1;
+        const int vintpairsize = b.rows() / timeshifts;
 
         # pragma omp parallel for schedule(guided)
         for( int trace = 0; trace < traces; ++trace ) {
 
-        for( int i = 0; i < vintages - 1; ++i ){
+        for( int i = 0; i < timeshifts; ++i ){
             const auto col = i * diagonals;
             const auto row = i * vintpairsize + trace*dims;
-            v.segment( row, dims ).array()
-              += this->mat->col( col )
-                          .segment( row, dims )
-                          .cwiseInverse()
-                          .array()
-               * b.segment( row, dims )
-                  .array();
+
+            v.segment( row, dims ) += this->mat->col( col )
+                                        .segment( row, dims )
+                                        .cwiseInverse()
+                                        .cwiseProduct( b.segment(row, dims) );
         }
         }
         return v;
@@ -825,7 +824,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
     Eigen::ConjugateGradient<
         decltype( rep ),
         Eigen::Lower | Eigen::Upper,
-        SuperPreconditioner<T>
+        SimpliPreconditioner<T>
     > cg;
     cg.preconditioner().initialize( rep );
     cg.setMaxIterations( opts.solver_max_iter );
