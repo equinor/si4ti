@@ -35,8 +35,10 @@ struct options {
     bool        correct_4d_noise     = false;
     bool        cumulative           = false;
     double      datascaling          = 30;
+    std::string dir                  = "";
     std::string prefix               = "timeshift";
     std::string delim                = "-";
+    std::string extension            = "sgy";
     int         verbosity            = 0;
     int         ilbyte               = SEGY_TR_INLINE;
     int         xlbyte               = SEGY_TR_CROSSLINE;
@@ -52,8 +54,10 @@ options parseopts( int argc, char** argv ) {
         { "correct-4D",           no_argument,       0, 'c' },
         { "cumulative",           no_argument,       0, 's' },
         { "normalizer",           required_argument, 0, 'n' },
+        { "output-dir",           required_argument, 0, 'P' },
         { "output-prefix",        required_argument, 0, 'p' },
         { "output-delim",         required_argument, 0, 'D' },
+        { "output-ext",           required_argument, 0, 'X' },
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
         { "verbose",              no_argument,       0, 'v' },
@@ -66,7 +70,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsn:p:D:i:x:v",
+                             "r:H:V:m:dcsnP::p:D:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -80,8 +84,10 @@ options parseopts( int argc, char** argv ) {
             case 'c': opts.correct_4d_noise     = true; break;
             case 's': opts.cumulative           = true; break;
             case 'n': break;
+            case 'P': opts.dir                  = optarg; break;
             case 'p': opts.prefix               = optarg; break;
             case 'D': opts.delim                = optarg; break;
+            case 'X': opts.extension            = optarg; break;
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
             case 'v': break;
@@ -99,6 +105,12 @@ options parseopts( int argc, char** argv ) {
 
     while( optind < argc )
         opts.files.push_back( argv[ optind++ ] );
+
+    if( !opts.extension.empty() and opts.extension.front() != '.' )
+        opts.extension.insert( opts.extension.begin(), '.' );
+
+    if( !opts.dir.empty() and opts.dir.back() != '/' )
+        opts.dir.push_back( '/' );
 
     return opts;
 }
@@ -892,11 +904,13 @@ int main( int argc, char** argv ) {
     for( int i = 0; i < timeshifts; ++i ) {
         vector< T > seg = x.segment( i * M, M );
         auto timeshift = reconstruct( seg );
-        writefile( opts.files.front(),
-                   timeshift,
-                   opts.prefix + opts.delim + std::to_string( i ) + ".sgy",
-                   geometries.back() );
-
+        const auto fname = opts.dir
+                         + opts.prefix
+                         + opts.delim
+                         + std::to_string( i )
+                         + opts.extension
+                         ;
+        writefile( opts.files.front(), timeshift, fname, geometries.back() );
     }
 }
 
