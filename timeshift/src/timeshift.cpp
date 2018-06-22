@@ -884,9 +884,9 @@ int main( int argc, char** argv ) {
     };
 
     const auto M = B.cols() * geometries.front().traces;
+    const int timeshifts = vintages - 1;
 
-    for( int i = 0; i < vintages - 1; ++i ) {
-        T scale = 4;
+    for( int i = 0; i < timeshifts; ++i ) {
         vector< T > seg = x.segment( i * M, M );
         auto timeshift = reconstruct( seg );
         writefile( opts.files.front(),
