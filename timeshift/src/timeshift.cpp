@@ -27,17 +27,18 @@ namespace {
 
 struct options {
     std::vector< std::string > files;
-    double timeshift_resolution = 0.05;
-    double horizontal_smoothing = 0.01;
-    double vertical_smoothing   = 0.1;
-    int    solver_max_iter      = 100;
-    bool   double_precision     = false;
-    bool   correct_4d_noise     = false;
-    bool   cumulative           = false;
-    double datascaling          = 30;
-    int    verbosity            = 0;
-    int    ilbyte               = SEGY_TR_INLINE;
-    int    xlbyte               = SEGY_TR_CROSSLINE;
+    double      timeshift_resolution = 0.05;
+    double      horizontal_smoothing = 0.01;
+    double      vertical_smoothing   = 0.1;
+    int         solver_max_iter      = 100;
+    bool        double_precision     = false;
+    bool        correct_4d_noise     = false;
+    bool        cumulative           = false;
+    double      datascaling          = 30;
+    std::string prefix               = "timeshift";
+    int         verbosity            = 0;
+    int         ilbyte               = SEGY_TR_INLINE;
+    int         xlbyte               = SEGY_TR_CROSSLINE;
 };
 
 options parseopts( int argc, char** argv ) {
@@ -50,6 +51,7 @@ options parseopts( int argc, char** argv ) {
         { "correct-4D",           no_argument,       0, 'c' },
         { "cumulative",           no_argument,       0, 's' },
         { "normalizer",           required_argument, 0, 'n' },
+        { "output-prefix",        required_argument, 0, 'p' },
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
         { "verbose",              no_argument,       0, 'v' },
@@ -62,7 +64,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsn:i:x:v",
+                             "r:H:V:m:dcsn:p:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -76,6 +78,7 @@ options parseopts( int argc, char** argv ) {
             case 'c': opts.correct_4d_noise     = true; break;
             case 's': opts.cumulative           = true; break;
             case 'n': break;
+            case 'p': opts.prefix               = optarg; break;
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
             case 'v': break;
@@ -888,7 +891,7 @@ int main( int argc, char** argv ) {
         auto timeshift = reconstruct( seg );
         writefile( opts.files.front(),
                    timeshift,
-                   "timeshift-" + std::to_string( i ) + ".sgy",
+                   opts.prefix + "-" + std::to_string( i ) + ".sgy",
                    geometries.back() );
 
     }
