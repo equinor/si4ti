@@ -764,9 +764,10 @@ linear_system< T > build_system( const sparse< T >& B,
 
 template< typename T >
 void accumulate_timeshifts( vector< T >& x, int vintages ) {
-    int sz = x.size() / (vintages-1);
-    for( int i = 1; i < vintages-1; ++i )
-        x.segment( i*sz, sz ) += x.segment( (i-1)*sz, sz );
+    const int timeshifts = vintages - 1;
+    const int len = x.size() / timeshifts;
+    for( int prev = 0, next = 1; next < timeshifts; ++next, ++prev )
+        x.segment( next*len, len ) += x.segment( prev*len, len );
 }
 
 template< typename T >
