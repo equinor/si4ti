@@ -856,14 +856,8 @@ vector< T > compute_timeshift( const sparse< T >& B,
     return x;
 }
 
-}
-
-#ifndef TEST
-
-int main( int argc, char** argv ) {
-    Eigen::initParallel();
-    auto opts = parseopts( argc, argv );
-
+template< typename T >
+void run( const options& opts ) {
     std::vector< sio::simple_file > files;
     std::vector< geometry > geometries;
     for( const auto& file : opts.files ) {
@@ -872,8 +866,6 @@ int main( int argc, char** argv ) {
 
         geometries.push_back( findgeometry( files.back() ) );
     }
-
-    using T = float;
 
     const auto vintages = files.size();
     const auto samples = geometries.back().samples;
@@ -901,17 +893,37 @@ int main( int argc, char** argv ) {
     const auto M = B.cols() * geometries.front().traces;
     const int timeshifts = vintages - 1;
 
+    std::vector< std::string > fnames;
     for( int i = 0; i < timeshifts; ++i ) {
-        vector< T > seg = x.segment( i * M, M );
-        auto timeshift = reconstruct( seg );
         const auto fname = opts.dir
                          + opts.prefix
                          + opts.delim
                          + std::to_string( i )
                          + opts.extension
                          ;
-        writefile( opts.files.front(), timeshift, fname, geometries.back() );
+        fnames.push_back( fname );
     }
+
+    for( int i = 0; i < timeshifts; ++i ) {
+        vector< T > seg = x.segment( i * M, M );
+        auto timeshift = reconstruct( seg );
+        writefile( opts.files.front(),
+                   timeshift,
+                   fnames[ i ],
+                   geometries.back() );
+    }
+}
+
+}
+
+#ifndef TEST
+
+int main( int argc, char** argv ) {
+    Eigen::initParallel();
+    auto opts = parseopts( argc, argv );
+
+    if( not opts.double_precision ) run< float >( opts );
+    else run< double >( opts );
 }
 
 #endif
