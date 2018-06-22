@@ -36,6 +36,7 @@ struct options {
     bool        cumulative           = false;
     double      datascaling          = 30;
     std::string prefix               = "timeshift";
+    std::string delim                = "-";
     int         verbosity            = 0;
     int         ilbyte               = SEGY_TR_INLINE;
     int         xlbyte               = SEGY_TR_CROSSLINE;
@@ -52,6 +53,7 @@ options parseopts( int argc, char** argv ) {
         { "cumulative",           no_argument,       0, 's' },
         { "normalizer",           required_argument, 0, 'n' },
         { "output-prefix",        required_argument, 0, 'p' },
+        { "output-delim",         required_argument, 0, 'D' },
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
         { "verbose",              no_argument,       0, 'v' },
@@ -64,7 +66,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsn:p:i:x:v",
+                             "r:H:V:m:dcsn:p:D:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -79,6 +81,7 @@ options parseopts( int argc, char** argv ) {
             case 's': opts.cumulative           = true; break;
             case 'n': break;
             case 'p': opts.prefix               = optarg; break;
+            case 'D': opts.delim                = optarg; break;
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
             case 'v': break;
@@ -891,7 +894,7 @@ int main( int argc, char** argv ) {
         auto timeshift = reconstruct( seg );
         writefile( opts.files.front(),
                    timeshift,
-                   opts.prefix + "-" + std::to_string( i ) + ".sgy",
+                   opts.prefix + opts.delim + std::to_string( i ) + ".sgy",
                    geometries.back() );
 
     }
