@@ -34,7 +34,7 @@ struct options {
     bool        double_precision     = false;
     bool        correct_4d_noise     = false;
     bool        cumulative           = false;
-    double      datascaling          = 30;
+    double      scaling              = 30.0;
     std::string dir                  = "";
     std::string prefix               = "timeshift";
     std::string delim                = "-";
@@ -53,7 +53,7 @@ options parseopts( int argc, char** argv ) {
         { "double-precision",     no_argument,       0, 'd' },
         { "correct-4D",           no_argument,       0, 'c' },
         { "cumulative",           no_argument,       0, 's' },
-        { "normalizer",           required_argument, 0, 'n' },
+        { "scaling",              required_argument, 0, 'S' },
         { "output-dir",           required_argument, 0, 'P' },
         { "output-prefix",        required_argument, 0, 'p' },
         { "output-delim",         required_argument, 0, 'D' },
@@ -70,7 +70,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsnP::p:D:i:x:v",
+                             "r:H:V:m:dcsS:P:p:D:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -80,10 +80,10 @@ options parseopts( int argc, char** argv ) {
             case 'H': opts.horizontal_smoothing = std::stod( optarg ); break;
             case 'V': opts.vertical_smoothing   = std::stod( optarg ); break;
             case 'm': opts.solver_max_iter      = std::stoi( optarg ); break;
-            case 'd': break;
+            case 'd': opts.double_precision     = true; break;
             case 'c': opts.correct_4d_noise     = true; break;
             case 's': opts.cumulative           = true; break;
-            case 'n': break;
+            case 'S': opts.scaling              = std::stod( optarg ); break;
             case 'P': opts.dir                  = optarg; break;
             case 'p': opts.prefix               = optarg; break;
             case 'D': opts.delim                = optarg; break;
@@ -813,7 +813,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const int ndiagonals = splineord + 1;
     const auto vintages = files.size();
 
-    const T normalizer = normalize_surveys( opts.datascaling, files );
+    const T normalizer = normalize_surveys( opts.scaling, files );
 
     auto linear_system = build_system( B,
                                        C,
