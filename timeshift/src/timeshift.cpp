@@ -846,7 +846,6 @@ vector< T > compute_timeshift( const sparse< T >& B,
 #ifndef TEST
 
 int main( int argc, char** argv ) {
-    //std::cout << EIGEN_WORLD_VERSION << "." << EIGEN_MAJOR_VERSION << "." << EIGEN_MINOR_VERSION << "\n";
     Eigen::initParallel();
     auto opts = parseopts( argc, argv );
 
@@ -856,8 +855,7 @@ int main( int argc, char** argv ) {
         files.push_back( { file, sio::config().ilbyte( opts.ilbyte )
                                               .xlbyte( opts.xlbyte ) }  );
 
-        geometries.push_back( findgeometry( files.back() )
-                            );
+        geometries.push_back( findgeometry( files.back() ) );
     }
 
     using T = float;
