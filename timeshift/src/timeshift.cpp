@@ -835,6 +835,9 @@ vector< T > compute_timeshift( const sparse< T >& B,
         x -= cg.solve( linear_system.b );
     }
 
+    if( opts.cumulative )
+        accumulate_timeshifts( x, vintages );
+
     return x;
 }
 
@@ -867,9 +870,6 @@ int main( int argc, char** argv ) {
                                        splineord );
 
     auto x = compute_timeshift( B, splineord, files, geometries, opts );
-
-    if( opts.cumulative )
-        accumulate_timeshifts( x, vintages );
 
     auto reconstruct = [&]( vector< T > seg ) {
         const auto scale = 4.0;
