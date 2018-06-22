@@ -791,9 +791,6 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const auto samples = geometries.back().samples;
     const auto omega = angular_frequency( samples, T( 1.0 ) );
 
-    const auto solsize =
-        B.cols() * geometries.front().traces * (files.size() - 1);
-
     const auto& geo = geometries.back();
     const int ndiagonals = splineord + 1;
     const auto vintages = files.size();
