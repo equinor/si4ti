@@ -76,7 +76,7 @@ options parseopts( int argc, char** argv ) {
         if( c == -1 ) break;
 
         switch( c ) {
-            case 'r': break;
+            case 'r': opts.timeshift_resolution = std::stod( optarg ); break;
             case 'H': opts.horizontal_smoothing = std::stod( optarg ); break;
             case 'V': opts.vertical_smoothing   = std::stod( optarg ); break;
             case 'm': opts.solver_max_iter      = std::stoi( optarg ); break;
