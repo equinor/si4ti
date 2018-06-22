@@ -809,17 +809,16 @@ vector< T > compute_timeshift( const sparse< T >& B,
                                        ndiagonals);
 
     BlockBandedMatrix< T > rep( std::move( linear_system.L ),
-                          ndiagonals,
-                          Bnn,
-                          multiplier( vintages ),
-                          vintages,
-                          geo.ilines,
-                          geo.xlines );
+                                ndiagonals,
+                                Bnn,
+                                multiplier( vintages ),
+                                vintages,
+                                geo.ilines,
+                                geo.xlines );
 
-    Eigen::ConjugateGradient<
-        decltype( rep ),
-        Eigen::Lower | Eigen::Upper,
-        SimpliPreconditioner<T>
+    Eigen::ConjugateGradient< decltype( rep ),
+                              Eigen::Lower | Eigen::Upper,
+                              SimpliPreconditioner<T>
     > cg;
     cg.preconditioner().initialize( rep );
     cg.setMaxIterations( opts.solver_max_iter );
@@ -827,7 +826,12 @@ vector< T > compute_timeshift( const sparse< T >& B,
     vector< T > x = cg.solve( linear_system.b );
 
     if( opts.correct_4d_noise ) {
-        linear_system.b = timeshift_4D_correction( x, files, B, geo, omega, normalizer );
+        linear_system.b = timeshift_4D_correction( x,
+                                                   files,
+                                                   B,
+                                                   geo,
+                                                   omega,
+                                                   normalizer );
         x -= cg.solve( linear_system.b );
     }
 
