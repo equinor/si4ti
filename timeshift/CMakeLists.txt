@@ -121,3 +121,7 @@ add_custom_target(showgrind
     COMMAND ${kcachegrind} callgrind.out.timeshift
     DEPENDS callgrind
 )
+
+configure_file(test/vintage1.sgy test-data/vintage1.sgy COPYONLY)
+configure_file(test/vintage2.sgy test-data/vintage2.sgy COPYONLY)
+configure_file(test/vintage3.sgy test-data/vintage3.sgy COPYONLY)
