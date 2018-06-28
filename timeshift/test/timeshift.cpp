@@ -102,4 +102,26 @@ TEST_CASE("Regression test") {
         apply_timeshift( x, corr );
         CHECK_THAT( expected.transpose().eval(), ApproxRange(x.transpose().eval()) );
     }
+
+    SECTION("Mask linear operator") {
+        Eigen::MatrixXi expected( 3, 3 );
+
+        expected << 1,1,1,
+                    1,1,1,
+                    1,1,1;
+        auto result = mask_linear( 4, 0, 3 );
+        CHECK( result == expected );
+
+        expected << 0,0,0,
+                    0,1,1,
+                    0,1,1;
+        result = mask_linear( 4, 1, 3 );
+        CHECK( result == expected );
+
+        expected << 0,0,0,
+                    0,1,0,
+                    0,0,0;
+        result = mask_linear( 4, 1, 2 );
+        CHECK( result == expected );
+    }
 }
