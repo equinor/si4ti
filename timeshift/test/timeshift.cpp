@@ -124,4 +124,20 @@ TEST_CASE("Regression test") {
         result = mask_linear( 4, 1, 2 );
         CHECK( result == expected );
     }
+
+    SECTION("Mask solution") {
+        Eigen::VectorXi expected( 3 );
+
+        expected << 1,1,1;
+        auto result = mask_solution( 4, 0, 3 );
+        CHECK( result == expected );
+
+        expected << 0,1,1;
+        result = mask_solution( 4, 1, 3 );
+        CHECK( result == expected );
+
+        expected << 0,1,0;
+        result = mask_solution( 4, 1, 2 );
+        CHECK( result == expected );
+    }
 }
