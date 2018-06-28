@@ -140,4 +140,14 @@ TEST_CASE("Regression test") {
         result = mask_solution( 4, 1, 2 );
         CHECK( result == expected );
     }
+
+    SECTION("Multiplier") {
+        Eigen::MatrixXi expected( 3, 3 );
+
+        expected << 3,2,1,
+                    2,4,2,
+                    1,2,3;
+        auto result = multiplier( 4 );
+        CHECK( result == expected );
+    }
 }
