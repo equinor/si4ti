@@ -141,18 +141,17 @@ struct generic_product_impl< BlockBandedMatrix< T >,
 
             const auto lhs_col   = mvcol * diagonals + diag;
             const auto lhs_start = mvrow * vintpairsize + trace * localsize;
-            const auto dst_start = lhs_start;
-            const auto rhs_start = diag
-                                 + mvcol * vintpairsize
+            const auto dst_start = lhs_start + diag;
+            const auto rhs_start = mvcol * vintpairsize
                                  + trace * localsize;
             const auto len       = localsize - diag;
 
-            dst.segment( rhs_start, len ).array()
+            dst.segment( dst_start, len ).array()
                 += alpha * lhs.mat
                             .col( lhs_col )
                             .segment( lhs_start, len )
                             .array()
-                        * rhs.segment( dst_start, len )
+                        * rhs.segment( rhs_start, len )
                             .array()
                         ;
         }}}
