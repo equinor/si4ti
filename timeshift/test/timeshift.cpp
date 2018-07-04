@@ -173,5 +173,26 @@ TEST_CASE("3 vintages (tiny cubes)") {
         CHECK( d == Approx( 2.0613483677 ) );
     }
 
+    SECTION("Linear system") {
+        const geometry geo{ 51, 12, 3, 4 };
+        const int splineord = 3;
+        const auto spline = normalized_bspline( geo.samples, 0.1, splineord );
+        const auto C = constraints( spline, 0.01, 0.03 );
+        const auto omega = angular_frequency( geo.samples, 1.0 );
+        const int ndiagonals = splineord - 1;
+        const double normalizer = 3;
 
+        const auto linsys = build_system( spline,
+                                          C,
+                                          omega,
+                                          normalizer,
+                                          vintages,
+                                          geo,
+                                          ndiagonals );
+
+        const auto expectedL = linsysL();
+        const auto expectedb = linsysb();
+        CHECK( linsys.L.isApprox( expectedL, 1e-5 ) );
+        CHECK( linsys.b.isApprox( expectedb, 1e-5 ) );
+    }
 }
