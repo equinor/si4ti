@@ -84,6 +84,7 @@ options parseopts( int argc, char** argv ) {
 
 template< typename T >
 void run( const options& opts ) {
+    std::cout << "Building basis functions\n";
     std::vector< sio::simple_file > files;
     std::vector< geometry > geometries;
     for( const auto& file : opts.files ) {
@@ -132,14 +133,16 @@ void run( const options& opts ) {
 
     for( int i = 0; i < timeshifts; ++i ) {
         vector< T > seg = x.segment( i * M, M );
+        std::cout << "Reconstructing timeshift " << i << "\n";
         auto timeshift = reconstruct( seg );
+
+        std::cout << "Writing output file " << fnames[ i ] << "\n";
         writefile( opts.files.front(),
                    timeshift,
                    fnames[ i ],
                    geometries.back() );
     }
 }
-
 }
 
 int main( int argc, char** argv ) {

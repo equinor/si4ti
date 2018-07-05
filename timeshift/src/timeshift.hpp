@@ -724,6 +724,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
      * consumption.
      */
 
+    std::cout << "Building constraints\n";
     const auto C = constraints( B,
                                 opts.vertical_smoothing,
                                 opts.horizontal_smoothing );
@@ -737,8 +738,10 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const int ndiagonals = splineord + 1;
     const auto vintages = files.size();
 
+    std::cout << "Normalizing survey\n";
     const T normalizer = normalize_surveys( opts.scaling, files );
 
+    std::cout << "Building linear system\n";
     auto linear_system = build_system( B,
                                        C,
                                        omega,
@@ -755,6 +758,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
                                 geo.ilines,
                                 geo.xlines );
 
+    std::cout << "Preconditioning solution\n";
     Eigen::ConjugateGradient< decltype( rep ),
                               Eigen::Lower | Eigen::Upper,
                               SimpliPreconditioner<T>
@@ -762,9 +766,11 @@ vector< T > compute_timeshift( const sparse< T >& B,
     cg.preconditioner().initialize( rep );
     cg.setMaxIterations( opts.solver_max_iter );
     cg.compute( rep );
+    std::cout << "Solving linear system\n";
     vector< T > x = cg.solve( linear_system.b );
 
     if( opts.correct_4d_noise ) {
+        std::cout << "Applying 4D correction\n";
         linear_system.b = timeshift_4D_correction( x,
                                                    files,
                                                    B,
@@ -775,6 +781,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
     }
 
     if( opts.cumulative ) {
+        std::cout << "Accumulating timeshifts\n";
         accumulate_timeshifts( x, vintages );
     }
 
