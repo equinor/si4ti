@@ -1,8 +1,7 @@
 #include <catch/catch.hpp>
 #include <Eigen/Core>
 
-#define TEST
-#include <timeshift.cpp>
+#include <timeshift.hpp>
 
 #include "matrices.hpp"
 #include "matchers.hpp"
