@@ -11,6 +11,35 @@
 
 namespace {
 
+void printhelp(){
+    std::cout <<
+        "Usage: timeshift [OPTION]... [FILE]...\n"
+        "Compute timeshifts between seismic vintages.\n"
+        "\n"
+        "-r, --timeshift-resolution    downscale the resolution of the\n"
+        "                              timeshift by this factor\n"
+        "-H, --horizontal-smoothing    horizontal smoothing factor\n"
+        "-V, --vertical-smoothing      vertical smoothing factor\n"
+        "-m, --max-iter                maximum number of itarations for \n"
+        "                              linear solver\n"
+        "-d, --double-precision        use double precision numeric type for\n"
+        "                              computations\n"
+        "-c, --correct-4D              apply 4D correction\n"
+        "-s, --cumulative              output comulative timeshifts.\n"
+        "-S, --scaling                 Data is normalized and scaled by this\n"
+        "                              factor. Defaults to 30\n"
+        "-P, --output-dir              output directory\n"
+        "-p, --output-prefix           output filename prefix\n"
+        "-D, --output-delim            output filename delimiter\n"
+        "-X, --output-ext              output file extension\n"
+        "-i, --ilbyte                  inline header word byte offset\n"
+        "-x, --xlbyte                  crossline header word byte offset\n"
+        "-v, --verbose                 increase verbosity\n"
+        "-h, --help                    display this help and exit\n"
+        "\n\n"
+    ;
+}
+
 options parseopts( int argc, char** argv ) {
     static struct option longopts[] = {
         { "timeshift-resolution", required_argument, 0, 'r' },
@@ -58,9 +87,12 @@ options parseopts( int argc, char** argv ) {
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
             case 'v': break;
-            case 'h': break;
+            case 'h':
+                printhelp();
+                std::exit( 0 );
 
             default:
+                printhelp();
                 std::exit( 1 );
         }
     }
