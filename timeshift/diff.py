@@ -10,6 +10,11 @@ def main():
     parser.add_argument('files', type=str, nargs='+')
     parser.add_argument('--iline', '-i', type=int, default=189)
     parser.add_argument('--xline', '-x', type=int, default=193)
+
+    parser.add_argument('--avg', '-a', type=float, default=8e-3)
+
+    parser.add_argument('--max', '-m', type=float, default=8e-3)
+
     args = parser.parse_args()
 
     if len(args.files) % 2 != 0:
@@ -26,11 +31,11 @@ def main():
             diff = abs(xs - ys)
 
             s = sum(sum(diff)) / sum(sum(ys))
-            if s > 2e-1:
+            if s > args.avg:
                 msg = 'Error in {}, avg too high: {}'
                 sys.exit(msg.format(base, s))
 
-            if not diff.max() < 1e-1:
+            if not diff.max() < args.max:
                 msg = 'Error in {}, max too high: {}'
                 sys.exit(msg.format(base, diff.max()))
 
