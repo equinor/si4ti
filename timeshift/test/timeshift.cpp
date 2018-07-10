@@ -422,3 +422,93 @@ TEST_CASE("Linear algebra") {
         }
     }
 }
+
+SCENARIO("Preconditioning") {
+
+    GIVEN("A diagonal matrix M") {
+
+        Eigen::MatrixXd vp_M( 10, 10 ); vp_M <<
+            0.1,   0,   0,   0,   0,   0,   0,   0,   0,  0,
+              0, 0.2,   0,   0,   0,   0,   0,   0,   0,  0,
+              0,   0, 0.3,   0,   0,   0,   0,   0,   0,  0,
+              0,   0,   0, 0.4,   0,   0,   0,   0,   0,  0,
+              0,   0,   0,   0, 0.5,   0,   0,   0,   0,  0,
+              0,   0,   0,   0,   0, 0.6,   0,   0,   0,  0,
+              0,   0,   0,   0,   0,   0, 0.7,   0,   0,  0,
+              0,   0,   0,   0,   0,   0,   0, 0.8,   0,  0,
+              0,   0,   0,   0,   0,   0,   0,   0, 0.9,  0,
+              0,   0,   0,   0,   0,   0,   0,   0,   0,  1;
+
+        // The second column should not be used by the preconditioner and is set
+        // to 1 discover potential accidental off diagonal contributions
+        Eigen::MatrixXd vp_M_c( 10, 2 ); vp_M_c <<
+            0.1, 1,
+            0.2, 1,
+            0.3, 1,
+            0.4, 1,
+            0.5, 1,
+            0.6, 1,
+            0.7, 1,
+            0.8, 1,
+            0.9, 1,
+            1, 1;
+
+        // Bnn has no effect on the preconditioner but is required to
+        // construct the compressed matrix
+        Eigen::MatrixXd Bnn( 1, 1); Bnn.setOnes();
+
+
+        WHEN("Preconditioning the system M * x") {
+        THEN("2 vintage preconditioner should compute excact result") {
+
+            Eigen::VectorXd x( 10 );
+            x << 1,2,3,4,5,6,7,8,9,10;
+
+            Eigen::VectorXd b = vp_M * x;
+
+            Eigen::MatrixXi comb( 1, 1 );
+            BlockBandedMatrix< double > bbm( vp_M_c,
+                                             2,
+                                             Bnn.sparseView(),
+                                             comb,
+                                             2,
+                                             2, 5 );
+
+            SimpliPreconditioner< double > pcon;
+            pcon.initialize( bbm );
+            const auto result = pcon.solve( b );
+            CHECK( result.isApprox( x ) );
+        }}
+
+        WHEN("Preconditioning the system [ M, 0; 0, 2*M ] * x") {
+        THEN("3 vintage preconditioner should compute excact result") {
+            Eigen::VectorXd x( 20 );
+            x << 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20;
+
+            Eigen::MatrixXd M( 20, 20 ); M.setZero();
+            M.topLeftCorner( 10, 10 ) = vp_M;
+            M.bottomRightCorner( 10, 10 ) = 4*vp_M;
+
+            Eigen::VectorXd b = M * x;
+
+            Eigen::MatrixXd M_c( 20, 4 ); M_c.setZero();
+            M_c.topLeftCorner( 10, 2 ) = vp_M_c;
+            M_c.bottomRightCorner( 10, 2 ) = 4*vp_M_c;
+
+            Eigen::MatrixXi comb( 2, 2 ); comb.setZero();
+            BlockBandedMatrix< double > bbm( M_c,
+                                             2,
+                                             Bnn.sparseView(),
+                                             comb,
+                                             3,
+                                             2, 5 );
+
+            SimpliPreconditioner< double > pcon;
+            pcon.initialize( bbm );
+            const auto result = pcon.solve( b );
+            CHECK( result.isApprox( x ) );
+        }}
+
+    }
+
+}
