@@ -32,6 +32,7 @@ struct options {
     bool        correct_4d_noise     = false;
     bool        cumulative           = false;
     double      scaling              = 30.0;
+    double      normalization        = 0.0;
     std::string dir                  = "";
     std::string prefix               = "timeshift";
     std::string delim                = "-";
@@ -739,7 +740,9 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const auto vintages = files.size();
 
     std::cout << "Normalizing survey\n";
-    const T normalizer = normalize_surveys( opts.scaling, files );
+    const T normalizer = opts.normalization == 0.0
+                            ? normalize_surveys( opts.scaling, files )
+                            : opts.normalization;
 
     std::cout << "Building linear system\n";
     auto linear_system = build_system( B,
