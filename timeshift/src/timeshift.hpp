@@ -33,6 +33,7 @@ struct options {
     bool        cumulative           = false;
     double      scaling              = 30.0;
     double      normalization        = 0.0;
+    bool        output_norm          = false;
     std::string dir                  = "";
     std::string prefix               = "timeshift";
     std::string delim                = "-";

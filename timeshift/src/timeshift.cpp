@@ -31,6 +31,9 @@ void printhelp(){
         "-n, --normalization           Normalization factor. Normalize the\n"
         "                              data by this factor. By default this\n"
         "                              is computed from the input cubes"
+        "-N, --output-normalization    Compute normalization (and multiply by\n"
+        "                              scaling), write to standard out and "
+        "                              exit\n"
         "-P, --output-dir              output directory\n"
         "-p, --output-prefix           output filename prefix\n"
         "-D, --output-delim            output filename delimiter\n"
@@ -54,6 +57,7 @@ options parseopts( int argc, char** argv ) {
         { "cumulative",           no_argument,       0, 's' },
         { "scaling",              required_argument, 0, 'S' },
         { "normalization",        required_argument, 0, 'n' },
+        { "output-normalization", required_argument, 0, 'N' },
         { "output-dir",           required_argument, 0, 'P' },
         { "output-prefix",        required_argument, 0, 'p' },
         { "output-delim",         required_argument, 0, 'D' },
@@ -70,7 +74,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsS:n:P:p:D:i:x:v",
+                             "r:H:V:m:dcsN:S:n:P:p:D:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -85,6 +89,7 @@ options parseopts( int argc, char** argv ) {
             case 's': opts.cumulative           = true; break;
             case 'S': opts.scaling              = std::stod( optarg ); break;
             case 'n': opts.normalization        = std::stod( optarg ); break;
+            case 'N': opts.output_norm          = true; break;
             case 'P': opts.dir                  = optarg; break;
             case 'p': opts.prefix               = optarg; break;
             case 'D': opts.delim                = optarg; break;
@@ -129,6 +134,11 @@ void run( const options& opts ) {
                                               .xlbyte( opts.xlbyte ) }  );
 
         geometries.push_back( findgeometry( files.back() ) );
+    }
+
+    if( opts.output_norm ){
+        std::cout << normalize_surveys( opts.scaling, files ) << "\n";
+        std::exit( 1 );
     }
 
     const auto vintages = files.size();
