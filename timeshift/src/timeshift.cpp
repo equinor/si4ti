@@ -28,7 +28,7 @@ void printhelp(){
         "-s, --cumulative              output comulative timeshifts.\n"
         "-S, --scaling                 Data is normalized and scaled by this\n"
         "                              factor. Defaults to 30\n"
-        "-n, --normalization           Normalization factor. Normalize the\n"
+        "-A, --normalization           Normalization factor. Normalize the\n"
         "                              data by this factor. By default this\n"
         "                              is computed from the input cubes"
         "-N, --output-normalization    Compute normalization (and multiply by\n"
@@ -56,7 +56,7 @@ options parseopts( int argc, char** argv ) {
         { "correct-4D",           no_argument,       0, 'c' },
         { "cumulative",           no_argument,       0, 's' },
         { "scaling",              required_argument, 0, 'S' },
-        { "normalization",        required_argument, 0, 'n' },
+        { "normalization",        required_argument, 0, 'A' },
         { "output-normalization", required_argument, 0, 'N' },
         { "output-dir",           required_argument, 0, 'P' },
         { "output-prefix",        required_argument, 0, 'p' },
@@ -74,7 +74,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsNS:n:P:p:D:i:x:v",
+                             "r:H:V:m:dcsNS:A:P:p:D:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -88,7 +88,7 @@ options parseopts( int argc, char** argv ) {
             case 'c': opts.correct_4d_noise     = true; break;
             case 's': opts.cumulative           = true; break;
             case 'S': opts.scaling              = std::stod( optarg ); break;
-            case 'n': opts.normalization        = std::stod( optarg ); break;
+            case 'A': opts.normalization        = std::stod( optarg ); break;
             case 'N': opts.output_norm          = true; break;
             case 'P': opts.dir                  = optarg; break;
             case 'p': opts.prefix               = optarg; break;

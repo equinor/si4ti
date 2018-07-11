@@ -90,7 +90,7 @@ add_custom_target(diff-cropped-cumulative
 
 add_custom_target(ts-cropped-custom_norm
     COMMENT "Running timeshift with custom normalization"
-    COMMAND timeshift -i 5 -x 21 -n 12.72372 -p ts-cust_norm ${cropped-files}
+    COMMAND timeshift -i 5 -x 21 -A 12.72372 -p ts-cust_norm ${cropped-files}
     DEPENDS timeshift
 )
 
