@@ -74,7 +74,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsN:S:n:P:p:D:i:x:v",
+                             "r:H:V:m:dcsNS:n:P:p:D:i:x:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
