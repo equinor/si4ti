@@ -33,8 +33,8 @@ With the noise-free timelapse poststack data
 
 .. math::
 
-       d_m (t - \frac{1}{2} \Delta t (t))
-     = d_b (t + \frac{1}{2} \Delta t (t)) + d_{4D}(t)
+       d_m (t + \frac{1}{2} \Delta t (t))
+     = d_b (t - \frac{1}{2} \Delta t (t)) + d_{4D}(t)
 
 where our monitor trace :math:`d_{m}` equals the base trace :math:`d_{b}` by a
 varying timeshift :math:`\Delta t` in addition to 4D amplitude changes
@@ -44,7 +44,7 @@ expansion to first order, reorganise and simplify
 .. math::
     :label: noisefree
 
-    d_m(t) - d_b(t)
+    d_b(t) - d_m(t)
     \approx
     \frac{1}{2} \partial_{t} (d_{b}(t) + d_{m}(t)) \Delta t(t) + d_{4D}(t)
 
@@ -63,6 +63,13 @@ the element-wise sum of the derived vectors of the base and monitor traces.
 When these equations are assembled for the combinations of vintages, that's the
 whole problem when it comes to physics.
 
+.. note::
+
+    Timeshifts :math:`\mathbf{\Delta t}` can be seen either as a shift from base
+    to monitor as we do in this solution or as a shift from monitor to base. One
+    is simpli a negation of the other.
+
+
 With noise
 ----------
 
@@ -71,7 +78,7 @@ However, the *seismic observations* are naturally noisy, and noise terms
 
 .. math::
 
-    d_m(t) - d_b(t)
+    d_b(t) - d_m(t)
     & \approx
       \frac{1}{2} \partial_t (d_b(t) + d_m(t)) \Delta t_0(t)
       + d_{4D}(t) \\
