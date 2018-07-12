@@ -43,6 +43,21 @@ struct options {
     int         xlbyte               = SEGY_TR_CROSSLINE;
 };
 
+struct Progress {
+    static int expected;
+    static int count;
+
+    static void report() {
+        count++;
+        if( count % (expected/20) == 0 )
+            std::cout << "Progress: " << (count*100)/expected << "%\n";
+    }
+
+    static void report( int n ) {
+        for( int i = 0; i < n; ++i ) report();
+    }
+};
+
 /*
  * Analyse the B-spline with De Boor's algorithm as an n * basis-functions
  * matrix.
@@ -655,9 +670,17 @@ linear_system< T > build_system( const sparse< T >& B,
     // TODO: sparse localL?
     matrix< T > localL( localsize, localsize );
 
+    int processed = 0;
+
     # pragma omp parallel for schedule(guided) \
                  firstprivate(f, trc, drv, D, delta, localL)
     for( auto traceno = 0; traceno < geo.traces; ++traceno ) {
+
+        if( omp_get_thread_num() == 0 ) {
+            const int chunk = geo.traces / omp_get_num_threads();
+            processed++;
+            if( processed % (chunk/40) == 0  ) Progress::report();
+        }
 
         for( int i = 0; i < vintages; ++i ){
             f[i].read( traceno, trc[i].data() );
@@ -726,7 +749,6 @@ vector< T > compute_timeshift( const sparse< T >& B,
      * consumption.
      */
 
-    std::cout << "Building constraints\n";
     const auto C = constraints( B,
                                 opts.vertical_smoothing,
                                 opts.horizontal_smoothing );
@@ -740,12 +762,12 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const int ndiagonals = splineord + 1;
     const auto vintages = files.size();
 
-    std::cout << "Normalizing survey\n";
     const T normalizer = opts.normalization == 0.0
                             ? normalize_surveys( opts.scaling, files )
                             : opts.normalization;
 
-    std::cout << "Building linear system\n";
+    Progress::report( 5 );
+
     auto linear_system = build_system( B,
                                        C,
                                        omega,
@@ -754,15 +776,14 @@ vector< T > compute_timeshift( const sparse< T >& B,
                                        geo,
                                        ndiagonals);
 
-    BlockBandedMatrix< T > rep( std::move( linear_system.L ),
-                                ndiagonals,
-                                Bnn,
-                                multiplier( vintages ),
-                                vintages,
-                                geo.ilines,
-                                geo.xlines );
+    BlockBandedMatrix< T, Progress > rep( std::move( linear_system.L ),
+                                          ndiagonals,
+                                          Bnn,
+                                          multiplier( vintages ),
+                                          vintages,
+                                          geo.ilines,
+                                          geo.xlines );
 
-    std::cout << "Preconditioning solution\n";
     Eigen::ConjugateGradient< decltype( rep ),
                               Eigen::Lower | Eigen::Upper,
                               SimpliPreconditioner<T>
@@ -770,22 +791,20 @@ vector< T > compute_timeshift( const sparse< T >& B,
     cg.preconditioner().initialize( rep );
     cg.setMaxIterations( opts.solver_max_iter );
     cg.compute( rep );
-    std::cout << "Solving linear system\n";
     vector< T > x = cg.solve( linear_system.b );
 
     if( opts.correct_4d_noise ) {
-        std::cout << "Applying 4D correction\n";
         linear_system.b = timeshift_4D_correction( x,
                                                    files,
                                                    B,
                                                    geo,
                                                    omega,
                                                    normalizer );
+        Progress::report( 20 );
         x -= cg.solve( linear_system.b );
     }
 
     if( opts.cumulative ) {
-        std::cout << "Accumulating timeshifts\n";
         accumulate_timeshifts( x, vintages );
     }
 

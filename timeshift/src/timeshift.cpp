@@ -9,6 +9,9 @@
 
 #define EIGEN_DONT_PARALLELIZE
 
+int Progress::count = 0;
+int Progress::expected = 60;
+
 namespace {
 
 void printhelp(){
@@ -125,7 +128,6 @@ options parseopts( int argc, char** argv ) {
 
 template< typename T >
 void run( const options& opts ) {
-    std::cout << "Building basis functions\n";
     std::vector< sio::simple_file > files;
     std::vector< geometry > geometries;
     for( const auto& file : opts.files ) {
@@ -179,21 +181,24 @@ void run( const options& opts ) {
 
     for( int i = 0; i < timeshifts; ++i ) {
         vector< T > seg = x.segment( i * M, M );
-        std::cout << "Reconstructing timeshift " << i << "\n";
         auto timeshift = reconstruct( seg );
 
-        std::cout << "Writing output file " << fnames[ i ] << "\n";
         writefile( opts.files.front(),
                    timeshift,
                    fnames[ i ],
                    geometries.back() );
     }
+    Progress::report( 5 );
 }
 }
 
 int main( int argc, char** argv ) {
     Eigen::initParallel();
     auto opts = parseopts( argc, argv );
+
+    Progress::expected += opts.solver_max_iter;
+
+    if( opts.correct_4d_noise ) Progress::expected += opts.solver_max_iter + 20;
 
     if( not opts.double_precision ) run< float >( opts );
     else run< double >( opts );

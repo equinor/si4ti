@@ -7,8 +7,12 @@ using matrix = Eigen::Matrix< T, Eigen::Dynamic, Eigen::Dynamic >;
 template< typename T >
 using sparse = Eigen::SparseMatrix< T >;
 
-template< typename T >
-struct BlockBandedMatrix : public Eigen::EigenBase< BlockBandedMatrix< T > > {
+struct QuietReporter {
+    static void report(){};
+};
+
+template< typename T, typename Reporter = QuietReporter >
+struct BlockBandedMatrix : public Eigen::EigenBase< BlockBandedMatrix< T, Reporter > > {
     using Scalar = T;
     using RealScalar = T;
     using StorageIndex = std::ptrdiff_t;
@@ -42,6 +46,7 @@ struct BlockBandedMatrix : public Eigen::EigenBase< BlockBandedMatrix< T > > {
     template< typename Rhs >
     Eigen::Product< BlockBandedMatrix, Rhs, Eigen::AliasFreeProduct >
     operator*( const Eigen::MatrixBase< Rhs >& x ) const {
+        Reporter::report();
         return { *this, x.derived() };
     }
 
@@ -59,29 +64,29 @@ struct BlockBandedMatrix : public Eigen::EigenBase< BlockBandedMatrix< T > > {
 namespace Eigen { namespace internal {
 
 template<>
-template< typename T >
-struct traits< BlockBandedMatrix< T > > :
+template< typename T, typename Reporter >
+struct traits< BlockBandedMatrix< T, Reporter > > :
     public Eigen::internal::traits< Eigen::SparseMatrix< T > >
 {};
 
-template< typename T, typename Rhs >
-struct generic_product_impl< BlockBandedMatrix< T >,
+template< typename T, typename Rhs, typename Reporter >
+struct generic_product_impl< BlockBandedMatrix< T, Reporter >,
                              Rhs,
                              SparseShape,
                              DenseShape,
                              GemvProduct // GEMV stands for matrix-vector
                            >
      : generic_product_impl_base<
-            BlockBandedMatrix< T >,
+            BlockBandedMatrix< T, Reporter >,
             Rhs,
-            generic_product_impl< BlockBandedMatrix< T >, Rhs >
+            generic_product_impl< BlockBandedMatrix< T, Reporter >, Rhs >
        >
 {
-    using Scalar = typename Product< BlockBandedMatrix< T >, Rhs >::Scalar;
+    using Scalar = typename Product< BlockBandedMatrix< T, Reporter >, Rhs >::Scalar;
 
     template< typename Dest >
     static void upper_triangle( Dest& dst,
-                                const BlockBandedMatrix< T >& lhs,
+                                const BlockBandedMatrix< T, Reporter >& lhs,
                                 const Rhs& rhs,
                                 const Scalar& alpha ) {
 
@@ -121,7 +126,7 @@ struct generic_product_impl< BlockBandedMatrix< T >,
 
     template< typename Dest >
     static void lower_triangle( Dest& dst,
-                                const BlockBandedMatrix< T >& lhs,
+                                const BlockBandedMatrix< T, Reporter >& lhs,
                                 const Rhs& rhs,
                                 const Scalar& alpha ) {
 
@@ -161,7 +166,7 @@ struct generic_product_impl< BlockBandedMatrix< T >,
 
     template< typename Dest >
     static void apply_smoothing( Dest& dst,
-                                 const BlockBandedMatrix< T >& lhs,
+                                 const BlockBandedMatrix< T, Reporter >& lhs,
                                  const Rhs& rhs ) {
 
         const auto ilines     = lhs.ilines;
@@ -214,7 +219,7 @@ struct generic_product_impl< BlockBandedMatrix< T >,
 
     template< typename Dest >
     static void scaleAndAddTo( Dest& dst,
-                               const BlockBandedMatrix< T >& lhs,
+                               const BlockBandedMatrix< T, Reporter >& lhs,
                                const Rhs& rhs,
                                const Scalar& alpha ) {
 
