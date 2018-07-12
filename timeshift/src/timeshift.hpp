@@ -429,7 +429,7 @@ vector< T >& apply_timeshift( vector< T >& d, const vector< T >& shift ) {
     tk::spline s;
     s.set_points( ls, dd );
 
-    xs -= shift;
+    xs += shift;
 
     std::transform( begin( xs ), end( xs ), begin( d ),
                     [&]( T x ) { return s( x ); }
@@ -508,7 +508,7 @@ void correct( int start, int end,
 
             D = 0.5 * ( drv[vint1] + drv[vint2] );
 
-            delta = trc[vint2] - trc[vint1];
+            delta = trc[vint1] - trc[vint2];
             // TODO: alloc outside of solution
             sol = solution( D, delta, spline );
 
@@ -695,7 +695,7 @@ linear_system< T > build_system( const sparse< T >& B,
             const auto maskL = mask_linear( vintages, vint1, vint2 );
             const auto maskb = mask_solution( vintages, vint1, vint2 );
 
-            delta = trc[vint2] - trc[vint1];
+            delta = trc[vint1] - trc[vint2];
             D = 0.5 * ( drv[vint1] + drv[vint2] );
             // TODO: if C and linearoperator(D,B) always share non-zero
             // pattern, this is reduced to an element-wise sum, and there's no

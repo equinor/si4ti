@@ -10,6 +10,7 @@ def main():
     parser.add_argument('files', type=str, nargs='+')
     parser.add_argument('--iline', '-i', type=int, default=189)
     parser.add_argument('--xline', '-x', type=int, default=193)
+    parser.add_argument('--reverse', '-r', action="store_true")
 
     parser.add_argument('--avg', '-a', type=float, default=8e-3)
 
@@ -27,6 +28,8 @@ def main():
         with segyio.open(base) as src, segyio.open(reference) as ref:
             xs = src.trace.raw[:]
             ys = ref.trace.raw[:]
+
+            if args.reverse: ys = -ys
 
             diff = abs(xs - ys)
 
