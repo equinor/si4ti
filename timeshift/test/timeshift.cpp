@@ -102,7 +102,11 @@ TEST_CASE("Regression test") {
         Eigen::VectorXd corr(10);
         corr << 0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5;
         apply_timeshift( x, corr );
-        CHECK_THAT( expected.transpose().eval(), ApproxRange(x.transpose().eval()) );
+        CHECK( x.isApprox( expected ) );
+
+        expected << 0,1,2,3,4,5,6,7,8,9;
+        apply_timeshift( x, (-corr).eval() );
+        CHECK( x.isApprox( expected ) );
     }
 
     SECTION("Mask linear operator") {
