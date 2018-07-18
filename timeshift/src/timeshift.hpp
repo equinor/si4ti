@@ -34,6 +34,7 @@ struct options {
     double      scaling              = 30.0;
     double      normalization        = 0.0;
     bool        output_norm          = false;
+    bool        compute_norm         = false;
     std::string dir                  = "";
     std::string prefix               = "timeshift";
     std::string delim                = "-";
@@ -765,6 +766,9 @@ vector< T > compute_timeshift( const sparse< T >& B,
     const T normalizer = opts.normalization == 0.0
                             ? normalize_surveys( opts.scaling, files )
                             : opts.normalization;
+
+    if( opts.output_norm )
+        std::cout << "Normalization: " << normalizer << "\n";
 
     Progress::report( 5 );
 
