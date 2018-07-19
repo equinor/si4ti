@@ -101,7 +101,7 @@ TEST_CASE("Regression test") {
         Eigen::VectorXd x(10);
         x << 0,1,2,3,4,5,6,7,8,9;
         Eigen::VectorXd expected(10);
-        expected << -0.5,0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5;
+        expected << 0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5;
         Eigen::VectorXd corr(10);
         corr << 0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5;
         apply_timeshift( x, corr );
@@ -200,7 +200,7 @@ TEST_CASE("3 vintages (tiny cubes)") {
         const auto expectedL = linsysL();
         const auto expectedb = linsysb();
         CHECK( linsys.L.isApprox( expectedL, 1e-5 ) );
-        CHECK( linsys.b.isApprox( expectedb, 1e-5 ) );
+        CHECK( linsys.b.isApprox( -expectedb, 1e-5 ) );
     }
 }
 
