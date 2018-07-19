@@ -680,7 +680,8 @@ linear_system< T > build_system( const sparse< T >& B,
         if( omp_get_thread_num() == 0 ) {
             const int chunk = geo.traces / omp_get_num_threads();
             processed++;
-            if( processed % (chunk/40) == 0  ) Progress::report();
+            if( chunk > 40 && processed % (chunk/40) == 0 )
+                Progress::report();
         }
 
         for( int i = 0; i < vintages; ++i ){
