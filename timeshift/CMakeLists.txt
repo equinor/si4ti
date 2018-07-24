@@ -65,7 +65,7 @@ add_custom_target(ts-cropped-4Dcorr
 )
 
 add_custom_target(diff-cropped-4Dcorr
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 3e-2 -m 3e-2
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 9e-3
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-0.sgy ts-4Dcorr-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-1.sgy ts-4Dcorr-1.sgy
     COMMENT "Analysing 4D corrected cropped diff image"

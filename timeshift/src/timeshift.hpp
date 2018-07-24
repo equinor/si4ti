@@ -469,18 +469,23 @@ void correct( int start, int end,
     vector< T > D( geo.samples );
     vector< T > delta( geo.samples );
     vector< T > mean( geo.samples );
+    vector< T > c( geo.samples );
     vector< T > shift( geo.samples );
 
     for( int t = start; t < end; ++t ) {
 
         mean.setZero();
+        c.setZero();
         for( int i = 0; i < timeshifts; ++i ) {
             // TODO: comment on why
             const int r = (t * localsize) + (i * vintpairsize);
-            mean += mean + spline * x.segment( r, localsize );
+            c += spline * x.segment( r, localsize );
+            mean += c;
         }
-        mean /= timeshifts;
+        mean /= timeshifts + 1;
 
+        shift.setZero();
+        shift -= mean;
         for( int i = 0; i < vintages; ++i ){
             auto& file = files[i];
             auto& trace = trc[i];
@@ -491,12 +496,11 @@ void correct( int start, int end,
             // derived is updated in-place
             derived = derive( derived, omega );
 
-            shift.setZero();
-            for( int j = 0; j < i; ++j ) {
-                const int r = (t * localsize) + (j * vintpairsize);
+            if( i != 0 ) {
+                const int r = t * localsize + (i-1) * vintpairsize;
                 shift += spline * x.segment( r, localsize );
             }
-            shift -= mean;
+
             // trace is updated in-place
             trace = apply_timeshift( trace, shift );
         }
