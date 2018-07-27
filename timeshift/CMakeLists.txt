@@ -23,6 +23,11 @@ segyio-shared)
 target_compile_definitions(tests PRIVATE EIGEN_FFTW_DEFAULT=1)
 add_test(NAME test COMMAND tests)
 
+add_executable(apply_timeshift src/apply_timeshift.cpp)
+target_link_libraries(apply_timeshift Eigen3::Eigen
+                                      segyio-shared
+)
+
 #
 # Benchmarks and integration test suite
 #
@@ -103,8 +108,23 @@ add_custom_target(diff-cropped-custom_norm
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
+list(GET cropped-files 1 M1)
+add_custom_target(apply-ts
+    COMMENT "Running apply timeshift"
+    COMMAND apply_timeshift -i 5 -x 21 ${M1} timeshift-0.sgy
+    DEPENDS ts-cropped
+)
+
+add_custom_target(diff-apply-ts
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 3e-4 -m 6e-5
+        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshifted-old.sgy shifted.sgy
+    COMMENT "Analysing applied timeshift"
+    DEPENDS apply-ts
+            ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+)
+
 add_dependencies(diff diff-cropped diff-cropped-4Dcorr diff-cropped-cumulative
-                 diff-cropped-custom_norm)
+                 diff-cropped-custom_norm diff-apply-ts)
 
 find_program(valgrind valgrind)
 if(NOT valgrind)
