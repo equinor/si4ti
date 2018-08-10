@@ -95,7 +95,7 @@ add_custom_target(ts-cropped-custom_norm
 )
 
 add_custom_target(diff-cropped-custom_norm
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 1e-20 -m 1e-20
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 8e-7 -m 9e-7
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-0.sgy ts-cust_norm-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-1.sgy ts-cust_norm-1.sgy
     COMMENT "Analysing timeshift with custom normalization"
