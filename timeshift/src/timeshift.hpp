@@ -587,7 +587,7 @@ struct SimpliPreconditioner {
 
     template<typename Rhs>
     inline const Rhs solve(const Eigen::MatrixBase<Rhs>& b) const {
-        eigen_assert( !mat
+        eigen_assert( mat
                    && "SimpliPreconditioner is not initialized.");
         Rhs v( b.rows() );
         v.setZero();
