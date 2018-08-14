@@ -68,6 +68,7 @@ options parseopts( int argc, char** argv ) {
         { "output-ext",           required_argument, 0, 'X' },
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
+        { "sampling-interval",    required_argument, 0, 't' },
         { "verbose",              no_argument,       0, 'v' },
         { "help",                 no_argument,       0, 'h' },
         { nullptr },
@@ -78,7 +79,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsNCS:A:P:p:D:i:x:v",
+                             "r:H:V:m:dcsNCS:A:P:p:D:i:x:t:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -100,6 +101,7 @@ options parseopts( int argc, char** argv ) {
             case 'D': opts.delim                = optarg; break;
             case 'X': opts.extension            = optarg; break;
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
+            case 't': opts.sampling_interval = std::stof( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
             case 'v': break;
             case 'h':
@@ -155,14 +157,13 @@ void run( const options& opts ) {
     auto x = compute_timeshift( B, splineord, files, geometries, opts );
 
     auto reconstruct = [&]( vector< T > seg ) {
-        const auto scale = 4.0;
         const auto samples = geometries.front().samples;
         const auto M = B.cols();
 
         vector< T > reconstructed( geometries.front().traces * samples );
         for( int i = 0; i < geometries.front().traces; ++i ) {
             reconstructed.segment( i * samples, samples )
-                = scale * B * seg.segment( i * M, M );
+                = opts.sampling_interval * B * seg.segment( i * M, M );
         }
 
         return reconstructed;
