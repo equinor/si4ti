@@ -35,6 +35,7 @@ struct opt {
     int         ilbyte               = SEGY_TR_INLINE;
     int         xlbyte               = SEGY_TR_CROSSLINE;
     int         reverse              = -1;
+    double      sampling_interval    = 4.0;
 };
 
 opt parseopts( int argc, char** argv ) {
@@ -44,6 +45,7 @@ opt parseopts( int argc, char** argv ) {
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
         { "reverse",              no_argument,       0, 'r' },
+        { "sampling-interval",    required_argument, 0, 's' },
         { "verbose",              no_argument,       0, 'v' },
         { "help",                 no_argument,       0, 'h' },
         { nullptr },
@@ -54,17 +56,18 @@ opt parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "O:o:i:x:rvh",
+                             "O:o:i:x:rs:vh",
                              longopts, &option_index );
 
         if( c == -1 ) break;
 
         switch( c ) {
-            case 'O': opts.output_dir      = optarg; break;
-            case 'o': opts.output_filename = optarg; break;
-            case 'i': opts.ilbyte          = std::stoi( optarg ); break;
-            case 'x': opts.xlbyte          = std::stoi( optarg ); break;
-            case 'r': opts.reverse         = 1; break;
+            case 'O': opts.output_dir        = optarg; break;
+            case 'o': opts.output_filename   = optarg; break;
+            case 'i': opts.ilbyte            = std::stoi( optarg ); break;
+            case 'x': opts.xlbyte            = std::stoi( optarg ); break;
+            case 'r': opts.reverse           = 1; break;
+            case 's': opts.sampling_interval = std::stof( optarg ); break;
             case 'v': break;
             case 'h':
                 printhelp();
@@ -119,7 +122,8 @@ int main( int argc, char** argv ) {
     for( int trc = 0; trc < traces; ++trc ) {
         cube.read( trc, trace.data() );
         timeshift.read( trc, shift.data() );
-        apply_timeshift( trace, ((opts.reverse * shift) / 4.0).eval() );
+        shift *= opts.reverse / opts.sampling_interval;
+        apply_timeshift( trace, shift );
         shifted_cube.put( trc, trace.data() );
     }
 
