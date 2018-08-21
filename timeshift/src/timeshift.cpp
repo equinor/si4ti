@@ -101,7 +101,7 @@ options parseopts( int argc, char** argv ) {
             case 'D': opts.delim                = optarg; break;
             case 'X': opts.extension            = optarg; break;
             case 'i': opts.ilbyte = std::stoi( optarg ); break;
-            case 't': opts.sampling_interval = std::stof( optarg ); break;
+            case 't': opts.sampling_interval    = std::stod( optarg ); break;
             case 'x': opts.xlbyte = std::stoi( optarg ); break;
             case 'v': break;
             case 'h':
