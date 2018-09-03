@@ -21,6 +21,7 @@ void printhelp(){
         "-o, --output                  output filename\n"
         "-i, --ilbyte                  inline header word byte offset\n"
         "-x, --xlbyte                  crossline header word byte offset\n"
+        "-r, --reverse                 reverse the timeshift before applying\n"
         "-v, --verbose                 increase verbosity\n"
         "-h, --help                    display this help and exit\n"
         "\n\n"
