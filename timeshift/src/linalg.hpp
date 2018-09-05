@@ -184,27 +184,20 @@ struct generic_product_impl< BlockBandedMatrix< T, Reporter >,
         for( int mvrow = 0; mvrow < timeshifts; ++mvrow ) {
         for( int mvcol = 0; mvcol < timeshifts; ++mvcol ) {
 
-        int j = trace / xlines;
-        int k = trace % xlines;
-        int i = trace;
+            int j = trace / xlines;
+            int k = trace % xlines;
             const std::ptrdiff_t iss[] = {
                 // C(j-1, k)
-                k == 0 ? i : i - 1,
+                k == 0 ? trace : trace - 1,
                 // C(j+1, k)
-                k == xlines - 1 ? i : i + 1,
+                k == xlines - 1 ? trace : trace + 1,
                 // C(j, k-1)
-                j == 0 ? i : i - xlines,
+                j == 0 ? trace : trace - xlines,
                 // C(j, k+1)
-                j == ilines - 1 ? i : i + xlines,
+                j == ilines - 1 ? trace : trace + xlines,
             };
 
-            // move one xline forward, unless we're at the last xline in this
-            // inline, then wrap around to zero again
-            k = k + 1 >= xlines ? 0 : k + 1;
-            // move the ilines forwards every time xlines wrap around
-            if( k == 0 ) ++j;
-
-            const auto col = (mvrow * vintsize) + i * localsize;
+            const auto col = (mvrow * vintsize) + trace * localsize;
             for( const auto is : iss ) {
                 const auto row = (mvcol * vintsize) + is * localsize;
                 const auto x = rhs.segment( row, localsize );
