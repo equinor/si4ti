@@ -232,11 +232,22 @@ T normalize_surveys( T scaling,
     return (acc * scaling) / surveys.size();
 }
 
-template< typename Vector >
-void writefile( const std::string& basefile,
-                const Vector& v,
-                const std::string& fname,
-                const geometry& geo ) {
+template< typename T >
+void reconstruct( const Eigen::Ref< const vector< T > >& c,
+                  vector< T >& reconstructed,
+                  double sampling_interval,
+                  const matrix< T >& B ) {
+
+    reconstructed = sampling_interval * B * c;
+}
+
+template< typename T >
+void output_timeshift( const std::string& basefile,
+                       const vector< T >& coeffisients,
+                       const std::string& fname,
+                       const geometry& geo,
+                       double sampling_interval,
+                       const matrix< T >& B ) {
 
     std::ifstream in( basefile );
     std::ofstream dst( fname );
@@ -245,9 +256,12 @@ void writefile( const std::string& basefile,
 
     sio::simple_file f( fname, sio::config().readwrite() );
 
-    auto itr = v.data();
-    for( int traceno = 0; traceno < geo.traces; ++traceno )
-        itr = f.put( traceno, itr );
+    vector< T > reconstructed( geo.samples );
+    for( int traceno = 0; traceno < geo.traces; ++traceno ) {
+        auto segment = coeffisients.segment( traceno * B.cols(), B.cols() );
+        reconstruct< T >( segment, reconstructed, sampling_interval, B );
+        f.put( traceno, reconstructed.data() );
+    }
 }
 
 template< typename T >

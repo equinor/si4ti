@@ -156,19 +156,6 @@ void run( const options& opts ) {
 
     auto x = compute_timeshift( B, splineord, files, geometries, opts );
 
-    auto reconstruct = [&]( vector< T > seg ) {
-        const auto samples = geometries.front().samples;
-        const auto M = B.cols();
-
-        vector< T > reconstructed( geometries.front().traces * samples );
-        for( int i = 0; i < geometries.front().traces; ++i ) {
-            reconstructed.segment( i * samples, samples )
-                = opts.sampling_interval * B * seg.segment( i * M, M );
-        }
-
-        return reconstructed;
-    };
-
     const auto M = B.cols() * geometries.front().traces;
     const int timeshifts = vintages - 1;
 
@@ -185,12 +172,13 @@ void run( const options& opts ) {
 
     for( int i = 0; i < timeshifts; ++i ) {
         vector< T > seg = x.segment( i * M, M );
-        auto timeshift = reconstruct( seg );
 
-        writefile( opts.files.front(),
-                   timeshift,
-                   fnames[ i ],
-                   geometries.back() );
+        output_timeshift< T >( opts.files.front(),
+                               seg,
+                               fnames[ i ],
+                               geometries.back(),
+                               opts.sampling_interval,
+                               B );
     }
     Progress::report( 5 );
 }
