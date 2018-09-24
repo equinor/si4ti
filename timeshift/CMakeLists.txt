@@ -4,7 +4,7 @@ add_executable(timeshift src/timeshift.cpp)
 target_link_libraries(timeshift ${fftw3f}
                                 ${fftw3}
                                 Eigen3::Eigen
-                                segyio-shared
+                                segyio
 )
 target_compile_definitions(timeshift PRIVATE EIGEN_FFTW_DEFAULT=1)
 
@@ -16,7 +16,7 @@ target_link_libraries(tests catch2
                             ${fftw3f}
                             ${fftw3}
                             Eigen3::Eigen
-                            segyio-shared
+                            segyio
 )
 target_link_libraries(tests catch2 Eigen3::Eigen ${fftw3f} ${fftw3}
 segyio-shared)
@@ -25,7 +25,7 @@ add_test(NAME test COMMAND tests)
 
 add_executable(apply_timeshift src/apply_timeshift.cpp)
 target_link_libraries(apply_timeshift Eigen3::Eigen
-                                      segyio-shared
+                                      segyio
 )
 
 #
