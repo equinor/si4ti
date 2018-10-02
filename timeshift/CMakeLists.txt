@@ -84,6 +84,7 @@ add_custom_target(ts-cropped
 
 add_custom_target(diff-cropped
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy timeshift-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy timeshift-1.sgy
     COMMENT "Analysing cropped diff image"
@@ -99,6 +100,7 @@ add_custom_target(ts-cropped-4Dcorr
 
 add_custom_target(diff-cropped-4Dcorr
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 9e-3
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-0.sgy ts-4Dcorr-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-1.sgy ts-4Dcorr-1.sgy
     COMMENT "Analysing 4D corrected cropped diff image"
@@ -114,6 +116,7 @@ add_custom_target(ts-cropped-cumulative
 
 add_custom_target(diff-cropped-cumulative
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-0.sgy ts-cropped-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-1.sgy ts-cropped-1.sgy
     COMMENT "Analysing cumulative cropped diff image"
@@ -129,6 +132,7 @@ add_custom_target(ts-cropped-custom_norm
 
 add_custom_target(diff-cropped-custom_norm
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 8e-7 -m 9e-7
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-0.sgy ts-cust_norm-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-1.sgy ts-cust_norm-1.sgy
     COMMENT "Analysing timeshift with custom normalization"
@@ -145,6 +149,7 @@ add_custom_target(apply-ts
 
 add_custom_target(diff-apply-ts
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 3e-4 -m 6e-5
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../timeshifted-old.sgy shifted.sgy
     COMMENT "Analysing applied timeshift"
     DEPENDS apply-ts

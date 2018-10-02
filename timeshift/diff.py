@@ -25,22 +25,24 @@ def main():
     bases = args.files[1::2]
 
     for base, reference in zip(bases, references):
-        with segyio.open(base) as src, segyio.open(reference) as ref:
-            xs = src.trace.raw[:]
-            ys = ref.trace.raw[:]
+        with segyio.open(base, iline=args.iline, xline=args.xline) as f:
+            xs = f.trace.raw[:]
 
-            if args.reverse: ys = -ys
+        with segyio.open(reference, iline=args.iline, xline=args.xline) as f:
+            ys = f.trace.raw[:]
 
-            diff = abs(xs - ys)
+        if args.reverse: ys = -ys
 
-            s = sum(sum(diff)) / sum(sum(ys))
-            if s > args.avg:
-                msg = 'Error in {}, avg too high: {}'
-                sys.exit(msg.format(base, s))
+        diff = abs(xs - ys)
 
-            if not diff.max() < args.max:
-                msg = 'Error in {}, max too high: {}'
-                sys.exit(msg.format(base, diff.max()))
+        s = sum(sum(diff)) / sum(sum(ys))
+        if s > args.avg:
+            msg = 'Error in {}, avg too high: {}'
+            sys.exit(msg.format(base, s))
+
+        if not diff.max() < args.max:
+            msg = 'Error in {}, max too high: {}'
+            sys.exit(msg.format(base, diff.max()))
 
 if __name__ == '__main__':
     main()
