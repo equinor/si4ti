@@ -3,6 +3,8 @@
 
 #include <segyio/segyio.hpp>
 
+using namespace segyio::literals;
+
 #include <timeshift.hpp>
 
 #include "matrices.hpp"
@@ -163,15 +165,17 @@ TEST_CASE("Regression test") {
 
 TEST_CASE("3 vintages (tiny cubes)") {
 
-    std::vector< sio::simple_file > vintages;
+    std::vector< input_file > vintages;
     std::vector< std::string > fnames {
         "test-data/vintage1.sgy",
         "test-data/vintage2.sgy",
         "test-data/vintage3.sgy"
     };
     for( const auto& fname : fnames)
-        vintages.push_back( { fname, sio::config().ilbyte(  5 )
-                                                  .xlbyte( 21 )} );
+        vintages.push_back( { segyio::path{ fname },
+                              segyio::config{}
+                                .with( 5_il )
+                                .with( 21_xl ) } );
 
     SECTION("Compute normalization") {
         auto f = normalize_surveys( float {30.0}, vintages );

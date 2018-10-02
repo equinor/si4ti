@@ -49,6 +49,14 @@ void printhelp(){
     ;
 }
 
+segyio::ilbyte mkilbyte( const std::string& optarg ) {
+    return segyio::ilbyte{ std::stoi( optarg ) };
+}
+
+segyio::xlbyte mkxlbyte( const std::string& optarg ) {
+    return segyio::xlbyte{ std::stoi( optarg ) };
+}
+
 options parseopts( int argc, char** argv ) {
     static struct option longopts[] = {
         { "timeshift-resolution", required_argument, 0, 'r' },
@@ -100,9 +108,9 @@ options parseopts( int argc, char** argv ) {
             case 'p': opts.prefix               = optarg; break;
             case 'D': opts.delim                = optarg; break;
             case 'X': opts.extension            = optarg; break;
-            case 'i': opts.ilbyte = std::stoi( optarg ); break;
             case 't': opts.sampling_interval    = std::stod( optarg ); break;
-            case 'x': opts.xlbyte = std::stoi( optarg ); break;
+            case 'i': opts.ilbyte               = mkilbyte( optarg ); break;
+            case 'x': opts.xlbyte               = mkxlbyte( optarg ); break;
             case 'v': break;
             case 'h':
                 printhelp();
@@ -132,12 +140,13 @@ options parseopts( int argc, char** argv ) {
 }
 
 template< typename T >
-void run( const options& opts ) {
-    std::vector< sio::simple_file > files;
+void run( const options& opts ) try {
+    std::vector< input_file > files;
     std::vector< geometry > geometries;
     for( const auto& file : opts.files ) {
-        files.push_back( { file, sio::config().ilbyte( opts.ilbyte )
-                                              .xlbyte( opts.xlbyte ) }  );
+        files.push_back( { segyio::path{ file },
+                           segyio::config{}.with( opts.ilbyte )
+                                           .with( opts.xlbyte ) } );
 
         geometries.push_back( findgeometry( files.back() ) );
     }
@@ -181,7 +190,10 @@ void run( const options& opts ) {
                                B );
     }
     Progress::report( 5 );
+} catch( std::exception& e ) {
+    std::cerr << e.what() << '\n';
 }
+
 }
 
 int main( int argc, char** argv ) {
