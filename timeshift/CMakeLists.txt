@@ -5,8 +5,15 @@ target_link_libraries(timeshift ${fftw3f}
                                 ${fftw3}
                                 Eigen3::Eigen
                                 segyio
+                                ${OpenMP_EXE_LINKER_FLAGS}
+                                ${OpenMP_CXX_FLAGS}
 )
-target_compile_definitions(timeshift PRIVATE EIGEN_FFTW_DEFAULT=1)
+target_compile_options(timeshift
+    PRIVATE ${OpenMP_CXX_FLAGS}
+)
+target_compile_definitions(timeshift
+    PRIVATE EIGEN_FFTW_DEFAULT=1
+)
 
 add_executable(tests test/testsuite.cpp
                      test/timeshift.cpp
@@ -17,10 +24,15 @@ target_link_libraries(tests catch2
                             ${fftw3}
                             Eigen3::Eigen
                             segyio
+                            ${OpenMP_EXE_LINKER_FLAGS}
+                            ${OpenMP_CXX_FLAGS}
 )
-target_link_libraries(tests catch2 Eigen3::Eigen ${fftw3f} ${fftw3}
-segyio-shared)
-target_compile_definitions(tests PRIVATE EIGEN_FFTW_DEFAULT=1)
+target_compile_options(tests
+    PRIVATE ${OpenMP_CXX_FLAGS}
+)
+target_compile_definitions(tests
+    PRIVATE EIGEN_FFTW_DEFAULT=1
+)
 add_test(NAME test COMMAND tests)
 
 add_executable(apply_timeshift src/apply_timeshift.cpp)

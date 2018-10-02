@@ -5,6 +5,7 @@ include(CTest)
 include(GNUInstallDirs)
 
 find_package(Eigen3 3.3.4 REQUIRED)
+find_package(OpenMP REQUIRED)
 find_package(segyio REQUIRED)
 find_library(fftw3 NAMES fftw3 REQUIRED)
 find_library(fftw3f NAMES fftw3f REQUIRED)
