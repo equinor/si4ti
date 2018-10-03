@@ -174,8 +174,8 @@ TEST_CASE("3 vintages (tiny cubes)") {
                                                   .xlbyte( 21 )} );
 
     SECTION("Compute normalization") {
-        auto f = normalize_surveys( 30.0f, vintages );
-        auto d = normalize_surveys( 30.0d, vintages );
+        auto f = normalize_surveys( float {30.0}, vintages );
+        auto d = normalize_surveys( double{30.0}, vintages );
         CHECK( f == Approx( 2.0613483677 ) );
         CHECK( d == Approx( 2.0613483677 ) );
     }
