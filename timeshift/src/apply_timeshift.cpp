@@ -69,7 +69,7 @@ opt parseopts( int argc, char** argv ) {
             case 'x': opts.xlbyte            = std::stoi( optarg ); break;
             case 'r': opts.reverse           = 1; break;
             case 's': opts.sampling_interval = std::stod( optarg ); break;
-            case 'v': break;
+            case 'v': opts.verbosity++; break;
             case 'h':
                 printhelp();
                 std::exit( 0 );
