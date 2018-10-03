@@ -15,6 +15,11 @@ target_compile_definitions(timeshift
     PRIVATE EIGEN_FFTW_DEFAULT=1
 )
 
+add_executable(apply_timeshift src/apply_timeshift.cpp)
+target_link_libraries(apply_timeshift Eigen3::Eigen
+                                      segyio
+)
+
 add_executable(tests test/testsuite.cpp
                      test/timeshift.cpp
 )
@@ -35,10 +40,9 @@ target_compile_definitions(tests
 )
 add_test(NAME test COMMAND tests)
 
-add_executable(apply_timeshift src/apply_timeshift.cpp)
-target_link_libraries(apply_timeshift Eigen3::Eigen
-                                      segyio
-)
+configure_file(test/vintage1.sgy test-data/vintage1.sgy COPYONLY)
+configure_file(test/vintage2.sgy test-data/vintage2.sgy COPYONLY)
+configure_file(test/vintage3.sgy test-data/vintage3.sgy COPYONLY)
 
 #
 # Benchmarks and integration test suite
@@ -167,7 +171,3 @@ add_custom_target(showgrind
     COMMAND ${kcachegrind} callgrind.out.timeshift
     DEPENDS callgrind
 )
-
-configure_file(test/vintage1.sgy test-data/vintage1.sgy COPYONLY)
-configure_file(test/vintage2.sgy test-data/vintage2.sgy COPYONLY)
-configure_file(test/vintage3.sgy test-data/vintage3.sgy COPYONLY)
