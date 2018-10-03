@@ -9,6 +9,7 @@
 #include <vector>
 #include <mutex>
 
+#include <omp.h>
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
