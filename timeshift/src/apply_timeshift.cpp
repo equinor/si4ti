@@ -120,6 +120,10 @@ int main( int argc, char** argv ) {
 
     Eigen::VectorXd trace( samples );
     Eigen::VectorXd shift( samples );
+
+    if( opts.verbosity > 2 )
+        std::cout << "Applying timeshift to " << out_fname << '\n';
+
     for( int trc = 0; trc < traces; ++trc ) {
         cube.read( trc, trace.data() );
         timeshift.read( trc, shift.data() );
