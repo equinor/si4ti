@@ -4,6 +4,8 @@ project(simpli VERSION 0.0.0 LANGUAGES CXX)
 include(CTest)
 include(GNUInstallDirs)
 
+set(CMAKE_CXX_STANDARD 11)
+
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(segyio REQUIRED)
