@@ -79,7 +79,7 @@ list(APPEND cropped-files
 
 add_custom_target(ts-cropped
     COMMENT "Running timeshift (cropped)"
-    COMMAND timeshift -i 5 -x 21 ${cropped-files}
+    COMMAND timeshift -i 5 -x 21 ${cropped-files} 1>/dev/null
     DEPENDS timeshift
 )
 
@@ -95,7 +95,7 @@ add_custom_target(diff-cropped
 
 add_custom_target(ts-cropped-4Dcorr
     COMMENT "Running 4D corrected timeshift (cropped)"
-    COMMAND timeshift -c -i 5 -x 21 -p ts-4Dcorr ${cropped-files}
+    COMMAND timeshift -c -i 5 -x 21 -p ts-4Dcorr ${cropped-files} 1>/dev/null
     DEPENDS timeshift
 )
 
@@ -111,7 +111,7 @@ add_custom_target(diff-cropped-4Dcorr
 
 add_custom_target(ts-cropped-cumulative
     COMMENT "Running cumulative timeshift (cropped)"
-    COMMAND timeshift -s -i 5 -x 21 -p ts-cropped ${cropped-files}
+    COMMAND timeshift -s -i 5 -x 21 -p ts-cropped ${cropped-files} 1>/dev/null
     DEPENDS timeshift
 )
 
@@ -127,7 +127,7 @@ add_custom_target(diff-cropped-cumulative
 
 add_custom_target(ts-cropped-custom_norm
     COMMENT "Running timeshift with custom normalization"
-    COMMAND timeshift -i 5 -x 21 -A 12.72372 -p ts-cust_norm ${cropped-files}
+    COMMAND timeshift -i 5 -x 21 -A 12.72372 -p ts-cust_norm ${cropped-files} 1>/dev/null
     DEPENDS timeshift
 )
 
