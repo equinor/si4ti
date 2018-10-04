@@ -60,7 +60,8 @@ configure_file(test/vintage3.sgy test-data/vintage3.sgy COPYONLY)
 # Benchmarks and integration test suite
 #
 
-add_custom_target(diff)
+add_custom_target(diff-timeshift)
+add_dependencies(diff diff-timeshift)
 
 find_program(python python3)
 if(NOT python)
@@ -156,7 +157,7 @@ add_custom_target(diff-apply-ts
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_dependencies(diff diff-cropped diff-cropped-4Dcorr diff-cropped-cumulative
+add_dependencies(diff-timeshift diff-cropped diff-cropped-4Dcorr diff-cropped-cumulative
                  diff-cropped-custom_norm diff-apply-ts)
 
 find_program(valgrind valgrind)
