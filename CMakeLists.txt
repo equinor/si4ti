@@ -1,10 +1,13 @@
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(simpli VERSION 0.0.0 LANGUAGES CXX)
 
 include(CTest)
 include(GNUInstallDirs)
 
+set(CMAKE_CXX_STANDARD 11)
+
 find_package(Eigen3 3.3.4 REQUIRED)
+find_package(OpenMP REQUIRED)
 find_package(segyio REQUIRED)
 find_library(fftw3 NAMES fftw3 REQUIRED)
 find_library(fftw3f NAMES fftw3f REQUIRED)

@@ -5,8 +5,32 @@ target_link_libraries(timeshift ${fftw3f}
                                 ${fftw3}
                                 Eigen3::Eigen
                                 segyio
+                                ${OpenMP_EXE_LINKER_FLAGS}
+                                ${OpenMP_CXX_FLAGS}
 )
-target_compile_definitions(timeshift PRIVATE EIGEN_FFTW_DEFAULT=1)
+target_compile_options(timeshift
+    PRIVATE ${OpenMP_CXX_FLAGS}
+)
+target_compile_definitions(timeshift
+    PRIVATE EIGEN_FFTW_DEFAULT=1
+)
+
+add_executable(apply_timeshift src/apply_timeshift.cpp)
+target_link_libraries(apply_timeshift Eigen3::Eigen
+                                      segyio
+)
+
+install(TARGETS timeshift
+                apply_timeshift
+        EXPORT timeshift
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+if(NOT BUILD_TESTING)
+    return()
+endif()
 
 add_executable(tests test/testsuite.cpp
                      test/timeshift.cpp
@@ -17,16 +41,20 @@ target_link_libraries(tests catch2
                             ${fftw3}
                             Eigen3::Eigen
                             segyio
+                            ${OpenMP_EXE_LINKER_FLAGS}
+                            ${OpenMP_CXX_FLAGS}
 )
-target_link_libraries(tests catch2 Eigen3::Eigen ${fftw3f} ${fftw3}
-segyio-shared)
-target_compile_definitions(tests PRIVATE EIGEN_FFTW_DEFAULT=1)
+target_compile_options(tests
+    PRIVATE ${OpenMP_CXX_FLAGS}
+)
+target_compile_definitions(tests
+    PRIVATE EIGEN_FFTW_DEFAULT=1
+)
 add_test(NAME test COMMAND tests)
 
-add_executable(apply_timeshift src/apply_timeshift.cpp)
-target_link_libraries(apply_timeshift Eigen3::Eigen
-                                      segyio
-)
+configure_file(test/vintage1.sgy test-data/vintage1.sgy COPYONLY)
+configure_file(test/vintage2.sgy test-data/vintage2.sgy COPYONLY)
+configure_file(test/vintage3.sgy test-data/vintage3.sgy COPYONLY)
 
 #
 # Benchmarks and integration test suite
@@ -56,6 +84,7 @@ add_custom_target(ts-cropped
 
 add_custom_target(diff-cropped
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy timeshift-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy timeshift-1.sgy
     COMMENT "Analysing cropped diff image"
@@ -71,6 +100,7 @@ add_custom_target(ts-cropped-4Dcorr
 
 add_custom_target(diff-cropped-4Dcorr
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 9e-3
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-0.sgy ts-4Dcorr-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-1.sgy ts-4Dcorr-1.sgy
     COMMENT "Analysing 4D corrected cropped diff image"
@@ -86,6 +116,7 @@ add_custom_target(ts-cropped-cumulative
 
 add_custom_target(diff-cropped-cumulative
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-0.sgy ts-cropped-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-1.sgy ts-cropped-1.sgy
     COMMENT "Analysing cumulative cropped diff image"
@@ -100,7 +131,8 @@ add_custom_target(ts-cropped-custom_norm
 )
 
 add_custom_target(diff-cropped-custom_norm
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 8e-7 -m 9e-7
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 8e-6 -m 9e-6
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-0.sgy ts-cust_norm-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-1.sgy ts-cust_norm-1.sgy
     COMMENT "Analysing timeshift with custom normalization"
@@ -117,6 +149,7 @@ add_custom_target(apply-ts
 
 add_custom_target(diff-apply-ts
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 3e-4 -m 6e-5
+        --iline 5 --xline 21
         ${CMAKE_CURRENT_SOURCE_DIR}/../timeshifted-old.sgy shifted.sgy
     COMMENT "Analysing applied timeshift"
     DEPENDS apply-ts
@@ -155,7 +188,3 @@ add_custom_target(showgrind
     COMMAND ${kcachegrind} callgrind.out.timeshift
     DEPENDS callgrind
 )
-
-configure_file(test/vintage1.sgy test-data/vintage1.sgy COPYONLY)
-configure_file(test/vintage2.sgy test-data/vintage2.sgy COPYONLY)
-configure_file(test/vintage3.sgy test-data/vintage3.sgy COPYONLY)

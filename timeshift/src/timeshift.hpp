@@ -9,6 +9,7 @@
 #include <vector>
 #include <mutex>
 
+#include <omp.h>
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
@@ -19,6 +20,10 @@
 #include "linalg.hpp"
 
 #define EIGEN_DONT_PARALLELIZE
+
+using input_file = segyio::basic_volume< segyio::readonly >;
+using output_file = segyio::basic_unstructured< segyio::trace_writer,
+                                                segyio::write_always >;
 
 namespace {
 
@@ -41,8 +46,8 @@ struct options {
     std::string delim                = "-";
     std::string extension            = "sgy";
     int         verbosity            = 0;
-    int         ilbyte               = SEGY_TR_INLINE;
-    int         xlbyte               = SEGY_TR_CROSSLINE;
+    segyio::ilbyte ilbyte            = segyio::ilbyte();
+    segyio::xlbyte xlbyte            = segyio::xlbyte();
 };
 
 struct Progress {
@@ -199,12 +204,12 @@ struct geometry {
     int xlines;
 };
 
-geometry findgeometry( sio::simple_file& f ) {
+geometry findgeometry( input_file& f ) {
     geometry geo;
 
-    geo.samples = f.read(0).size();
-    geo.ilines  = f.inlines().size();
-    geo.xlines  = f.crosslines().size();
+    geo.samples = f.samplecount();
+    geo.ilines  = f.inlinecount();
+    geo.xlines  = f.crosslinecount();
     geo.traces  = geo.ilines*geo.xlines;
 
     return geo;
@@ -212,16 +217,16 @@ geometry findgeometry( sio::simple_file& f ) {
 
 template< typename T >
 T normalize_surveys( T scaling,
-                     std::vector< sio::simple_file >& surveys ) {
+                     std::vector< input_file >& surveys ) {
 
     const auto nonzero = []( T x ) { return x != 0.0; };
     const auto abs = []( T x ) { return std::abs( x ); };
     T acc = 0;
-    std::vector< T > trace;
+    std::vector< T > trace( surveys.front().samplecount() );
     for( auto& survey : surveys ) {
         T sum = 0.0, count = 0.0;
-        for( int trc = 0; trc < survey.size(); ++trc ) {
-            survey.read( trc, trace );
+        for( int trc = 0; trc < survey.tracecount(); ++trc ) {
+            survey.get( trc, trace.begin() );
             std::transform( trace.begin(), trace.end(), trace.begin(), abs );
             sum   += std::accumulate( trace.begin(), trace.end(), 0.0 );
             count += std::count_if( trace.begin(), trace.end(), nonzero );
@@ -254,7 +259,7 @@ void output_timeshift( const std::string& basefile,
     dst << in.rdbuf();
     dst.close();
 
-    sio::simple_file f( fname, sio::config().readwrite() );
+    output_file f( segyio::path{ fname } );
 
     vector< T > reconstructed( geo.samples );
     for( int traceno = 0; traceno < geo.traces; ++traceno ) {
@@ -457,7 +462,7 @@ vector< T >& apply_timeshift( vector< T >& d, const vector< T >& shift ) {
 template< typename T >
 void correct( int start, int end,
               const vector< T >& x,
-              std::vector< sio::simple_file >& files,
+              std::vector< input_file >& files,
               const sparse< T >& spline,
               const geometry& geo,
               const vector< T >& omega,
@@ -506,7 +511,7 @@ void correct( int start, int end,
             auto& trace = trc[i];
             auto& derived = drv[i];
 
-            file.read( t, begin( trace ) );
+            file.get( t, begin( trace ) );
             derived = (trace /= normalizer);
             // derived is updated in-place
             derived = derive( derived, omega );
@@ -544,7 +549,7 @@ void correct( int start, int end,
 
 template< typename T >
 vector< T > timeshift_4D_correction( const vector< T >& x,
-                                     std::vector< sio::simple_file >& files,
+                                     std::vector< input_file >& files,
                                      const sparse< T >& spline,
                                      const geometry& geo,
                                      const vector< T >& omega,
@@ -557,7 +562,8 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
 
     # pragma omp parallel for
     for( int thread_id = 0; thread_id < nthreads; ++thread_id ) {
-        std::vector< sio::simple_file > f( files );
+        /* copy so each thread has its own file handle and I/O buffer */
+        auto f = files;
 
         const int start = thread_id * (geo.traces/nthreads);
         const int end = (thread_id+1) == nthreads
@@ -644,7 +650,7 @@ linear_system< T > build_system( const sparse< T >& B,
                                  const sparse< T >& C,
                                  const vector< T >& omega,
                                  double normalizer,
-                                 std::vector< sio::simple_file >& files,
+                                 std::vector< input_file >& files,
                                  const geometry& geo,
                                  const int ndiagonals) {
 
@@ -680,7 +686,7 @@ linear_system< T > build_system( const sparse< T >& B,
     p.L.setZero();
     p.b.setZero();
 
-    std::vector< sio::simple_file > f( files );
+    auto f = files;
 
     std::vector< vector< T > > trc( vintages, vector< T >( geo.samples ) );
     std::vector< vector< T > > drv( vintages, vector< T >( geo.samples ) );
@@ -704,7 +710,7 @@ linear_system< T > build_system( const sparse< T >& B,
         }
 
         for( int i = 0; i < vintages; ++i ){
-            f[i].read( traceno, trc[i].data() );
+            f[i].get( traceno, trc[i].data() );
             drv[i] = trc[i] /= normalizer;
             drv[i] = derive( drv[i], omega );
         }
@@ -761,7 +767,7 @@ void accumulate_timeshifts( vector< T >& x, int vintages ) {
 template< typename T >
 vector< T > compute_timeshift( const sparse< T >& B,
                                int splineord,
-                               std::vector< sio::simple_file >& files,
+                               std::vector< input_file >& files,
                                const std::vector< geometry >& geometries,
                                const options& opts ) {
 
