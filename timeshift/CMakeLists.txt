@@ -28,6 +28,10 @@ install(TARGETS timeshift
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+if(NOT BUILD_TESTING)
+    return()
+endif()
+
 add_executable(tests test/testsuite.cpp
                      test/timeshift.cpp
 )
