@@ -20,6 +20,14 @@ target_link_libraries(apply_timeshift Eigen3::Eigen
                                       segyio
 )
 
+install(TARGETS timeshift
+                apply_timeshift
+        EXPORT timeshift
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 add_executable(tests test/testsuite.cpp
                      test/timeshift.cpp
 )
