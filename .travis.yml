@@ -76,8 +76,8 @@ before_script:
     - popd
 
 script:
-  - pushd build
-  - $SCAN make
-  - make test
-  - make diff
-  - sudo make install
+    - pushd build
+    - $SCAN make
+    - make test
+    - make diff
+    - sudo make install
