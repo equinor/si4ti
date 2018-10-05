@@ -4,12 +4,11 @@ services: docker
 sudo: required
 
 env:
+    matrix:
+        - SCAN="scan-build --status-bugs"
+        - RELEASE=1
     global:
         - EVAL_GCC="CC=gcc-7 && CXX=g++-7"
-    matrix:
-        - MARCH="-march=x86-64"
-        - MARCH="-march=skylake"
-        - SCAN="scan-build --status-bugs"
 
 matrix:
     fast_finish: true
@@ -34,7 +33,7 @@ before_install:
     - eval "${EVAL_GCC}"
     - git clone https://github.com/jokva/segyio
     - git clone https://github.com/eigenteam/eigen-git-mirror eigen
-    - mkdir -p segyio/build eigen/build build
+    - mkdir -p segyio/build eigen/build build build-skylake x86-64 skylake
 
 install:
     - python3 -m pip install --user --upgrade pip setuptools setuptools-scm
@@ -43,19 +42,16 @@ install:
     - git fetch && git checkout experimental-c++-interface
     - cmake -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_CXX_FLAGS="$MARCH"
             -DBUILD_PYTHON=OFF
             -DBUILD_TESTING=OFF
             -DEXPERIMENTAL=ON
             -DSEGYIO_NO_GIT_VER=ON
             ..
-    - make
-    - sudo make install
+    - make && sudo make install
     - popd
     - pushd eigen/build
     - cmake -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_CXX_FLAGS="$MARCH"
             ..
     - make
     - sudo make install
@@ -66,6 +62,7 @@ before_script:
     - $SCAN cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
                   -DBUILD_SHARED_LIBS=OFF
                   -DCMAKE_BUILD_TYPE=Release
+                  -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/x86-64
                   ..
     - cppcheck --enable=style,portability,performance,warning
                --library=posix
@@ -74,10 +71,22 @@ before_script:
                --project=compile_commands.json
                --error-exitcode=1
     - popd
+    - pushd build-skylake
+    - cmake -DBUILD_SHARED_LIBS=OFF
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_CXX_FLAGS=-march=skylake
+            -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/skylake
+            ..
+    - popd
 
 script:
     - pushd build
     - $SCAN make
     - make test
     - make diff
-    - sudo make install
+    - make install
+    - popd
+    - pushd build-skylake
+    - make
+    - make install
+    - popd
