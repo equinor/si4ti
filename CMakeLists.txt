@@ -14,7 +14,10 @@ find_library(fftw3f NAMES fftw3f REQUIRED)
 
 option(BUILD_DOC "Build documentation" OFF)
 
+add_custom_target(diff)
+
 enable_testing()
 add_subdirectory(external/catch2)
 add_subdirectory(timeshift)
 add_subdirectory(doc)
+add_subdirectory(impedance)
