@@ -90,3 +90,17 @@ script:
     - make
     - make install
     - popd
+
+before_deploy:
+    - tar cvzf simpli-$TRAVIS_TAG.tar.gz x86-64 skylake
+
+deploy:
+    - provider: releases
+      skip_cleanup: true
+      file:
+        - simpli-$TRAVIS_TAG.tar.gz
+      on:
+        tags: true
+        condition: $RELEASE
+      api_key:
+        secure: wM3U6p/+JX7Khl5Txvm1dw0kaLk4IrHhU2nv+RNWlPmzGhv9nId/SMKvPrCDR90gPfhuFzIYefZmZD+07v8nPqhv3yhXq7yeB4jaAu7gGKG/oZQKCGSoVbwcmPOHdQidC2xTS9CxjhBOH62vzfqbuHsKGyzDghHAt66OZOlTheocmHraM1mqC3LGNPvNlZ7mCtuQVNL0ZPIornkhIfu+JBneix9OkSV2SCAk2mH7NcX142hvcA1hblvRaQom+ubAcc95gg9UqOz2IQ9OxJYf2sihI/E5QLrUUWzzpYxB+JU/OT9q49KYDj+7Wk2bJn9l3RLTc7h4evq+Y+epeK/QZygcccFjf98BFfGgOKyKI3UP/DriXVU3DnQIlIDLq9niWibwWSRco5MskLJaafMC8ycDNxzRA/lA4Yv2z3uWf4CDhoqDrOZi0KNirLWR4YjhUUV7fxf4uzPGWFrMOc+19ti1C8CO8pkrbvWYZo9aqbxQFFc+dgUbIK09ivWpt/hS03KcTDN4BfWTAkRb830Sc/zjYym23urfnUkdntTpSRAdNFEw5jWFQPqPtK3UDPxIglHr6fMaYbCiBTj4Q9kW5MdMF++rC9fovJvvF0o3fKoRWiDMDXAUm2gnMzHQpYpIo6l6MfSU+WIcitsuWbscAd41mfawG/MxQdFyuOp5SZQ=
