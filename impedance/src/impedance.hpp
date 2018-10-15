@@ -21,6 +21,21 @@ using output_file = segyio::basic_volume< segyio::trace_writer,
 
 namespace {
 
+struct Progress {
+    static int expected;
+    static int count;
+
+    static void report() {
+        count++;
+        if( count % (expected/20) == 0 )
+            std::cout << "Progress: " << (count*100)/expected << "%\n";
+    }
+
+    static void report( int n ) {
+        for( int i = 0; i < n; ++i ) report();
+    }
+};
+
 template< typename T >
 using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
 template< typename T >
@@ -279,6 +294,9 @@ solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
     matrix< T > L_in( tracelen, tracelen );
 
     for( int v = 0; v < nvint; ++v ) {
+
+        Progress::report( 20 / nvint );
+
         L_in = (L[v] + dmp).inverse();
         auto& vintage = vintages[v];
 
@@ -433,14 +451,14 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
                              trc_start, trc_end );
     }
 
-    SimpliImpMatrix< T > rbd_L( std::move( L ),
-                                nvints,
-                                ilines,
-                                xlines,
-                                damping_4D,
-                                lat_smooth_3D,
-                                lat_smooth_4D,
-                                segmented );
+    SimpliImpMatrix< T, Progress > rbd_L( std::move( L ),
+                                          nvints,
+                                          ilines,
+                                          xlines,
+                                          damping_4D,
+                                          lat_smooth_3D,
+                                          lat_smooth_4D,
+                                          segmented );
 
     Eigen::ConjugateGradient< decltype( rbd_L ),
                               Eigen::Lower | Eigen::Upper,

@@ -2,6 +2,9 @@
 
 #include <getopt.h>
 
+int Progress::count = 0;
+int Progress::expected = 10;
+
 namespace {
 
 void printhelp(){
@@ -135,6 +138,8 @@ int main( int argc, char** argv ) {
 
     auto opts = parseopts( argc, argv );
 
+    Progress::expected += opts.segments * ( opts.max_iter + 25 );
+
     std::vector< input_file > files;
 
     for( const auto& file : opts.files )
@@ -150,8 +155,9 @@ int main( int argc, char** argv ) {
                                                        opts.tv_wavelet,
                                                        opts.polarity );
 
-    T norm = normalization( wvlets );
+    Progress::report( 5 );
 
+    T norm = normalization( wvlets );
     const int vintages = files.size();
 
     std::vector< matrix< T > > A = forward_operators< T >( wvlets,
@@ -217,5 +223,6 @@ int main( int argc, char** argv ) {
                        dsyn_files[ i ],
                        trc_start, trc_end );
         }
+        Progress::report( 5 );
     }
 }
