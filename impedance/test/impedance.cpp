@@ -23,7 +23,6 @@ TEST_CASE("Regression test") {
     SECTION( "segmentation 2 segments" ) {
         std::vector< std::pair< int, int > > expected{{0,55565},{33075,65708}};
         auto result = segments( 2, 149, 441, 50 );
-        std::cout << result[0].first << " " << result[0].second << "\n";
 
         CHECK( result == expected );
     }
