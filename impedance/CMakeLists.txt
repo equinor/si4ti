@@ -16,6 +16,13 @@ target_compile_definitions(impedance
     PRIVATE EIGEN_FFTW_DEFAULT=1
 )
 
+install(TARGETS impedance
+        EXPORT impedance
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 if(NOT BUILD_TESTING)
     return()
 endif()
