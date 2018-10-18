@@ -9,13 +9,8 @@ matrix:
 before_install:
     - docker build --tag centos --file travis/Dockerfile .
     - eval "${EVAL_GCC}"
-    - git clone https://github.com/jokva/segyio
+    - git clone https://github.com/statoil/segyio
     - git clone https://github.com/eigenteam/eigen-git-mirror eigen
-
-before_script:
-    - pushd segyio
-    - git fetch && git checkout experimental-c++-interface
-    - popd
 
 script:
     - docker run --volume $PWD:/io centos
