@@ -415,6 +415,35 @@ struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter >
 
 };
 
+template< typename T, typename MatrixType >
+vector< T > conjugate_gradient( const MatrixType& L,
+                                vector< T >& x,
+                                vector< T >& b,
+                                int iterations ) {
+    b = b - L * x;
+
+    vector< T > p = b;
+    vector< T > q( b.size() );
+    double rho_2;
+
+    for( int i = 0; i < iterations; ++i ) {
+        double rho_1 = b.squaredNorm();
+
+        if( i != 0 ) {
+            double beta = rho_1 / rho_2;
+            p = b + beta*p;
+        }
+
+        q = L * p;
+        double alpha = rho_1 / p.dot(q);
+        x = x + alpha * p;
+        b = b - alpha * q;
+        rho_2 = rho_1;
+    }
+
+    return x;
+}
+
 template< typename T >
 vector< T > compute_impedance( std::vector< input_file >& vintages,
                                std::vector< output_file >& relAI_files,
@@ -460,13 +489,7 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
                                           lat_smooth_4D,
                                           segmented );
 
-    Eigen::ConjugateGradient< decltype( rbd_L ),
-                              Eigen::Lower | Eigen::Upper,
-                              Eigen::IdentityPreconditioner
-    > cg;
-    cg.setMaxIterations( max_iter );
-    cg.compute( rbd_L );
-    sol.rj = cg.solveWithGuess( sol.b, sol.rj );
+    conjugate_gradient( rbd_L, sol.rj, sol.b, max_iter );
 
     return sol.rj / norm;
 }
