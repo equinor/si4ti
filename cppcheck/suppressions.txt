@@ -1,1 +1,9 @@
 *:*timeshift/src/spline.h
+
+cstyleCast:*
+useStlAlgorithm:*
+shadowLocal:*
+
+// pass by value is used together with std::move to move ownership rather
+// than passing a reference
+passedByValue:*impedance/src/impedance.hpp

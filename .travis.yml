@@ -11,6 +11,10 @@ before_install:
     - eval "${EVAL_GCC}"
     - git clone https://github.com/jokva/segyio
     - git clone https://github.com/eigenteam/eigen-git-mirror eigen
+    - mkdir cppcheck-src
+    - pushd cppcheck-src
+    - git clone https://github.com/danmar/cppcheck
+    - popd
 
 before_script:
     - pushd segyio
