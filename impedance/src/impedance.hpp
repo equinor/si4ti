@@ -21,6 +21,21 @@ using output_file = segyio::basic_volume< segyio::trace_writer,
 
 namespace {
 
+struct Progress {
+    static int expected;
+    static int count;
+
+    static void report() {
+        count++;
+        if( count % (expected/20) == 0 )
+            std::cout << "Progress: " << (count*100)/expected << "%\n";
+    }
+
+    static void report( int n ) {
+        for( int i = 0; i < n; ++i ) report();
+    }
+};
+
 template< typename T >
 using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
 template< typename T >
@@ -279,6 +294,9 @@ solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
     matrix< T > L_in( tracelen, tracelen );
 
     for( int v = 0; v < nvint; ++v ) {
+
+        Progress::report( 20 / nvint );
+
         L_in = (L[v] + dmp).inverse();
         auto& vintage = vintages[v];
 
@@ -397,6 +415,143 @@ struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter >
 
 };
 
+template< typename T, typename MatrixType >
+vector< T > conjugate_gradient( const MatrixType& L,
+                                vector< T >& x,
+                                vector< T >& b,
+                                int iterations ) {
+    b = b - L * x;
+
+    vector< T > p = b;
+    vector< T > q( b.size() );
+    double rho_2;
+
+    for( int i = 0; i < iterations; ++i ) {
+        double rho_1 = b.squaredNorm();
+
+        if( i != 0 ) {
+            double beta = rho_1 / rho_2;
+            p = b + beta*p;
+        }
+
+        q = L * p;
+        double alpha = rho_1 / p.dot(q);
+        x = x + alpha * p;
+        b = b - alpha * q;
+        rho_2 = rho_1;
+    }
+
+    return x;
+}
+
+template< typename T >
+vector< T > compute_impedance( std::vector< input_file >& vintages,
+                               std::vector< output_file >& relAI_files,
+                               std::vector< matrix< T > >& A,
+                               T norm,
+                               int max_iter,
+                               T damping_3D,
+                               T damping_4D,
+                               T lat_smooth_3D,
+                               T lat_smooth_4D,
+                               int trc_start,
+                               int trc_end ) {
+
+    const int xlines = vintages.front().crosslinecount();
+    const int ilines = (trc_end - trc_start + 1) / xlines;
+    const int nvints = vintages.size();
+    const bool segmented = trc_start != 0;
+
+    std::vector< matrix< T > > L = inverse_operators< T >( A,
+                                                           nvints,
+                                                           damping_3D );
+
+    solution_1D< T > sol = solve_1D( vintages,
+                                     L,
+                                     A,
+                                     damping_3D,
+                                     trc_start, trc_end );
+
+    if( segmented ) {
+        add_boundary_inline( relAI_files,
+                             sol.b,
+                             norm,
+                             lat_smooth_3D, lat_smooth_4D,
+                             trc_start, trc_end );
+    }
+
+    SimpliImpMatrix< T, Progress > rbd_L( std::move( L ),
+                                          nvints,
+                                          ilines,
+                                          xlines,
+                                          damping_4D,
+                                          lat_smooth_3D,
+                                          lat_smooth_4D,
+                                          segmented );
+
+    conjugate_gradient( rbd_L, sol.rj, sol.b, max_iter );
+
+    return sol.rj / norm;
+}
+
+template< typename Vector >
+void writefile( const Vector& v,
+                output_file& f,
+                int trc_start, int trc_end ) {
+
+    auto itr = v.data();
+    for( int traceno = trc_start; traceno <= trc_end; ++traceno )
+        itr = f.put( traceno, itr );
+}
+
+template< typename T >
+T normalization( const std::vector< matrix< T > >& wvlets ) {
+    T norm = 0;
+
+    for( auto & wvlet: wvlets ) {
+        T m = wvlet.cwiseAbs().maxCoeff();
+        norm = m > norm ? m : norm;
+    }
+    return norm;
+}
+
+template< typename T >
+vector< T > reconstruct_data( Eigen::Ref< vector< T > > rel_AI,
+                              const matrix< T >& A,
+                              T norm,
+                              int traces ) {
+    const int tracelen = A.cols();
+
+    Eigen::Map< matrix< T > > x( rel_AI.data(), tracelen, traces );
+    x = A * x * norm;
+
+    return rel_AI;
+}
+
+std::vector< std::pair< int, int > > segments( int numseg,
+                                               int ilines,
+                                               int xlines,
+                                               int max_iterations ) {
+
+    /* Data is divided into <numseg> segments on inlines, with a
+     * <max_iterations> overlap. This function returns (start, end) pairs
+     * containing the first and last (inclusive) trace of the segments.
+     */
+
+    std::vector< std::pair<  int, int > > sgmnts;
+
+    for( int i = 0; i < numseg; ++i ) {
+        int first = xlines * std::round( double(i) / numseg * ilines );
+        int last = xlines * ( std::round( double(i+1)/numseg * ilines
+                              + max_iterations ) + 1 )
+                          - 1;
+        last = std::min( last, ilines*xlines - 1 );
+        sgmnts.push_back( { first, last } );
+    }
+
+    return sgmnts;
+}
+
 }
 
 namespace Eigen { namespace internal {
@@ -513,117 +668,3 @@ struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
 };
 
 } }
-
-template< typename T >
-vector< T > compute_impedance( std::vector< input_file >& vintages,
-                               std::vector< output_file >& relAI_files,
-                               std::vector< matrix< T > >& A,
-                               T norm,
-                               int max_iter,
-                               T damping_3D,
-                               T damping_4D,
-                               T lat_smooth_3D,
-                               T lat_smooth_4D,
-                               int trc_start,
-                               int trc_end ) {
-
-    const int xlines = vintages.front().crosslinecount();
-    const int ilines = (trc_end - trc_start + 1) / xlines;
-    const int nvints = vintages.size();
-    const bool segmented = trc_start != 0;
-
-    std::vector< matrix< T > > L = inverse_operators< T >( A,
-                                                           nvints,
-                                                           damping_3D );
-
-    solution_1D< T > sol = solve_1D( vintages,
-                                     L,
-                                     A,
-                                     damping_3D,
-                                     trc_start, trc_end );
-
-    if( segmented ) {
-        add_boundary_inline( relAI_files,
-                             sol.b,
-                             norm,
-                             lat_smooth_3D, lat_smooth_4D,
-                             trc_start, trc_end );
-    }
-
-    SimpliImpMatrix< T > rbd_L( std::move( L ),
-                                nvints,
-                                ilines,
-                                xlines,
-                                damping_4D,
-                                lat_smooth_3D,
-                                lat_smooth_4D,
-                                segmented );
-
-    Eigen::ConjugateGradient< decltype( rbd_L ),
-                              Eigen::Lower | Eigen::Upper,
-                              Eigen::IdentityPreconditioner
-    > cg;
-    cg.setMaxIterations( max_iter );
-    cg.compute( rbd_L );
-    vector< T > x = cg.solveWithGuess( sol.b, sol.rj );
-
-    return x / norm;
-}
-
-template< typename Vector >
-void writefile( const Vector& v,
-                output_file& f,
-                int trc_start, int trc_end ) {
-
-    auto itr = v.data();
-    for( int traceno = trc_start; traceno <= trc_end; ++traceno )
-        itr = f.put( traceno, itr );
-}
-
-template< typename T >
-T normalization( const std::vector< matrix< T > >& wvlets ) {
-    T norm = 0;
-
-    for( auto & wvlet: wvlets ) {
-        T m = wvlet.cwiseAbs().maxCoeff();
-        norm = m > norm ? m : norm;
-    }
-    return norm;
-}
-
-template< typename T >
-vector< T > reconstruct_data( Eigen::Ref< vector< T > > rel_AI,
-                              const matrix< T >& A,
-                              T norm,
-                              int traces ) {
-    const int tracelen = A.cols();
-
-    Eigen::Map< matrix< T > > x( rel_AI.data(), tracelen, traces );
-    x = A * x * norm;
-
-    return rel_AI;
-}
-
-std::vector< std::pair< int, int > > segments( int numseg,
-                                               int ilines,
-                                               int xlines,
-                                               int max_iterations ) {
-
-    /* Data is divided into <numseg> segments on inlines, with a
-     * <max_iterations> overlap. This function returns (start, end) pairs
-     * containing the first and last (inclusive) trace of the segments.
-     */
-
-    std::vector< std::pair<  int, int > > sgmnts;
-
-    for( int i = 0; i < numseg; ++i ) {
-        int first = xlines * std::round( double(i) / numseg * ilines );
-        int last = xlines * ( std::round( double(i+1)/numseg * ilines
-                              + max_iterations ) + 1 )
-                          - 1;
-        last = std::min( last, ilines*xlines - 1 );
-        sgmnts.push_back( { first, last } );
-    }
-
-    return sgmnts;
-}
