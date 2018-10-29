@@ -28,6 +28,10 @@ void printhelp(){
         "-s, --segments                if this parameter is set, data domain\n"
         "                              splitting will be performed. Takes the\n"
         "                              number of segments as an argument.\n"
+        "-o, --overlap                 number of inlines overlap between\n"
+        "                              segments when performing data domain\n"
+        "                              splitting. Defaults to maximum number\n"
+        "                              of iterations of the linear solver "
         "-p, --inverse-polarity        invert polarity of the data\n"
         "-m, --max-iter                maximum number of itarations for\n"
         "                              linear solver\n"
@@ -46,6 +50,7 @@ struct options {
     segyio::xlbyte  xlbyte               = segyio::xlbyte();
     int             polarity             = 1;
     int             segments             = 1;
+    int             overlap              = -1;
     bool            tv_wavelet           = false;
     double          damping_3D           = 0.0001;
     double          damping_4D           = 0.0001;
@@ -65,6 +70,7 @@ options parseopts( int argc, char** argv ) {
         { "lateral-smoothing-3D", required_argument, 0, 'l' },
         { "lateral-smoothing-4D", required_argument, 0, 'L' },
         { "segments",             required_argument, 0, 's' },
+        { "overlap",              required_argument, 0, 'o' },
         { "max-iter",             required_argument, 0, 'm' },
         { "verbose",              no_argument,       0, 'v' },
         { "help",                 no_argument,       0, 'h' },
@@ -76,7 +82,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "i:x:ptd:D:l:L:s:m:vh",
+                             "i:x:ptd:D:l:L:s:o:m:vh",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -95,6 +101,7 @@ options parseopts( int argc, char** argv ) {
             case 'l': opts.latsmooth_3D = std::stod( optarg ); break;
             case 'L': opts.latsmooth_4D = std::stod( optarg ); break;
             case 's': opts.segments     = std::stoi( optarg ); break;
+            case 'o': opts.overlap      = std::stoi( optarg ); break;
             case 'm': opts.max_iter     = std::stoi( optarg ); break;
             case 'v': opts.verbosity++;                        break;
             case 'h':
@@ -137,6 +144,8 @@ int main( int argc, char** argv ) {
     using T = float;
 
     auto opts = parseopts( argc, argv );
+
+    if( opts.overlap < 0 ) opts.overlap = opts.max_iter;
 
     Progress::expected += opts.segments * ( opts.max_iter + 25 );
 
@@ -190,7 +199,7 @@ int main( int argc, char** argv ) {
 
     const auto sgments = segments( opts.segments,
                                    ilines, xlines,
-                                   opts.max_iter );
+                                   opts.overlap );
 
     for( const auto& segment : sgments ) {
         const int trc_start = segment.first;

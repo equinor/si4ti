@@ -531,11 +531,11 @@ vector< T > reconstruct_data( Eigen::Ref< vector< T > > rel_AI,
 std::vector< std::pair< int, int > > segments( int numseg,
                                                int ilines,
                                                int xlines,
-                                               int max_iterations ) {
+                                               int overlap ) {
 
-    /* Data is divided into <numseg> segments on inlines, with a
-     * <max_iterations> overlap. This function returns (start, end) pairs
-     * containing the first and last (inclusive) trace of the segments.
+    /* Data is divided into <numseg> segments on inlines, with an
+     * overlap. This function returns (start, end) pairs containing the
+     * first and last (inclusive) trace of the segments.
      */
 
     std::vector< std::pair<  int, int > > sgmnts;
@@ -543,7 +543,7 @@ std::vector< std::pair< int, int > > segments( int numseg,
     for( int i = 0; i < numseg; ++i ) {
         int first = xlines * std::round( double(i) / numseg * ilines );
         int last = xlines * ( std::round( double(i+1)/numseg * ilines
-                              + max_iterations ) + 1 )
+                              + overlap ) + 1 )
                           - 1;
         last = std::min( last, ilines*xlines - 1 );
         sgmnts.push_back( { first, last } );
