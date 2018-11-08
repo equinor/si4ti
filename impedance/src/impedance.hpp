@@ -447,7 +447,7 @@ vector< T > conjugate_gradient( const MatrixType& L,
 template< typename T >
 vector< T > compute_impedance( std::vector< input_file >& vintages,
                                std::vector< output_file >& relAI_files,
-                               std::vector< matrix< T > >& A,
+                               const std::vector< matrix< T > >& A,
                                T norm,
                                int max_iter,
                                T damping_3D,
