@@ -367,8 +367,8 @@ as the operator :math:`\mathbf{F}` is proportional to the data
 
 This shows that the scaling of the data influences the strength of the
 regularisation :math:`\mathbf{\Gamma}`. Bearing in mind that seismic may be
-scaled randomly, an automatic scaling is necessary to keep comparable
-constraints.
+scaled arbitrarily, an automatic scaling is necessary to keep comparable
+constraints. It is assumed all inputs are uniformly scaled.
 
 4D correction
 =============
