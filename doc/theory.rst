@@ -6,8 +6,6 @@ Theory
 
 This section is largely based on [Lie2011]_.
 
-TODO:: emphasise that all these are per-trace equations
-
 .. latex newcommand works across math blocks, so define some useful,
 .. much-needed macros
 .. math::
