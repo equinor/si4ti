@@ -430,6 +430,7 @@ These sub systems are not independent, and in particular we have that
 :math:`\Delta t_3 = \Delta t_1 + \Delta t_2`, meaning we can simplify the system.
 
 .. math::
+    :label: eq_multivintage
 
     \begin{pmatrix}
         \F_{1,2} & 0        \\
