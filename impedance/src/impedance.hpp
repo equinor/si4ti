@@ -345,11 +345,11 @@ void add_boundary_inline( std::vector< output_file >& relAI_files,
             b.segment( offset, tracelen ) += norm * (lat_smooth_3D/4) * trace;
 
             for( int v2 = 0; v2 < nvints; ++v2 ) {
-                if( v != v2 ) {
-                    relAI_files[v2].get( t, trace2.data() );
-                    b.segment( offset, tracelen ) +=
-                        norm * (lat_smooth_4D/4) * ( trace - trace2 );
-                }
+                if( v == v2 ) continue;
+
+                relAI_files[v2].get( t, trace2.data() );
+                b.segment( offset, tracelen ) +=
+                    norm * (lat_smooth_4D/4) * ( trace - trace2 );
             }
         }
     }
