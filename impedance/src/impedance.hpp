@@ -67,8 +67,8 @@ vector< T > timeinvariant_wavelet( input_file& survey ) {
 
     const auto tracelen = survey.samplecount();
 
-    vector< T > fwav( tracelen );
-    fwav.setZero();
+    vector< T > freqwav( tracelen );
+    freqwav.setZero();
 
     vector< T > trace( tracelen );
     Eigen::FFT< T > fft;
@@ -77,10 +77,10 @@ vector< T > timeinvariant_wavelet( input_file& survey ) {
     for( int trc = 0; trc < survey.tracecount(); ++trc ) {
         survey.get( trc, trace.data() );
         fft.fwd( spectrum, trace );
-        fwav += spectrum.cwiseAbs() / survey.tracecount();
+        freqwav += spectrum.cwiseAbs() / survey.tracecount();
     }
 
-    return fwav;
+    return freqwav;
 }
 
 template< typename T >
@@ -90,7 +90,7 @@ matrix< T > timevarying_wavelet( input_file& survey ) {
     const int win_size = 101;
     const int win_step = 20;
 
-    matrix< T > fwav = matrix< T >::Zero( tracelen, tracelen );
+    matrix< T > freqwav = matrix< T >::Zero( tracelen, tracelen );
 
     vector< T > trace( tracelen );
     Eigen::FFT< T > fft;
@@ -103,24 +103,24 @@ matrix< T > timevarying_wavelet( input_file& survey ) {
         for( int offset = win_size/2; offset <= last_offset; offset += win_step ) {
             auto segment = trace.segment( offset-win_size/2, win_size );
             fft.fwd( spectrum, segment );
-            fwav.col( offset ).head( win_size )
+            freqwav.col( offset ).head( win_size )
                 += spectrum.cwiseAbs() / survey.tracecount();
         }
     }
 
-    fwav.leftCols( win_size/2 ).colwise() = fwav.col( win_size/2 );
-    fwav.rightCols( tracelen - last_offset ).colwise() = fwav.col( last_offset );
+    freqwav.leftCols( win_size/2 ).colwise() = freqwav.col( win_size/2 );
+    freqwav.rightCols( tracelen - last_offset ).colwise() = freqwav.col( last_offset );
 
     for( int offset = win_size/2; offset < last_offset; offset += win_step ) {
         for( int i = 1; i < win_step; ++i ) {
-            fwav.col( offset + i )
-                = (1-T(i)/win_step)*fwav.col( offset )
-                + (T(i)/win_step)*(fwav.col( offset + win_step ));
+            freqwav.col( offset + i )
+                = (1-T(i)/win_step)*freqwav.col( offset )
+                + (T(i)/win_step)*(freqwav.col( offset + win_step ));
         }
     }
 
     for( int c = 0; c < tracelen; ++c ) {
-        auto segment = fwav.col(c).head( win_size );
+        auto segment = freqwav.col(c).head( win_size );
         spectrum = segment;
         fft.inv( segment, spectrum );
     }
@@ -128,21 +128,21 @@ matrix< T > timevarying_wavelet( input_file& survey ) {
     matrix< T > mh( win_size, tracelen );
     mh.colwise() = myhamn< T >( win_size );
 
-    ifftshift< T >( fwav.topRows( win_size ) );
-    fwav.topRows( win_size ) = mh.array() * fwav.topRows( win_size ).array();
+    ifftshift< T >( freqwav.topRows( win_size ) );
+    freqwav.topRows( win_size ) = mh.array() * freqwav.topRows( win_size ).array();
 
     vector< std::complex< T > > spectrum2( tracelen );
     for( int c = 0; c < tracelen; ++c ) {
-        auto col = fwav.col(c);
+        auto col = freqwav.col(c);
         fft.fwd( spectrum2, col );
         col = spectrum2.cwiseAbs();
     }
 
-    fwav.array().rowwise() /=
-           fwav.colwise().mean().array() / fwav.mean()
+    freqwav.array().rowwise() /=
+           freqwav.colwise().mean().array() / freqwav.mean()
          + std::numeric_limits<T>::epsilon();
 
-    return fwav;
+    return freqwav;
 }
 
 template< typename T >
