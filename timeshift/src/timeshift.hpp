@@ -38,7 +38,7 @@ struct options {
     bool        cumulative           = false;
     double      scaling              = 30.0;
     double      normalization        = 0.0;
-    double      sampling_interval    = 4.0;
+    double      sampling_interval    = 0.0;
     bool        output_norm          = false;
     bool        compute_norm         = false;
     std::string dir                  = "";
@@ -49,6 +49,28 @@ struct options {
     segyio::ilbyte ilbyte            = segyio::ilbyte();
     segyio::xlbyte xlbyte            = segyio::xlbyte();
 };
+
+double infer_interval( input_file& f,  double parsed ) {
+    if( parsed > 0)
+        return parsed;
+
+    double fallback = 4.0;
+    double inferred = 0;
+    std::string fallback_msg = ", falling back to sampling interval = 4.0 ms\n";
+    try {
+        // TODO: use get_bin() when binary_header_reader trait is merged in segyio
+        inferred = (double)f.get_th( 0 ).sample_interval / 1000.0;
+    }
+    catch( std::runtime_error &e ) {
+        std::cout << e.what() << fallback_msg;
+    }
+
+    if( inferred <= 0 )
+        std::cerr << fallback_msg;
+        return fallback;
+
+    return inferred;
+}
 
 struct Progress {
     static int expected;

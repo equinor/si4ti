@@ -523,3 +523,21 @@ SCENARIO("Preconditioning") {
     }
 
 }
+
+SCENARIO( "Infer sampling interval ") {
+    double sampling_interval;
+
+    input_file f( segyio::path{ "test-data/vintage1.sgy" },
+                     segyio::config{}.with( segyio::ilbyte{ 5 } )
+                                     .with( segyio::xlbyte{ 21 } ) );
+
+    GIVEN( "the sampling interval is user-spesified" ) {
+        sampling_interval = infer_interval( f, 5.0 );
+        CHECK(sampling_interval == 5.0 );
+    }
+
+    GIVEN( "the sampling interval is not user spesified" ) {
+        sampling_interval = infer_interval( f, 0.0 );;
+        CHECK(sampling_interval == 4.0 );
+    }
+}

@@ -22,6 +22,7 @@ void printhelp(){
         "-i, --ilbyte                  inline header word byte offset\n"
         "-x, --xlbyte                  crossline header word byte offset\n"
         "-r, --reverse                 reverse the timeshift before applying\n"
+        "-s, --sampling-interval       sampling interval\n"
         "-v, --verbose                 increase verbosity\n"
         "-h, --help                    display this help and exit\n"
         "\n\n"
@@ -36,7 +37,7 @@ struct opt {
     segyio::ilbyte  ilbyte               = segyio::ilbyte();
     segyio::xlbyte  xlbyte               = segyio::xlbyte();
     int             reverse              = -1;
-    double          sampling_interval    = 4.0;
+    double          sampling_interval    = 0.0;
 };
 
 segyio::ilbyte mkilbyte( const std::string& optarg ) {
@@ -120,6 +121,7 @@ int main( int argc, char** argv ) {
 
     const int samples = cube.samplecount();
     const int traces = cube.inlinecount() * cube.crosslinecount();
+    const double sample_interval = infer_interval( cube, opts.sampling_interval );
 
     Eigen::VectorXd trace( samples );
     Eigen::VectorXd shift( samples );
@@ -130,7 +132,7 @@ int main( int argc, char** argv ) {
     for( int trc = 0; trc < traces; ++trc ) {
         cube.get( trc, trace.data() );
         timeshift.get( trc, shift.data() );
-        shift *= opts.reverse / opts.sampling_interval;
+        shift *= opts.reverse / sample_interval;
         apply_timeshift( trace, shift );
         shifted_cube.put( trc, trace.data() );
     }
