@@ -3,6 +3,7 @@
 cstyleCast:*
 useStlAlgorithm:*
 shadowLocal:*
+shadowFunction:*
 
 // pass by value is used together with std::move to move ownership rather
 // than passing a reference
