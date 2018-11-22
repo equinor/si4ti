@@ -43,6 +43,7 @@ void printhelp(){
         "-X, --output-ext              output file extension\n"
         "-i, --ilbyte                  inline header word byte offset\n"
         "-x, --xlbyte                  crossline header word byte offset\n"
+        "-t, --sampling-interval       sampling interval\n"
         "-v, --verbose                 increase verbosity\n"
         "-h, --help                    display this help and exit\n"
         "\n\n"
@@ -151,6 +152,8 @@ void run( const options& opts ) try {
         geometries.push_back( findgeometry( files.back() ) );
     }
 
+    const double sample_interval = infer_interval( files[0],
+                                                   opts.sampling_interval );
     if( opts.compute_norm ){
         std::cout << normalize_surveys( opts.scaling, files ) << "\n";
         std::exit( 0 );
@@ -186,7 +189,7 @@ void run( const options& opts ) try {
                                seg,
                                fnames[ i ],
                                geometries.back(),
-                               opts.sampling_interval,
+                               sample_interval,
                                B );
     }
     Progress::report( 5 );
