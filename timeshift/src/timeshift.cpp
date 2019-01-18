@@ -36,11 +36,16 @@ void printhelp(){
         "                              is computed from the input cubes\n"
         "-N, --output-normalization    output normalization during run\n"
         "-C, --compute-normalization   Compute normalization (and multiply by\n"
-        "                              scaling), write to stoud and exit\n"
+        "                              scaling), write to stdout and exit\n"
         "-P, --output-dir              output directory\n"
         "-p, --output-prefix           output filename prefix\n"
         "-D, --output-delim            output filename delimiter\n"
         "-X, --output-ext              output file extension\n"
+        "-o, --output-files            space separated list of filenames. The\n"
+        "                              list is terminated by a double dash\n"
+        "                              [out1.sgy ... --]. If this option is\n"
+        "                              set, all other filename specifiers\n"
+        "                              will be ignored (-P, -p, -D,-X).\n"
         "-i, --ilbyte                  inline header word byte offset\n"
         "-x, --xlbyte                  crossline header word byte offset\n"
         "-t, --sampling-interval       sampling interval\n"
@@ -75,6 +80,7 @@ options parseopts( int argc, char** argv ) {
         { "output-prefix",        required_argument, 0, 'p' },
         { "output-delim",         required_argument, 0, 'D' },
         { "output-ext",           required_argument, 0, 'X' },
+        { "output-files",         required_argument, 0, 'o' },
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
         { "sampling-interval",    required_argument, 0, 't' },
@@ -88,7 +94,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "r:H:V:m:dcsNCS:A:P:p:D:i:x:t:v",
+                             "r:H:V:m:dcsNCS:A:P:p:D:X:o:i:x:t:v",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -109,6 +115,12 @@ options parseopts( int argc, char** argv ) {
             case 'p': opts.prefix               = optarg; break;
             case 'D': opts.delim                = optarg; break;
             case 'X': opts.extension            = optarg; break;
+            case 'o':
+                optind--;
+                while( "--" != std::string( argv[optind] ) )
+                    opts.output_files.push_back( argv[optind++] );
+                optind++;
+                break;
             case 't': opts.sampling_interval    = std::stod( optarg ); break;
             case 'i': opts.ilbyte               = mkilbyte( optarg ); break;
             case 'x': opts.xlbyte               = mkxlbyte( optarg ); break;
@@ -172,14 +184,26 @@ void run( const options& opts ) try {
     const int timeshifts = vintages - 1;
 
     std::vector< std::string > fnames;
-    for( int i = 0; i < timeshifts; ++i ) {
-        const auto fname = opts.dir
-                         + opts.prefix
-                         + opts.delim
-                         + std::to_string( i )
-                         + opts.extension
-                         ;
-        fnames.push_back( fname );
+
+    if( opts.output_files.empty() ) {
+        for( int i = 0; i < timeshifts; ++i ) {
+            const auto fname = opts.dir
+                             + opts.prefix
+                             + opts.delim
+                             + std::to_string( i )
+                             + opts.extension
+                             ;
+            fnames.push_back( fname );
+        }
+    }
+    else {
+        if( opts.output_files.size() != timeshifts ) {
+            std::cerr << "The number of output files should be one less than "
+                      << "the number of input files\n";
+            std::exit( 1 );
+        }
+
+        fnames = opts.output_files;
     }
 
     for( int i = 0; i < timeshifts; ++i ) {

@@ -141,6 +141,22 @@ add_custom_target(diff-cropped-custom_norm
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
+add_custom_target(ts-cropped-user-specified-output-files
+    COMMENT "Running timeshift (cropped)"
+    COMMAND timeshift -i 5 -x 21 --output-files out1.sgy out2.sgy -- ${cropped-files} 1>/dev/null
+    DEPENDS timeshift
+)
+
+add_custom_target(diff-cropped-user-specified-output-files
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
+        --iline 5 --xline 21
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy out1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy out2.sgy
+    COMMENT "Analysing cropped diff image"
+    DEPENDS ts-cropped
+            ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+)
+
 list(GET cropped-files 1 M1)
 add_custom_target(apply-ts
     COMMENT "Running apply timeshift"
