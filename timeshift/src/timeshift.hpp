@@ -29,6 +29,7 @@ namespace {
 
 struct options {
     std::vector< std::string > files;
+    std::vector< std::string > output_files;
     double      timeshift_resolution = 0.05;
     double      horizontal_smoothing = 0.01;
     double      vertical_smoothing   = 0.1;
