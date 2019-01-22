@@ -150,6 +150,26 @@ add_custom_target(imp-segmented-cropped
     DEPENDS imp-tinw-diff-cropped
 )
 
+add_custom_target(imp-custom-filenames-cropped
+    COMMENT "Running impedance, time varying wavelet (cropped)"
+    COMMAND impedance -i 5 -x 21 --output-files r1.sgy r2.sgy r3.sgy d1.sgy d2.sgy d3.sgy -- ${cropped-files} 1>/dev/null
+    DEPENDS impedance
+)
+
+add_custom_target(imp-custom-filenames-diff-cropped
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+        --iline 5 --xline 21
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-tinw.sgy r1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-tinw.sgy r2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-tinw.sgy r3.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-tinw.sgy d1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-tinw.sgy d2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-tinw.sgy d3.sgy
+    COMMENT "Analysing impedance diff image (time varying wavelet)"
+    DEPENDS imp-custom-filenames-cropped
+            ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
+)
+
 add_custom_target(imp-segmented-diff-cropped
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
         --iline 5 --xline 21
@@ -165,4 +185,4 @@ add_custom_target(imp-segmented-diff-cropped
 )
 
 add_dependencies(diff-impedance imp-tvw-diff-cropped imp-tinw-diff-cropped
-                 imp-segmented-diff-cropped)
+                 imp-segmented-diff-cropped imp-custom-filenames-diff-cropped)
