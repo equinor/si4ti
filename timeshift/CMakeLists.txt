@@ -153,7 +153,7 @@ add_custom_target(diff-cropped-user-specified-output-files
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy out1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy out2.sgy
     COMMENT "Analysing cropped diff image"
-    DEPENDS ts-cropped
+    DEPENDS ts-cropped-user-specified-output-files
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
@@ -174,7 +174,7 @@ add_custom_target(diff-apply-ts
 )
 
 add_dependencies(diff-timeshift diff-cropped diff-cropped-4Dcorr diff-cropped-cumulative
-                 diff-cropped-custom_norm diff-apply-ts)
+                 diff-cropped-custom_norm diff-apply-ts diff-cropped-user-specified-output-files)
 
 find_program(valgrind valgrind)
 if(NOT valgrind)
