@@ -35,6 +35,12 @@ void printhelp(){
         "-p, --inverse-polarity        invert polarity of the data\n"
         "-m, --max-iter                maximum number of itarations for\n"
         "                              linear solver\n"
+        "-O, --output-files            space separated list of filenames. The\n"
+        "                              list is terminated by a double dash\n"
+        "                              [out1.sgy ... --]. Relative acoustic\n"
+        "                              impedance will be output to the first\n"
+        "                              files, and the synthetic data to the\n"
+        "                              following files"
         "-i, --ilbyte                  inline header word byte offset\n"
         "-x, --xlbyte                  crossline header word byte offset\n"
         "-v, --verbose                 increase verbosity\n"
@@ -45,6 +51,7 @@ void printhelp(){
 
 struct options {
     std::vector< std::string > files;
+    std::vector< std::string > output_files;
     int             verbosity            = 0;
     segyio::ilbyte  ilbyte               = segyio::ilbyte();
     segyio::xlbyte  xlbyte               = segyio::xlbyte();
@@ -72,6 +79,7 @@ options parseopts( int argc, char** argv ) {
         { "segments",             required_argument, 0, 's' },
         { "overlap",              required_argument, 0, 'o' },
         { "max-iter",             required_argument, 0, 'm' },
+        { "output-files",         required_argument, 0, 'O' },
         { "verbose",              no_argument,       0, 'v' },
         { "help",                 no_argument,       0, 'h' },
         { nullptr },
@@ -82,7 +90,7 @@ options parseopts( int argc, char** argv ) {
     while( true ) {
         int option_index = 0;
         int c = getopt_long( argc, argv,
-                             "i:x:ptd:D:l:L:s:o:m:vh",
+                             "i:x:ptd:D:l:L:s:o:m:O:vh",
                              longopts, &option_index );
 
         if( c == -1 ) break;
@@ -104,6 +112,12 @@ options parseopts( int argc, char** argv ) {
             case 'o': opts.overlap      = std::stoi( optarg ); break;
             case 'm': opts.max_iter     = std::stoi( optarg ); break;
             case 'v': opts.verbosity++;                        break;
+            case 'O':
+                optind--;
+                while( "--" != std::string( argv[optind] ) )
+                    opts.output_files.push_back( argv[optind++] );
+                optind++;
+                break;
             case 'h':
                 printhelp();
                 std::exit( 0 );
@@ -120,6 +134,13 @@ options parseopts( int argc, char** argv ) {
 
     while( optind < argc )
         opts.files.push_back( argv[ optind++ ] );
+
+    if( 2*opts.files.size() != opts.output_files.size()
+        and !opts.output_files.empty() ) {
+        std::cerr << "The number of output files should be twice the number "
+                  << "of input files.";
+        std::exit( 1 );
+    }
 
     return opts;
 }
@@ -177,8 +198,18 @@ int main( int argc, char** argv ) {
     std::vector< output_file > dsyn_files;
 
     for( int i = 0; i < vintages; ++i ) {
-        std::string relAI_fname = "relAI-" + std::to_string( i ) + ".sgy";
-        std::string dsyn_fname = "dsyn-" + std::to_string( i ) + ".sgy";
+
+        std::string relAI_fname;
+        std::string dsyn_fname;
+
+        if( opts.output_files.empty() ) {
+            relAI_fname = "relAI-" + std::to_string( i ) + ".sgy";
+            dsyn_fname = "dsyn-" + std::to_string( i ) + ".sgy";
+        }
+        else {
+            relAI_fname = opts.output_files[ i ];
+            dsyn_fname = opts.output_files[ i + vintages ];
+        }
 
         auto relAI_file = create_file( relAI_fname,
                                        opts.files.front(),
