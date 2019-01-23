@@ -106,7 +106,7 @@ list(APPEND cropped-files
 
 add_custom_target(imp-tvw-cropped
     COMMENT "Running impedance, time varying wavelet (cropped)"
-    COMMAND impedance -i 5 -x 21 --timevarying-wavelet ${cropped-files}
+    COMMAND impedance -i 5 -x 21 --timevarying-wavelet ${cropped-files} 1>/dev/null
     DEPENDS impedance
 )
 
@@ -126,7 +126,7 @@ add_custom_target(imp-tvw-diff-cropped
 
 add_custom_target(imp-tinw-cropped
     COMMENT "Running impedance, time invariant wavelet (cropped)"
-    COMMAND impedance -i 5 -x 21 ${cropped-files}
+    COMMAND impedance -i 5 -x 21 ${cropped-files} 1>/dev/null
     DEPENDS imp-tvw-diff-cropped
 )
 
@@ -146,7 +146,7 @@ add_custom_target(imp-tinw-diff-cropped
 
 add_custom_target(imp-segmented-cropped
     COMMENT "Running impedance, segmented (cropped)"
-    COMMAND impedance -i 5 -x 21 --timevarying-wavelet --segments 2 --max-iter 3 ${cropped-files}
+    COMMAND impedance -i 5 -x 21 --timevarying-wavelet --segments 2 --max-iter 3 ${cropped-files} 1>/dev/null
     DEPENDS imp-tinw-diff-cropped
 )
 
