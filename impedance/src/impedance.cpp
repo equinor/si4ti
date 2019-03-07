@@ -224,17 +224,17 @@ int main( int argc, char** argv ) {
         dsyn_files.emplace_back( std::move( dsyn_file ) );
     }
 
-    const int ilines = files.front().inlinecount();
-    const int xlines = files.front().crosslinecount();
-    const int tracelen = files.front().samplecount();
+    const std::size_t ilines = files.front().inlinecount();
+    const std::size_t xlines = files.front().crosslinecount();
+    const std::size_t tracelen = files.front().samplecount();
 
     const auto sgments = segments( opts.segments,
                                    ilines, xlines,
                                    opts.overlap );
 
     for( const auto& segment : sgments ) {
-        const int trc_start = segment.first;
-        const int trc_end = segment.second;
+        const std::size_t trc_start = segment.first;
+        const std::size_t trc_end = segment.second;
 
         vector< T > relAI = compute_impedance< T >( files,
                                                     relAI_files,
@@ -247,8 +247,8 @@ int main( int argc, char** argv ) {
                                                     opts.latsmooth_4D,
                                                     trc_start, trc_end );
 
-        const int traces = trc_end - trc_start + 1;
-        const int cubesize = traces * tracelen;
+        const std::size_t traces = trc_end - trc_start + 1;
+        const std::size_t cubesize = traces * tracelen;
 
         for( int i = 0; i < vintages; ++i ) {
             auto seg = relAI.segment( i * cubesize, cubesize );

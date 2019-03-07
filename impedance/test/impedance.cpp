@@ -14,14 +14,14 @@ using T = double;
 TEST_CASE("Regression test") {
 
     SECTION( "segmentation 1 segment" ) {
-        std::vector< std::pair< int, int > > expected{{0,65708}};
+        std::vector< std::pair< std::size_t, std::size_t > > expected{{0,65708}};
         auto result = segments( 1, 149, 441, 50 );
 
         CHECK( result == expected );
     }
 
     SECTION( "segmentation 2 segments" ) {
-        std::vector< std::pair< int, int > > expected{{0,55565},{33075,65708}};
+        std::vector< std::pair< std::size_t, std::size_t > > expected{{0,55565},{33075,65708}};
         auto result = segments( 2, 149, 441, 50 );
 
         CHECK( result == expected );

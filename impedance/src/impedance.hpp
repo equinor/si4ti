@@ -74,7 +74,7 @@ vector< T > timeinvariant_wavelet( input_file& survey ) {
     Eigen::FFT< T > fft;
     vector< std::complex< T > > spectrum;
 
-    for( int trc = 0; trc < survey.tracecount(); ++trc ) {
+    for( std::size_t trc = 0; trc < survey.tracecount(); ++trc ) {
         survey.get( trc, trace.data() );
         fft.fwd( spectrum, trace );
         freqwav += spectrum.cwiseAbs() / survey.tracecount();
@@ -98,7 +98,7 @@ matrix< T > timevarying_wavelet( input_file& survey ) {
 
     const int last_offset = ((tracelen-win_size)/win_step)*win_step + win_size/2;
 
-    for( int trc = 0; trc < survey.tracecount(); ++trc ) {
+    for( std::size_t trc = 0; trc < survey.tracecount(); ++trc ) {
         survey.get( trc, trace.data() );
         for( int offset = win_size/2; offset <= last_offset; offset += win_step ) {
             auto segment = trace.segment( offset-win_size/2, win_size );
@@ -278,9 +278,9 @@ solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
                            T damping,
                            int trc_start, int trc_end ) {
 
-    const int traces =  trc_end - trc_start + 1;
-    const int tracelen = L[0].cols();
-    const int cubesize = traces * tracelen;
+    const std::size_t traces =  trc_end - trc_start + 1;
+    const std::size_t tracelen = L[0].cols();
+    const std::size_t cubesize = traces * tracelen;
     const int nvint = vintages.size();
 
     solution_1D< T > sol = {
@@ -300,8 +300,8 @@ solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
         L_in = (L[v] + dmp).inverse();
         auto& vintage = vintages[v];
 
-        for( int t = trc_start; t <= trc_end; ++t ) {
-            const int offset = v * cubesize + (t-trc_start) * tracelen;
+        for( std::size_t t = trc_start; t <= trc_end; ++t ) {
+            const std::size_t offset = v * cubesize + (t-trc_start) * tracelen;
             vintage.get( t, trace.data() );
             sol.b.segment( offset, tracelen ) = A[v].transpose() * trace;
         }
@@ -323,24 +323,26 @@ void add_boundary_inline( std::vector< output_file >& relAI_files,
                           vector< T >& b,
                           T norm,
                           T lat_smooth_3D, T lat_smooth_4D,
-                          int trc_start, int trc_end ) {
+                          std::size_t trc_start, std::size_t trc_end ) {
     /*
      * Adds lateral 3D/4D smoothing and 4D damping contributions from the last
      * trace of the previous segment.
      */
 
     const int nvints = relAI_files.size();
-    const int xlines = relAI_files.front().crosslinecount();
-    const int traces = trc_end - trc_start + 1;
-    const int tracelen = relAI_files.front().samplecount();
-    const int cubesize = tracelen * traces;
+    const std::size_t xlines = relAI_files.front().crosslinecount();
+    const std::size_t traces = trc_end - trc_start + 1;
+    const std::size_t tracelen = relAI_files.front().samplecount();
+    const std::size_t cubesize = tracelen * traces;
 
     vector< T > trace( tracelen );
     vector< T > trace2( tracelen );
 
     for( int v = 0; v < nvints; ++v ) {
-        for( int t = (trc_start - xlines); t < trc_start; ++t ) {
-            const int offset = v * cubesize + (t-(trc_start-xlines)) * tracelen;
+        for( std::size_t t = (trc_start - xlines); t < trc_start; ++t ) {
+            const std::size_t offset =
+                v * cubesize + (t-(trc_start-xlines)) * tracelen;
+
             relAI_files[v].get( t, trace.data() );
             b.segment( offset, tracelen ) += norm * (lat_smooth_3D/4) * trace;
 
@@ -519,7 +521,7 @@ template< typename T >
 vector< T > reconstruct_data( Eigen::Ref< vector< T > > rel_AI,
                               const matrix< T >& A,
                               T norm,
-                              int traces ) {
+                              std::size_t traces ) {
     const int tracelen = A.cols();
 
     Eigen::Map< matrix< T > > x( rel_AI.data(), tracelen, traces );
@@ -528,23 +530,23 @@ vector< T > reconstruct_data( Eigen::Ref< vector< T > > rel_AI,
     return rel_AI;
 }
 
-std::vector< std::pair< int, int > > segments( int numseg,
-                                               int ilines,
-                                               int xlines,
-                                               int overlap ) {
+std::vector< std::pair< std::size_t, std::size_t > > segments( int numseg,
+                                                               std::size_t ilines,
+                                                               std::size_t xlines,
+                                                               int overlap ) {
 
     /* Data is divided into <numseg> segments on inlines, with an
      * overlap. This function returns (start, end) pairs containing the
      * first and last (inclusive) trace of the segments.
      */
 
-    std::vector< std::pair<  int, int > > sgmnts;
+    std::vector< std::pair< std::size_t, std::size_t > > sgmnts;
 
     for( int i = 0; i < numseg; ++i ) {
-        int first = xlines * std::round( double(i) / numseg * ilines );
-        int last = xlines * ( std::round( double(i+1)/numseg * ilines
-                              + overlap ) + 1 )
-                          - 1;
+        std::size_t first = xlines * std::round( double(i) / numseg * ilines );
+        std::size_t last = xlines * ( std::round( double(i+1)/numseg * ilines
+                                      + overlap ) + 1 )
+                                  - 1;
         last = std::min( last, ilines*xlines - 1 );
         sgmnts.push_back( { first, last } );
     }
@@ -584,12 +586,12 @@ struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
                                const Rhs& rhs,
                                const Scalar& alpha ) {
 
-        const int tracelen = lhs.mat[0].cols();
-        const int xlines = lhs.xlines;
-        const int ilines = lhs.ilines;
-        const int traces = xlines * ilines;
-        const int cubesize = tracelen * traces;
-        const int vintages = lhs.vintages;
+        const std::size_t tracelen = lhs.mat[0].cols();
+        const std::size_t xlines = lhs.xlines;
+        const std::size_t ilines = lhs.ilines;
+        const std::size_t traces = xlines * ilines;
+        const std::size_t cubesize = tracelen * traces;
+        const std::size_t vintages = lhs.vintages;
 
         const T damping_4D = lhs.damping_4D;
         const T lat_smooth_3D = lhs.lat_smooth_3D;
@@ -606,12 +608,12 @@ struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
         }
 
         #pragma omp parallel for firstprivate( sm ) schedule( guided )
-        for( int t = 0; t < traces; ++t ) {
+        for( std::size_t t = 0; t < traces; ++t ) {
 
-            int j = t / xlines;
-            int k = t % xlines;
+            std::size_t j = t / xlines;
+            std::size_t k = t % xlines;
 
-            std::vector< std::ptrdiff_t > iss;
+            std::vector< std::size_t > iss;
 
             if( lhs.segmented and t < lhs.xlines )
                 iss = {
@@ -635,11 +637,13 @@ struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
                 };
 
             for( int v = 0; v < vintages; ++v ) {
-                const int offset = v * cubesize + t * tracelen;
+                const std::size_t offset = v * cubesize + t * tracelen;
 
                 sm.col( v ) = rhs.segment( offset, tracelen );
                 for( const auto is : iss ) {
-                    const int neighbour_offset = is * tracelen + v * cubesize;
+                    const std::size_t neighbour_offset =
+                        is * tracelen + v * cubesize;
+
                     sm.col( v ) -= 0.25
                                 * rhs.segment( neighbour_offset, tracelen );
                 }
@@ -651,8 +655,8 @@ struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
             for( int v2 = 0; v2 < vintages; ++v2 ) {
 
                 if( v1 != v2 ) {
-                    const int v1_offset = t * tracelen + v1 * cubesize;
-                    const int v2_offset = t * tracelen + v2 * cubesize;
+                    const std::size_t v1_offset = t * tracelen + v1 * cubesize;
+                    const std::size_t v2_offset = t * tracelen + v2 * cubesize;
 
                     auto lsmth_4D = lat_smooth_4D * (sm.col(v1) - sm.col(v2));
                     auto dmp_4D = damping_4D
