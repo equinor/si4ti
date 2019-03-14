@@ -221,10 +221,10 @@ sparse< T > normalized_bspline( int samples, T density, int degree ) {
 }
 
 struct geometry {
-    int samples;
-    int traces;
-    int ilines;
-    int xlines;
+    std::size_t samples;
+    std::size_t traces;
+    std::size_t ilines;
+    std::size_t xlines;
 };
 
 geometry findgeometry( input_file& f ) {
@@ -248,7 +248,7 @@ T normalize_surveys( T scaling,
     std::vector< T > trace( surveys.front().samplecount() );
     for( auto& survey : surveys ) {
         T sum = 0.0, count = 0.0;
-        for( int trc = 0; trc < survey.tracecount(); ++trc ) {
+        for( std::size_t trc = 0; trc < survey.tracecount(); ++trc ) {
             survey.get( trc, trace.begin() );
             std::transform( trace.begin(), trace.end(), trace.begin(), abs );
             sum   += std::accumulate( trace.begin(), trace.end(), 0.0 );
@@ -285,7 +285,7 @@ void output_timeshift( const std::string& basefile,
     output_file f( segyio::path{ fname } );
 
     vector< T > reconstructed( geo.samples );
-    for( int traceno = 0; traceno < geo.traces; ++traceno ) {
+    for( std::size_t traceno = 0; traceno < geo.traces; ++traceno ) {
         auto segment = coeffisients.segment( traceno * B.cols(), B.cols() );
         reconstruct< T >( segment, reconstructed, sampling_interval, B );
         f.put( traceno, reconstructed.data() );
@@ -500,8 +500,8 @@ void correct( int start, int end,
      */
 
     const int vintages = files.size();
-    const int localsize = spline.cols();
-    const int vintpairsize = localsize * geo.traces;
+    const std::size_t localsize = spline.cols();
+    const std::size_t vintpairsize = localsize * geo.traces;
 
     std::vector< vector< T > > trc( vintages, vector< T >( geo.samples ) );
     std::vector< vector< T > > drv( vintages, vector< T >( geo.samples ) );
@@ -515,13 +515,13 @@ void correct( int start, int end,
     vector< T > c( geo.samples );
     vector< T > shift( geo.samples );
 
-    for( int t = start; t < end; ++t ) {
+    for( std::size_t t = start; t < end; ++t ) {
 
         mean.setZero();
         c.setZero();
         for( int i = 0; i < timeshifts; ++i ) {
             // TODO: comment on why
-            const int r = (t * localsize) + (i * vintpairsize);
+            const std::size_t r = (t * localsize) + (i * vintpairsize);
             c += spline * x.segment( r, localsize );
             mean += c;
         }
@@ -562,7 +562,7 @@ void correct( int start, int end,
 
             // TODO: rename mvrow to indicate position (maybe) in system
             for( int mvrow = 0; mvrow < timeshifts; ++mvrow ) {
-                const int row = (mvrow * vintpairsize) + (t * localsize);
+                const std::size_t row = (mvrow * vintpairsize) + (t * localsize);
                 correction.segment( row, localsize ) += sol * maskb( mvrow );
             }
         }}
@@ -588,10 +588,10 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
         /* copy so each thread has its own file handle and I/O buffer */
         auto f = files;
 
-        const int start = thread_id * (geo.traces/nthreads);
-        const int end = (thread_id+1) == nthreads
-                      ? geo.traces
-                      : (thread_id+1) * (geo.traces/nthreads);
+        const std::size_t start = thread_id * (geo.traces/nthreads);
+        const std::size_t end = (thread_id+1) == nthreads
+                              ? geo.traces
+                              : (thread_id+1) * (geo.traces/nthreads);
 
         correct( start, end, x, f, spline, geo, omega, normalizer, cs );
     }
@@ -635,10 +635,10 @@ struct SimpliPreconditioner {
         Rhs v( b.rows() );
         v.setZero();
         const int timeshifts = vintages - 1;
-        const int vintpairsize = b.rows() / timeshifts;
+        const std::size_t vintpairsize = b.rows() / timeshifts;
 
         # pragma omp parallel for schedule(guided)
-        for( int trace = 0; trace < traces; ++trace ) {
+        for( std::size_t trace = 0; trace < traces; ++trace ) {
 
         for( int i = 0; i < timeshifts; ++i ){
             const auto col = i * diagonals;
@@ -658,8 +658,8 @@ struct SimpliPreconditioner {
     const matrix< T >* mat = nullptr;
     int vintages;
     int diagonals;
-    int traces;
-    int dims;
+    std::size_t traces;
+    std::size_t dims;
 };
 
 template< typename T >
@@ -697,9 +697,9 @@ linear_system< T > build_system( const sparse< T >& B,
 
     const int vintages = files.size();
     const int timeshifts = vintages - 1;
-    const int localsize = B.cols();
-    const int vintpairsize = localsize * geo.traces;
-    const int solutionsize = vintpairsize * (vintages - 1);
+    const std::size_t localsize = B.cols();
+    const std::size_t vintpairsize = localsize * geo.traces;
+    const std::size_t solutionsize = vintpairsize * (vintages - 1);
 
     linear_system< T > p = {
         matrix< T >( solutionsize, ndiagonals * (vintages - 1) ),
@@ -726,7 +726,7 @@ linear_system< T > build_system( const sparse< T >& B,
     for( auto traceno = 0; traceno < geo.traces; ++traceno ) {
 
         if( omp_get_thread_num() == 0 ) {
-            const int chunk = geo.traces / omp_get_num_threads();
+            const std::size_t chunk = geo.traces / omp_get_num_threads();
             processed++;
             if( chunk > 40 && processed % (chunk/40) == 0 )
                 Progress::report();
@@ -753,20 +753,20 @@ linear_system< T > build_system( const sparse< T >& B,
             localL = linearoperator( D, B ) + C;
 
             for( int mvrow = 0; mvrow < timeshifts; ++mvrow) {
-                const int row = (mvrow * vintpairsize) + (traceno * localsize);
+                const std::size_t row = (mvrow * vintpairsize) + (traceno * localsize);
                 p.b.segment( row, localsize )
                     += solution( D, delta, B ) * maskb(mvrow);
             }
 
             for( int mvrow = 0; mvrow < timeshifts; ++mvrow) {
-                const int row = (mvrow * vintpairsize) + (traceno * localsize);
+                const std::size_t row = (mvrow * vintpairsize) + (traceno * localsize);
 
                 for( int mvcol = 0; mvcol < timeshifts; ++mvcol) {
                     if( not maskL( mvrow, mvcol ) ) continue;
 
                     for( int diag = 0; diag < ndiagonals; ++diag ) {
-                        int col_size = localsize - diag;
-                        int col = (mvcol * ndiagonals) + diag;
+                        std::size_t col_size = localsize - diag;
+                        std::size_t col = (mvcol * ndiagonals) + diag;
 
                         p.L.block( row, col, col_size, 1 )
                             += localL.diagonal(diag);
@@ -782,8 +782,8 @@ linear_system< T > build_system( const sparse< T >& B,
 template< typename T >
 void accumulate_timeshifts( vector< T >& x, int vintages ) {
     const int timeshifts = vintages - 1;
-    const int len = x.size() / timeshifts;
-    for( int prev = 0, next = 1; next < timeshifts; ++next, ++prev )
+    const std::size_t len = x.size() / timeshifts;
+    for( std::size_t prev = 0, next = 1; next < timeshifts; ++next, ++prev )
         x.segment( next*len, len ) += x.segment( prev*len, len );
 }
 
