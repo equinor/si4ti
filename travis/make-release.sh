@@ -18,14 +18,16 @@ popd
 
 mkdir eigen
 pushd eigen
-cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release /io/eigen
+cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_CXX_FLAGS="-w" /io/eigen
 make
 make install
 popd
 
 mkdir cppcheck
 pushd cppcheck
-cmake -DCMAKE_BUILD_TYPE=Release /io/cppcheck-src/cppcheck
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-w" \
+      /io/cppcheck-src/cppcheck
 make
 make install
 popd
