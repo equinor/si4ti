@@ -525,6 +525,7 @@ vector< T > reconstruct_data( Eigen::Ref< vector< T > > rel_AI,
     const int tracelen = A.cols();
 
     Eigen::Map< matrix< T > > x( rel_AI.data(), tracelen, traces );
+    // cppcheck-suppress unreadVariable
     x = A * x * norm;
 
     return rel_AI;
