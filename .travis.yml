@@ -14,6 +14,9 @@ before_install:
     - mkdir cppcheck-src
     - pushd cppcheck-src
     - git clone https://github.com/danmar/cppcheck
+    - pushd cppcheck
+    - git checkout 1.87
+    - popd
     - popd
 
 script:
