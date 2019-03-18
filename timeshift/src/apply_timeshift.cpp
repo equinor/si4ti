@@ -119,8 +119,8 @@ int main( int argc, char** argv ) {
     input_file timeshift( segyio::path{ shift_fname }, cfg );
     output_file shifted_cube( segyio::path{ out_fname }, cfg );
 
-    const int samples = cube.samplecount();
-    const int traces = cube.inlinecount() * cube.crosslinecount();
+    const std::size_t samples = cube.samplecount();
+    const std::size_t traces = cube.inlinecount() * cube.crosslinecount();
     const double sample_interval = infer_interval( cube, opts.sampling_interval );
 
     Eigen::VectorXd trace( samples );
@@ -129,7 +129,7 @@ int main( int argc, char** argv ) {
     if( opts.verbosity > 2 )
         std::cout << "Applying timeshift to " << out_fname << '\n';
 
-    for( int trc = 0; trc < traces; ++trc ) {
+    for( std::size_t trc = 0; trc < traces; ++trc ) {
         cube.get( trc, trace.data() );
         timeshift.get( trc, shift.data() );
         shift *= opts.reverse / sample_interval;
