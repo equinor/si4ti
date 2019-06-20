@@ -4,7 +4,7 @@ add_executable(impedance src/impedance.cpp)
 target_link_libraries(impedance ${fftw3f}
                                 ${fftw3}
                                 Eigen3::Eigen
-                                segyio
+                                segyio::segyio
                                 ${OpenMP_EXE_LINKER_FLAGS}
                                 ${OpenMP_CXX_FLAGS}
 )
@@ -35,7 +35,7 @@ target_link_libraries(impedance_tests catch2
                                       ${fftw3f}
                                       ${fftw3}
                                       Eigen3::Eigen
-                                      segyio
+                                      segyio::segyio
                                       ${OpenMP_EXE_LINKER_FLAGS}
                                       ${OpenMP_CXX_FLAGS}
 )
