@@ -162,6 +162,10 @@ void run( const options& opts ) try {
                                            .with( opts.xlbyte ) } );
 
         geometries.push_back( findgeometry( files.back() ) );
+
+        if( geometries.front() != geometries.back() )
+            throw std::invalid_argument( "Input files must all "
+                                         "have equal structure" );
     }
 
     const double sample_interval = infer_interval( files[0],

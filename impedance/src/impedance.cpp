@@ -173,10 +173,22 @@ int main( int argc, char** argv ) {
 
     std::vector< input_file > files;
 
-    for( const auto& file : opts.files )
+    for( const auto& file : opts.files ) {
         files.emplace_back( segyio::path{ file },
                             segyio::config{}.with( opts.ilbyte )
                                             .with( opts.xlbyte ) );
+
+        auto& back = files.back();
+        auto& front = files.front();
+
+        if( not (front.sorting()        == back.sorting())
+            or   front.crosslinecount() != back.crosslinecount()
+            or   front.inlinecount()    != back.inlinecount()
+            or   front.tracecount()     != back.tracecount() )
+            
+            throw std::invalid_argument( "Input files must all "
+                                         "have equal structure" );
+    }
 
     std::vector< matrix< T > > wvlets = wavelets< T >( files,
                                                        opts.tv_wavelet,
