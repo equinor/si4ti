@@ -28,10 +28,11 @@ void printhelp(){
         "-s, --segments                if this parameter is set, data domain\n"
         "                              splitting will be performed. Takes the\n"
         "                              number of segments as an argument.\n"
-        "-o, --overlap                 number of inlines overlap between\n"
+        "-o, --overlap                 number of inlines (crosslines if\n"
+        "                              crossline sorted) overlap between\n"
         "                              segments when performing data domain\n"
         "                              splitting. Defaults to maximum number\n"
-        "                              of iterations of the linear solver "
+        "                              of iterations of the linear solver \n"
         "-p, --inverse-polarity        invert polarity of the data\n"
         "-m, --max-iter                maximum number of itarations for\n"
         "                              linear solver\n"
@@ -40,7 +41,7 @@ void printhelp(){
         "                              [out1.sgy ... --]. Relative acoustic\n"
         "                              impedance will be output to the first\n"
         "                              files, and the synthetic data to the\n"
-        "                              following files"
+        "                              following files\n"
         "-i, --ilbyte                  inline header word byte offset\n"
         "-x, --xlbyte                  crossline header word byte offset\n"
         "-v, --verbose                 increase verbosity\n"
@@ -177,10 +178,6 @@ int main( int argc, char** argv ) {
                             segyio::config{}.with( opts.ilbyte )
                                             .with( opts.xlbyte ) );
 
-    for( auto& file: files )
-        if( not ( file.sorting() == segyio::sorting::iline() ) )
-            throw std::runtime_error("File must be inline sorted");
-
     std::vector< matrix< T > > wvlets = wavelets< T >( files,
                                                        opts.tv_wavelet,
                                                        opts.polarity );
@@ -224,12 +221,16 @@ int main( int argc, char** argv ) {
         dsyn_files.emplace_back( std::move( dsyn_file ) );
     }
 
-    const std::size_t ilines = files.front().inlinecount();
-    const std::size_t xlines = files.front().crosslinecount();
+    const bool xl_sorted = files.front().sorting() == segyio::sorting::xline();
+    const std::size_t fast = xl_sorted ? files.front().crosslinecount()
+                                       : files.front().inlinecount();
+    const std::size_t slow = xl_sorted ? files.front().inlinecount()
+                                       : files.front().crosslinecount();
+
     const std::size_t tracelen = files.front().samplecount();
 
     const auto sgments = segments( opts.segments,
-                                   ilines, xlines,
+                                   fast, slow,
                                    opts.overlap );
 
     for( const auto& segment : sgments ) {

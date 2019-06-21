@@ -29,15 +29,15 @@ struct BlockBandedMatrix : public Eigen::EigenBase< BlockBandedMatrix< T, Report
                        sparse< T > bnn,
                        matrix< int > cmb,
                        int vints,
-                       int inlines,
-                       int crosslines ) :
+                       int fast,
+                       int slow ) :
         mat( std::move( m ) ),
         diagonals( diagonals ),
         Bnn( std::move( bnn ) ),
         comb( std::move( cmb ) ),
         vintages( vints ),
-        ilines( inlines ),
-        xlines( crosslines )
+        fast( fast ),
+        slow( slow )
     {}
 
     Index rows() const { return this->mat.rows(); }
@@ -55,7 +55,7 @@ struct BlockBandedMatrix : public Eigen::EigenBase< BlockBandedMatrix< T, Report
     sparse< T > Bnn;
     matrix< int > comb;
     int vintages;
-    int ilines, xlines;
+    int fast, slow;
 
 };
 
@@ -90,7 +90,7 @@ struct generic_product_impl< BlockBandedMatrix< T, Reporter >,
                                 const Rhs& rhs,
                                 const Scalar& alpha ) {
 
-        const auto traces       = lhs.ilines * lhs.xlines;
+        const auto traces       = lhs.fast * lhs.slow;
         const auto localsize    = lhs.Bnn.rows();
         const auto timeshifts   = lhs.vintages - 1;
         const auto diagonals    = lhs.diagonals;
@@ -130,7 +130,7 @@ struct generic_product_impl< BlockBandedMatrix< T, Reporter >,
                                 const Rhs& rhs,
                                 const Scalar& alpha ) {
 
-        const auto traces       = lhs.ilines * lhs.xlines;
+        const auto traces       = lhs.fast * lhs.slow;
         const auto localsize    = lhs.Bnn.rows();
         const auto timeshifts   = lhs.vintages - 1;
         const auto diagonals    = lhs.diagonals;
@@ -169,9 +169,9 @@ struct generic_product_impl< BlockBandedMatrix< T, Reporter >,
                                  const BlockBandedMatrix< T, Reporter >& lhs,
                                  const Rhs& rhs ) {
 
-        const auto ilines     = lhs.ilines;
-        const auto xlines     = lhs.xlines;
-        const auto traces     = ilines * xlines;
+        const auto fast     = lhs.fast;
+        const auto slow     = lhs.slow;
+        const auto traces     = fast * slow;
         const auto localsize  = lhs.Bnn.rows();
         const auto timeshifts = lhs.vintages - 1;
 
@@ -184,17 +184,17 @@ struct generic_product_impl< BlockBandedMatrix< T, Reporter >,
         for( int mvrow = 0; mvrow < timeshifts; ++mvrow ) {
         for( int mvcol = 0; mvcol < timeshifts; ++mvcol ) {
 
-            int j = trace / xlines;
-            int k = trace % xlines;
+            int j = trace / slow;
+            int k = trace % slow;
             const std::ptrdiff_t iss[] = {
                 // C(j-1, k)
                 k == 0 ? trace : trace - 1,
                 // C(j+1, k)
-                k == xlines - 1 ? trace : trace + 1,
+                k == slow - 1 ? trace : trace + 1,
                 // C(j, k-1)
-                j == 0 ? trace : trace - xlines,
+                j == 0 ? trace : trace - slow,
                 // C(j, k+1)
-                j == ilines - 1 ? trace : trace + xlines,
+                j == fast - 1 ? trace : trace + slow,
             };
 
             const auto col = (mvrow * vintsize) + trace * localsize;

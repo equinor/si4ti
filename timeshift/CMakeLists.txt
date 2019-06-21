@@ -157,6 +157,22 @@ add_custom_target(diff-cropped-user-specified-output-files
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
+add_custom_target(ts-cropped-crosslinesorted
+    COMMENT "Running timeshift crosslinesorted (cropped)"
+    COMMAND timeshift -i 21 -x 5 ${cropped-files} 1>/dev/null
+    DEPENDS timeshift
+)
+
+add_custom_target(diff-cropped-crosslinesorted
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
+        --iline 5 --xline 21
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy timeshift-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy timeshift-1.sgy
+    COMMENT "Analysing cropped diff image crosslinesorted"
+    DEPENDS ts-cropped-crosslinesorted
+            ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+)
+
 list(GET cropped-files 1 M1)
 add_custom_target(apply-ts
     COMMENT "Running apply timeshift"
@@ -174,7 +190,8 @@ add_custom_target(diff-apply-ts
 )
 
 add_dependencies(diff-timeshift diff-cropped diff-cropped-4Dcorr diff-cropped-cumulative
-                 diff-cropped-custom_norm diff-apply-ts diff-cropped-user-specified-output-files)
+                 diff-cropped-custom_norm diff-apply-ts diff-cropped-user-specified-output-files
+                 diff-cropped-crosslinesorted)
 
 find_program(valgrind valgrind)
 if(NOT valgrind)

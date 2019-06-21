@@ -330,7 +330,12 @@ void add_boundary_inline( std::vector< output_file >& relAI_files,
      */
 
     const int nvints = relAI_files.size();
-    const std::size_t xlines = relAI_files.front().crosslinecount();
+
+    const bool xlinesorted =
+        relAI_files.front().sorting() == segyio::sorting::xline();
+    const std::size_t slow = xlinesorted ?
+        relAI_files.front().inlinecount() : relAI_files.front().crosslinecount();
+
     const std::size_t traces = trc_end - trc_start + 1;
     const std::size_t tracelen = relAI_files.front().samplecount();
     const std::size_t cubesize = tracelen * traces;
@@ -339,9 +344,9 @@ void add_boundary_inline( std::vector< output_file >& relAI_files,
     vector< T > trace2( tracelen );
 
     for( int v = 0; v < nvints; ++v ) {
-        for( std::size_t t = (trc_start - xlines); t < trc_start; ++t ) {
+        for( std::size_t t = (trc_start - slow); t < trc_start; ++t ) {
             const std::size_t offset =
-                v * cubesize + (t-(trc_start-xlines)) * tracelen;
+                v * cubesize + (t-(trc_start-slow)) * tracelen;
 
             relAI_files[v].get( t, trace.data() );
             b.segment( offset, tracelen ) += norm * (lat_smooth_3D/4) * trace;
@@ -376,16 +381,16 @@ struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter >
 
     SimpliImpMatrix( std::vector< matrix< T > > m,
                      int vints,
-                     int inlines,
-                     int crosslines,
+                     int fast,
+                     int slow,
                      T damping_4D,
                      T lat_smooth_3D,
                      T lat_smooth_4D,
                      bool sgmented ) :
         mat( std::move( m ) ),
         vintages( vints ),
-        ilines( inlines ),
-        xlines( crosslines ),
+        fast( fast ),
+        slow( slow ),
         damping_4D( damping_4D ),
         lat_smooth_3D( lat_smooth_3D ),
         lat_smooth_4D( lat_smooth_4D ),
@@ -393,11 +398,11 @@ struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter >
     {}
 
     Index rows() const {
-        return this->mat[0].rows() * vintages * xlines * ilines;
+        return this->mat[0].rows() * vintages * slow * fast;
     }
 
     Index cols() const {
-        return this->mat[0].rows() * vintages * xlines * ilines;
+        return this->mat[0].rows() * vintages * slow * fast;
     }
 
     template< typename Rhs >
@@ -409,7 +414,7 @@ struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter >
 
     std::vector< matrix< T > > mat;
     int vintages;
-    int ilines, xlines;
+    int fast, slow;
     T damping_4D;
     T lat_smooth_3D;
     T lat_smooth_4D;
@@ -459,8 +464,12 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
                                int trc_start,
                                int trc_end ) {
 
-    const int xlines = vintages.front().crosslinecount();
-    const int ilines = (trc_end - trc_start + 1) / xlines;
+    bool xlinesorted = vintages.front().sorting() == segyio::sorting::xline();
+    const int slow = xlinesorted ?
+        vintages.front().inlinecount() : vintages.front().crosslinecount();
+
+    const int fast = (trc_end - trc_start + 1) / slow;
+
     const int nvints = vintages.size();
     const bool segmented = trc_start != 0;
 
@@ -484,8 +493,8 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
 
     SimpliImpMatrix< T, Progress > rbd_L( std::move( L ),
                                           nvints,
-                                          ilines,
-                                          xlines,
+                                          fast,
+                                          slow,
                                           damping_4D,
                                           lat_smooth_3D,
                                           lat_smooth_4D,
@@ -532,11 +541,11 @@ vector< T > reconstruct_data( Eigen::Ref< vector< T > > rel_AI,
 }
 
 std::vector< std::pair< std::size_t, std::size_t > > segments( int numseg,
-                                                               std::size_t ilines,
-                                                               std::size_t xlines,
+                                                               std::size_t fast,
+                                                               std::size_t slow,
                                                                int overlap ) {
 
-    /* Data is divided into <numseg> segments on inlines, with an
+    /* Data is divided into <numseg> segments on fast, with an
      * overlap. This function returns (start, end) pairs containing the
      * first and last (inclusive) trace of the segments.
      */
@@ -544,11 +553,11 @@ std::vector< std::pair< std::size_t, std::size_t > > segments( int numseg,
     std::vector< std::pair< std::size_t, std::size_t > > sgmnts;
 
     for( int i = 0; i < numseg; ++i ) {
-        std::size_t first = xlines * std::round( double(i) / numseg * ilines );
-        std::size_t last = xlines * ( std::round( double(i+1)/numseg * ilines
+        std::size_t first = slow * std::round( double(i) / numseg * fast );
+        std::size_t last = slow * ( std::round( double(i+1)/numseg * fast
                                       + overlap ) + 1 )
                                   - 1;
-        last = std::min( last, ilines*xlines - 1 );
+        last = std::min( last, fast*slow - 1 );
         sgmnts.push_back( { first, last } );
     }
 
@@ -588,9 +597,9 @@ struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
                                const Scalar& alpha ) {
 
         const std::size_t tracelen = lhs.mat[0].cols();
-        const std::size_t xlines = lhs.xlines;
-        const std::size_t ilines = lhs.ilines;
-        const std::size_t traces = xlines * ilines;
+        const std::size_t slow = lhs.slow;
+        const std::size_t fast = lhs.fast;
+        const std::size_t traces = slow * fast;
         const std::size_t cubesize = tracelen * traces;
         const std::size_t vintages = lhs.vintages;
 
@@ -611,30 +620,30 @@ struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
         #pragma omp parallel for firstprivate( sm ) schedule( guided )
         for( std::size_t t = 0; t < traces; ++t ) {
 
-            std::size_t j = t / xlines;
-            std::size_t k = t % xlines;
+            std::size_t j = t / slow;
+            std::size_t k = t % slow;
 
             std::vector< std::size_t > iss;
 
-            if( lhs.segmented and t < lhs.xlines )
+            if( lhs.segmented and t < lhs.slow )
                 iss = {
                     // C(j-1, k)
                     k == 0 ? t : t - 1,
                     // C(j+1, k)
-                    k == xlines - 1 ? t : t + 1,
+                    k == slow - 1 ? t : t + 1,
                     // C(j, k+1)
-                    j == ilines - 1 ? t : t + xlines,
+                    j == fast - 1 ? t : t + slow,
                 };
             else
                 iss = {
                     // C(j-1, k)
                     k == 0 ? t : t - 1,
                     // C(j+1, k)
-                    k == xlines - 1 ? t : t + 1,
+                    k == slow - 1 ? t : t + 1,
                     // C(j, k-1)
-                    j == 0 ? t : t - xlines,
+                    j == 0 ? t : t - slow,
                     // C(j, k+1)
-                    j == ilines - 1 ? t : t + xlines,
+                    j == fast - 1 ? t : t + slow,
                 };
 
             for( int v = 0; v < vintages; ++v ) {

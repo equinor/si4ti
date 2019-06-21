@@ -184,5 +184,46 @@ add_custom_target(imp-segmented-diff-cropped
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
 )
 
+add_custom_target(xlinesorted-cropped
+    COMMENT "Running impedance, (crossline sorted) (cropped)"
+    COMMAND impedance -i 21 -x 5 --timevarying-wavelet ${cropped-files} 1>/dev/null
+    DEPENDS impedance
+)
+
+add_custom_target(xlinesorted-diff-cropped
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+        --iline 5 --xline 21
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-tvw.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-tvw.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-tvw.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-tvw.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-tvw.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-tvw.sgy dsyn-2.sgy
+    COMMENT "Analysing impedance diff image (crossline sorted)"
+    DEPENDS xlinesorted-cropped
+            ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
+)
+
+add_custom_target(imp-segmented-xlinesorted-cropped
+    COMMENT "Running impedance, segmented (cropped)"
+    COMMAND impedance -i 21 -x 5 --timevarying-wavelet --segments 2 --max-iter 3 ${cropped-files} 1>/dev/null
+    DEPENDS imp-tinw-diff-cropped
+)
+
+add_custom_target(imp-segmented-xlinesorted-diff-cropped
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+        --iline 5 --xline 21
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-segmented.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-segmented.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-segmented.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-segmented.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-segmented.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-segmented.sgy dsyn-2.sgy
+    COMMENT "Analysing impedance diff image (segmented)"
+    DEPENDS imp-segmented-xlinesorted-cropped
+            ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
+)
+
 add_dependencies(diff-impedance imp-tvw-diff-cropped imp-tinw-diff-cropped
-                 imp-segmented-diff-cropped imp-custom-filenames-diff-cropped)
+                 imp-segmented-diff-cropped imp-custom-filenames-diff-cropped
+                 xlinesorted-diff-cropped imp-segmented-xlinesorted-diff-cropped)

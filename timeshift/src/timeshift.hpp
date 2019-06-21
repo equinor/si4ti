@@ -223,17 +223,28 @@ sparse< T > normalized_bspline( int samples, T density, int degree ) {
 struct geometry {
     std::size_t samples;
     std::size_t traces;
-    std::size_t ilines;
-    std::size_t xlines;
+    std::size_t fast;
+    std::size_t slow;
+
+    bool operator != (const geometry& rhs) const noexcept (true) {
+        return this->samples != rhs.samples
+           or  this->traces  != rhs.traces
+           or  this->fast  != rhs.fast
+           or  this->slow  != rhs.slow
+        ;
+    }
 };
 
 geometry findgeometry( input_file& f ) {
     geometry geo;
 
     geo.samples = f.samplecount();
-    geo.ilines  = f.inlinecount();
-    geo.xlines  = f.crosslinecount();
-    geo.traces  = geo.ilines*geo.xlines;
+    geo.fast  = f.inlinecount();
+    geo.slow  = f.crosslinecount();
+    geo.traces  = geo.fast*geo.slow;
+
+    if( f.sorting() == segyio::sorting::xline() )
+        std::swap( geo.fast, geo.slow );
 
     return geo;
 }
@@ -609,7 +620,7 @@ struct SimpliPreconditioner {
         this->mat = &m.mat;
         this->vintages = m.vintages;
         this->diagonals = m.diagonals;
-        this->traces = m.xlines*m.ilines;
+        this->traces = m.slow*m.fast;
         this->dims = m.Bnn.rows();
     }
 
@@ -834,8 +845,8 @@ vector< T > compute_timeshift( const sparse< T >& B,
                                           Bnn,
                                           multiplier( vintages ),
                                           vintages,
-                                          geo.ilines,
-                                          geo.xlines );
+                                          geo.fast,
+                                          geo.slow );
 
     Eigen::ConjugateGradient< decltype( rep ),
                               Eigen::Lower | Eigen::Upper,
