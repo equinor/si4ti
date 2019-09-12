@@ -172,10 +172,10 @@ TEST_CASE("3 vintages (tiny cubes)") {
         "test-data/vintage3.sgy"
     };
     for( const auto& fname : fnames)
-        vintages.push_back( { segyio::path{ fname },
-                              segyio::config{}
-                                .with( 5_il )
-                                .with( 21_xl ) } );
+        vintages.emplace_back( segyio::path{ fname },
+                               segyio::config{}
+                                   .with( 5_il )
+                                   .with( 21_xl ) );
 
     SECTION("Compute normalization") {
         auto f = normalize_surveys( float {30.0}, vintages );

@@ -157,9 +157,9 @@ void run( const options& opts ) try {
     std::vector< input_file > files;
     std::vector< geometry > geometries;
     for( const auto& file : opts.files ) {
-        files.push_back( { segyio::path{ file },
-                           segyio::config{}.with( opts.ilbyte )
-                                           .with( opts.xlbyte ) } );
+        files.emplace_back( segyio::path{ file },
+                            segyio::config{}.with( opts.ilbyte )
+                                            .with( opts.xlbyte ) );
 
         geometries.push_back( findgeometry( files.back() ) );
 

@@ -65,9 +65,9 @@ TEST_CASE("Regression test") {
     };
     std::vector< input_file > vintages;
     for( const auto& fname : fnames)
-        vintages.push_back( { segyio::path{ fname },
-                              segyio::config{}.with( 5_il )
-                                              .with( 21_xl ) } );
+        vintages.emplace_back( segyio::path{ fname },
+                               segyio::config{}.with( 5_il )
+                                               .with( 21_xl ) );
 
     SECTION("time varying wavelet") {
         auto expected = tvar_wvlt();
@@ -222,9 +222,9 @@ TEST_CASE("Regression test") {
     };
     std::vector< output_file > rel_AI_files;
     for( const auto& fname : rel_AI_fnames )
-        rel_AI_files.push_back( { segyio::path{ fname },
-                                  segyio::config{}.with( 5_il )
-                                                  .with( 21_xl )} );
+        rel_AI_files.emplace_back( segyio::path{ fname },
+                                   segyio::config{}.with( 5_il )
+                                                   .with( 21_xl ) );
 
     SECTION("solution (time varying wavelet)") {
         auto expected = sol_tvw();
