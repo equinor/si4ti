@@ -49,40 +49,6 @@ target_compile_definitions(impedance_tests
 
 add_test(NAME test COMMAND impedance_tests)
 
-configure_file(test/vint1.sgy test-data/vintage1.sgy COPYONLY)
-configure_file(test/vint2.sgy test-data/vintage2.sgy COPYONLY)
-configure_file(test/vint3.sgy test-data/vintage3.sgy COPYONLY)
-
-configure_file(test/timevaryingwavelet.csv test-data/timevaryingwavelet.csv COPYONLY)
-
-configure_file(test/forward_operator_tvw1.csv test-data/forward_operator_tvw1.csv COPYONLY)
-configure_file(test/forward_operator_tvw2.csv test-data/forward_operator_tvw2.csv COPYONLY)
-configure_file(test/forward_operator_tvw3.csv test-data/forward_operator_tvw3.csv COPYONLY)
-
-configure_file(test/forward_operator_tinw1.csv test-data/forward_operator_tinw1.csv COPYONLY)
-configure_file(test/forward_operator_tinw2.csv test-data/forward_operator_tinw2.csv COPYONLY)
-configure_file(test/forward_operator_tinw3.csv test-data/forward_operator_tinw3.csv COPYONLY)
-
-configure_file(test/inverse_operator_tvw1.csv test-data/inverse_operator_tvw1.csv COPYONLY)
-configure_file(test/inverse_operator_tvw2.csv test-data/inverse_operator_tvw2.csv COPYONLY)
-configure_file(test/inverse_operator_tvw3.csv test-data/inverse_operator_tvw3.csv COPYONLY)
-
-configure_file(test/inverse_operator_tinw1.csv test-data/inverse_operator_tinw1.csv COPYONLY)
-configure_file(test/inverse_operator_tinw2.csv test-data/inverse_operator_tinw2.csv COPYONLY)
-configure_file(test/inverse_operator_tinw3.csv test-data/inverse_operator_tinw3.csv COPYONLY)
-
-configure_file(test/solution_1D_tvw.csv test-data/solution_1D_tvw.csv COPYONLY)
-configure_file(test/solution_1D_tinw.csv test-data/solution_1D_tinw.csv COPYONLY)
-
-configure_file(test/solution_tvw.csv test-data/solution_tvw.csv COPYONLY)
-
-configure_file(test/solution_1D_tvw_segmented.csv test-data/solution_1D_tvw_segmented.csv COPYONLY)
-configure_file(test/solution_tvw_segmented.csv test-data/solution_tvw_segmented.csv COPYONLY)
-
-configure_file(test/relAI-0.sgy test-data/relAI-0.sgy COPYONLY)
-configure_file(test/relAI-1.sgy test-data/relAI-1.sgy COPYONLY)
-configure_file(test/relAI-2.sgy test-data/relAI-2.sgy COPYONLY)
-
 #
 # Integration test suite
 #
@@ -98,132 +64,127 @@ if(NOT python)
     return()
 endif()
 
-list(APPEND cropped-files
-    ${CMAKE_CURRENT_SOURCE_DIR}/../92NmoUpd_8-16stkEps_985_1281-cropped.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../01NmoUpd_8-16stkEps_985_1281-cropped.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../06NmoUpd_8-16stkEps_985_1281-cropped.sgy
+list(APPEND segy-files
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vint0.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vint1.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vint2.sgy
 )
 
-add_custom_target(imp-tvw-cropped
-    COMMENT "Running impedance, time varying wavelet (cropped)"
-    COMMAND impedance -i 5 -x 21 --timevarying-wavelet ${cropped-files} 1>/dev/null
+add_custom_target(imp-tvw
+    COMMENT "Running impedance, time varying wavelet"
+    COMMAND impedance --timevarying-wavelet ${segy-files} 1>/dev/null
     DEPENDS impedance
 )
 
-add_custom_target(imp-tvw-diff-cropped
+add_custom_target(imp-tvw-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-tvw.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-tvw.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-tvw.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-tvw.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-tvw.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-tvw.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (time varying wavelet)"
-    DEPENDS imp-tvw-cropped
+    DEPENDS imp-tvw
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
 )
 
-add_custom_target(imp-tinw-cropped
+add_custom_target(imp-tinw
     COMMENT "Running impedance, time invariant wavelet (cropped)"
-    COMMAND impedance -i 5 -x 21 ${cropped-files} 1>/dev/null
-    DEPENDS imp-tvw-diff-cropped
+    COMMAND impedance ${segy-files} 1>/dev/null
+    DEPENDS imp-tvw-diff
 )
 
-add_custom_target(imp-tinw-diff-cropped
+add_custom_target(imp-tinw-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 4.4
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-tinw.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-tinw.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-tinw.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-tinw.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-tinw.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-tinw.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (time invarant wavelet)"
-    DEPENDS imp-tinw-cropped
+    DEPENDS imp-tinw
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
 )
 
-add_custom_target(imp-segmented-cropped
-    COMMENT "Running impedance, segmented (cropped)"
-    COMMAND impedance -i 5 -x 21 --timevarying-wavelet --segments 2 --max-iter 3 ${cropped-files} 1>/dev/null
-    DEPENDS imp-tinw-diff-cropped
+add_custom_target(imp-segmented
+    COMMENT "Running impedance, segmented"
+    COMMAND impedance --timevarying-wavelet --segments 2 --max-iter 3 ${segy-files} 1>/dev/null
+    DEPENDS imp-tinw-diff
 )
 
-add_custom_target(imp-custom-filenames-cropped
-    COMMENT "Running impedance, time varying wavelet (cropped)"
-    COMMAND impedance -i 5 -x 21 --output-files r1.sgy r2.sgy r3.sgy d1.sgy d2.sgy d3.sgy -- ${cropped-files} 1>/dev/null
+add_custom_target(imp-custom-filenames
+    COMMENT "Running impedance, time varying wavelet"
+    COMMAND impedance --output-files r1.sgy r2.sgy r3.sgy d1.sgy d2.sgy d3.sgy -- ${segy-files} 1>/dev/null
     DEPENDS impedance
 )
 
-add_custom_target(imp-custom-filenames-diff-cropped
+add_custom_target(imp-custom-filenames-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-tinw.sgy r1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-tinw.sgy r2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-tinw.sgy r3.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-tinw.sgy d1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-tinw.sgy d2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-tinw.sgy d3.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-0-ref.sgy r1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-1-ref.sgy r2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-2-ref.sgy r3.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-0-ref.sgy d1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-1-ref.sgy d2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-2-ref.sgy d3.sgy
     COMMENT "Analysing impedance diff image (time varying wavelet)"
-    DEPENDS imp-custom-filenames-cropped
+    DEPENDS imp-custom-filenames
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
 )
 
-add_custom_target(imp-segmented-diff-cropped
+add_custom_target(imp-segmented-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-segmented.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-segmented.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-segmented.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-segmented.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-segmented.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-segmented.sgy dsyn-2.sgy
-    COMMENT "Analysing impedance diff image (segmented)"
-    DEPENDS imp-segmented-cropped
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-2-ref.sgy dsyn-2.sgy
+    COMMENT "Analysing impedance diff image"
+    DEPENDS imp-segmented
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
 )
 
-add_custom_target(xlinesorted-cropped
-    COMMENT "Running impedance, (crossline sorted) (cropped)"
-    COMMAND impedance -i 21 -x 5 --timevarying-wavelet ${cropped-files} 1>/dev/null
+add_custom_target(xlinesorted
+    COMMENT "Running impedance, (crossline sorted)"
+    COMMAND impedance -i 193 -x 189 --timevarying-wavelet ${segy-files} 1>/dev/null
     DEPENDS impedance
 )
 
-add_custom_target(xlinesorted-diff-cropped
+add_custom_target(xlinesorted-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-tvw.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-tvw.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-tvw.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-tvw.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-tvw.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-tvw.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (crossline sorted)"
-    DEPENDS xlinesorted-cropped
+    DEPENDS xlinesorted
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
 )
 
-add_custom_target(imp-segmented-xlinesorted-cropped
-    COMMENT "Running impedance, segmented (cropped)"
-    COMMAND impedance -i 21 -x 5 --timevarying-wavelet --segments 2 --max-iter 3 ${cropped-files} 1>/dev/null
-    DEPENDS imp-tinw-diff-cropped
+add_custom_target(imp-segmented-xlinesorted
+    COMMENT "Running impedance, segmented"
+    COMMAND impedance --timevarying-wavelet --segments 2 --max-iter 3 ${segy-files} 1>/dev/null
+    DEPENDS imp-tinw-diff
 )
 
-add_custom_target(imp-segmented-xlinesorted-diff-cropped
+add_custom_target(imp-segmented-xlinesorted-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-0-segmented.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-1-segmented.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-relAI-ref-2-segmented.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-0-segmented.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-1-segmented.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-dsyn-ref-2-segmented.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (segmented)"
-    DEPENDS imp-segmented-xlinesorted-cropped
+    DEPENDS imp-segmented-xlinesorted
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
 )
 
-add_dependencies(diff-impedance imp-tvw-diff-cropped imp-tinw-diff-cropped
-                 imp-segmented-diff-cropped imp-custom-filenames-diff-cropped
-                 xlinesorted-diff-cropped imp-segmented-xlinesorted-diff-cropped)
+add_dependencies(diff-impedance imp-tvw-diff imp-tinw-diff imp-segmented-diff
+                 imp-custom-filenames-diff xlinesorted-diff
+                 imp-segmented-xlinesorted-diff
+)

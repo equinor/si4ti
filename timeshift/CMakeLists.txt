@@ -71,127 +71,120 @@ if(NOT python)
     return()
 endif()
 
-list(APPEND cropped-files
-    ${CMAKE_CURRENT_SOURCE_DIR}/../92NmoUpd_8-16stkEps_985_1281-cropped.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../01NmoUpd_8-16stkEps_985_1281-cropped.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../06NmoUpd_8-16stkEps_985_1281-cropped.sgy
+list(APPEND segy-files
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vint0.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vint1.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vint2.sgy
 )
 
-add_custom_target(ts-cropped
-    COMMENT "Running timeshift (cropped)"
-    COMMAND timeshift -i 5 -x 21 ${cropped-files} 1>/dev/null
+add_custom_target(ts
+    COMMENT "Running timeshift"
+    COMMAND timeshift ${segy-files} 1>/dev/null
     DEPENDS timeshift
 )
 
-add_custom_target(diff-cropped
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy timeshift-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy timeshift-1.sgy
-    COMMENT "Analysing cropped diff image"
-    DEPENDS ts-cropped
+add_custom_target(diff-ts
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-0-ref.sgy timeshift-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-1-ref.sgy timeshift-1.sgy
+    COMMENT "Analysing diff image"
+    DEPENDS ts
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_custom_target(ts-cropped-4Dcorr
-    COMMENT "Running 4D corrected timeshift (cropped)"
-    COMMAND timeshift -c -i 5 -x 21 -p ts-4Dcorr ${cropped-files} 1>/dev/null
+add_custom_target(ts-4Dcorr
+    COMMENT "Running 4D corrected timeshift"
+    COMMAND timeshift -c -p ts-4Dcorr ${segy-files} 1>/dev/null
     DEPENDS timeshift
 )
 
-add_custom_target(diff-cropped-4Dcorr
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 9e-3
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-0.sgy ts-4Dcorr-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-4Dcorr-ref-1.sgy ts-4Dcorr-1.sgy
-    COMMENT "Analysing 4D corrected cropped diff image"
-    DEPENDS ts-cropped-4Dcorr
+add_custom_target(diff-4Dcorr
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 9e-3
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-4Dcorr-0-ref.sgy ts-4Dcorr-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-4Dcorr-1-ref.sgy ts-4Dcorr-1.sgy
+    COMMENT "Analysing 4D corrected diff image"
+    DEPENDS ts-4Dcorr
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_custom_target(ts-cropped-cumulative
-    COMMENT "Running cumulative timeshift (cropped)"
-    COMMAND timeshift -s -i 5 -x 21 -p ts-cropped ${cropped-files} 1>/dev/null
+add_custom_target(ts-cumulative
+    COMMENT "Running cumulative timeshift"
+    COMMAND timeshift -s -p ts-cumulative ${segy-files} 1>/dev/null
     DEPENDS timeshift
 )
 
-add_custom_target(diff-cropped-cumulative
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-0.sgy ts-cropped-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-cumulative-ref-1.sgy ts-cropped-1.sgy
-    COMMENT "Analysing cumulative cropped diff image"
-    DEPENDS ts-cropped-cumulative
+add_custom_target(diff-cumulative
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cumulative-0-ref.sgy ts-cumulative-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cumulative-1-ref.sgy ts-cumulative-1.sgy
+    COMMENT "Analysing cumulative diff image"
+    DEPENDS ts-cumulative
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_custom_target(ts-cropped-custom_norm
+add_custom_target(ts-custom_norm
     COMMENT "Running timeshift with custom normalization"
-    COMMAND timeshift -i 5 -x 21 -A 12.72372 -p ts-cust_norm ${cropped-files} 1>/dev/null
+    COMMAND timeshift -A 12.72372 -p ts-cust_norm ${segy-files} 1>/dev/null
     DEPENDS timeshift
 )
 
-add_custom_target(diff-cropped-custom_norm
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r -a 8e-6 -m 9e-6
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-0.sgy ts-cust_norm-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-custom_norm-ref-1.sgy ts-cust_norm-1.sgy
+add_custom_target(diff-custom_norm
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 6e-5 -m 9e-6
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cust_norm-0-ref.sgy ts-cust_norm-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cust_norm-1-ref.sgy ts-cust_norm-1.sgy
     COMMENT "Analysing timeshift with custom normalization"
-    DEPENDS ts-cropped-custom_norm
+    DEPENDS ts-custom_norm
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_custom_target(ts-cropped-user-specified-output-files
+add_custom_target(ts-user-specified-output-files
     COMMENT "Running timeshift (cropped)"
-    COMMAND timeshift -i 5 -x 21 --output-files out1.sgy out2.sgy -- ${cropped-files} 1>/dev/null
+    COMMAND timeshift --output-files out1.sgy out2.sgy -- ${segy-files} 1>/dev/null
     DEPENDS timeshift
 )
 
-add_custom_target(diff-cropped-user-specified-output-files
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy out1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy out2.sgy
-    COMMENT "Analysing cropped diff image"
-    DEPENDS ts-cropped-user-specified-output-files
+add_custom_target(diff-user-specified-output-files
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-0-ref.sgy out1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-1-ref.sgy out2.sgy
+    COMMENT "Analysing diff image"
+    DEPENDS ts-user-specified-output-files
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_custom_target(ts-cropped-crosslinesorted
-    COMMENT "Running timeshift crosslinesorted (cropped)"
-    COMMAND timeshift -i 21 -x 5 ${cropped-files} 1>/dev/null
+add_custom_target(ts-crosslinesorted
+    COMMENT "Running timeshift crosslinesorted"
+    COMMAND timeshift -i 193 -x 189 -p crosslinesorted ${segy-files} 1>/dev/null
     DEPENDS timeshift
 )
 
-add_custom_target(diff-cropped-crosslinesorted
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -r
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-0.sgy timeshift-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cropped-ref-1.sgy timeshift-1.sgy
-    COMMENT "Analysing cropped diff image crosslinesorted"
-    DEPENDS ts-cropped-crosslinesorted
+add_custom_target(diff-crosslinesorted
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-0-ref.sgy timeshift-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-1-ref.sgy timeshift-1.sgy
+    COMMENT "Analysing diff image crosslinesorted"
+    DEPENDS ts-crosslinesorted
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-list(GET cropped-files 1 M1)
+list(GET segy-files 1 M1)
 add_custom_target(apply-ts
     COMMENT "Running apply timeshift"
-    COMMAND apply_timeshift -i 5 -x 21 ${M1} timeshift-0.sgy
-    DEPENDS ts-cropped
+    COMMAND apply_timeshift ${M1} timeshift-1.sgy
+    DEPENDS ts
 )
 
 add_custom_target(diff-apply-ts
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 3e-4 -m 6e-5
-        --iline 5 --xline 21
-        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshifted-old.sgy shifted.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../shifted-ref.sgy shifted.sgy
     COMMENT "Analysing applied timeshift"
     DEPENDS apply-ts
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
 )
 
-add_dependencies(diff-timeshift diff-cropped diff-cropped-4Dcorr diff-cropped-cumulative
-                 diff-cropped-custom_norm diff-apply-ts diff-cropped-user-specified-output-files
-                 diff-cropped-crosslinesorted)
+add_dependencies(diff-timeshift diff-ts diff-4Dcorr diff-cumulative
+                 diff-custom_norm diff-apply-ts diff-user-specified-output-files
+                 diff-crosslinesorted)
 
 find_program(valgrind valgrind)
 if(NOT valgrind)
@@ -201,7 +194,7 @@ endif()
 
 add_custom_target(memcheck
     COMMAND ${valgrind} --leak-check=full
-        $<TARGET_FILE:timeshift> -i 5 -x 21 ${cropped-files}
+        $<TARGET_FILE:timeshift> ${segy-files}
     COMMENT "Running memcheck"
     DEPENDS timeshift ${cropped-files}
 )
@@ -210,7 +203,7 @@ add_custom_command(
     OUTPUT callgrind.out.timeshift
     COMMAND ${valgrind} --tool=callgrind
                         --callgrind-out-file=callgrind.out.timeshift
-        $<TARGET_FILE:timeshift> -i 5 -x 21 ${cropped-files}
+        $<TARGET_FILE:timeshift> ${segy-files}
         COMMENT "Running callgrind"
     DEPENDS timeshift ${cropped-files}
 )
