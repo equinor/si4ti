@@ -21,7 +21,7 @@ before_install:
 
 script:
     - docker run --volume $PWD:/io centos
-             scl enable devtoolset-7 rh-python35 /io/travis/make-release.sh
+             scl enable devtoolset-7 rh-python38 /io/travis/make-release.sh
 
 before_deploy:
     - tar cvzf simpli-$TRAVIS_TAG.tar.gz x86-64 skylake
