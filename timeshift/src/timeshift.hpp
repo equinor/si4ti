@@ -611,9 +611,9 @@ vector< T > timeshift_4D_correction( const vector< T >& x,
 }
 
 template< typename T >
-struct SimpliPreconditioner {
+struct Si4tiPreconditioner {
 
-    SimpliPreconditioner() = default;
+    Si4tiPreconditioner() = default;
 
     template<typename MatrixType>
     void initialize( const MatrixType& m ) {
@@ -625,24 +625,24 @@ struct SimpliPreconditioner {
     }
 
     template<typename MatrixType>
-    SimpliPreconditioner& analyzePattern( const MatrixType& ) {
+    Si4tiPreconditioner& analyzePattern( const MatrixType& ) {
         return *this;
     }
 
     template<typename MatrixType>
-    SimpliPreconditioner& factorize( const MatrixType& ) {
+    Si4tiPreconditioner& factorize( const MatrixType& ) {
         return *this;
     }
 
     template<typename MatrixType>
-    SimpliPreconditioner& compute( const MatrixType& ) {
+    Si4tiPreconditioner& compute( const MatrixType& ) {
         return *this;
     }
 
     template<typename Rhs>
     inline const Rhs solve(const Eigen::MatrixBase<Rhs>& b) const {
         eigen_assert( mat
-                   && "SimpliPreconditioner is not initialized.");
+                   && "Si4tiPreconditioner is not initialized.");
         Rhs v( b.rows() );
         v.setZero();
         const int timeshifts = vintages - 1;
@@ -850,7 +850,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
 
     Eigen::ConjugateGradient< decltype( rep ),
                               Eigen::Lower | Eigen::Upper,
-                              SimpliPreconditioner<T>
+                              Si4tiPreconditioner<T>
     > cg;
     cg.preconditioner().initialize( rep );
     cg.setMaxIterations( opts.solver_max_iter );

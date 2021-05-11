@@ -1,4 +1,4 @@
-project(simpli-timeshift LANGUAGES CXX)
+project(si4ti-timeshift LANGUAGES CXX)
 
 add_executable(timeshift src/timeshift.cpp)
 target_link_libraries(timeshift ${fftw3f}

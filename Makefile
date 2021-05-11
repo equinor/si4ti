@@ -1,7 +1,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = simpli
+SPHINXPROJ    = si4ti
 SOURCEDIR     = .
 BUILDDIR      = _build
 
@@ -12,9 +12,9 @@ default: run view
 python:
 	$(PYTHON) -m pip install . --user --no-deps
 	$(PYTHON) ~/.local/bin/ts \
-		92NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		01NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		06NmoUpd_8-16stkEps_985_1281-cropped.sgy \
+		vint0.sgy \
+		vint1.sgy \
+		vint2.sgy \
 
 test:
 	$(PYTHON) setup.py test
@@ -31,16 +31,16 @@ help:
 gdb: build
 	gdb -ex=run --args build/timeshift/timeshift \
 		-i 5 -x 21 \
-		92NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		01NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		06NmoUpd_8-16stkEps_985_1281-cropped.sgy \
+		vint0.sgy \
+		vint1.sgy \
+		vint2.sgy \
 
 valgrind: build
 	valgrind build/timeshift/timeshift \
 		-i 5 -x 21 \
-		92NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		01NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		06NmoUpd_8-16stkEps_985_1281-cropped.sgy \
+		vint0.sgy \
+		vint1.sgy \
+		vint2.sgy \
 
 build:
 	cd build && make
@@ -50,9 +50,9 @@ ITER = 100
 run: build
 	build/timeshift/timeshift -i 5 -x 21 \
 		--max-iter $(ITER) \
-		92NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		01NmoUpd_8-16stkEps_985_1281-cropped.sgy \
-		06NmoUpd_8-16stkEps_985_1281-cropped.sgy \
+		vint0.sgy \
+		vint1.sgy \
+		vint2.sgy \
 
 VIEW = timeshift-0.sgy
 

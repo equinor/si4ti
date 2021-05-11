@@ -1,4 +1,4 @@
-project(simpli-impedance LANGUAGES CXX)
+project(si4ti-impedance LANGUAGES CXX)
 
 add_executable(impedance src/impedance.cpp)
 target_link_libraries(impedance ${fftw3f}

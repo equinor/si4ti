@@ -24,13 +24,13 @@ script:
              scl enable devtoolset-7 rh-python38 /io/travis/make-release.sh
 
 before_deploy:
-    - tar cvzf simpli-$TRAVIS_TAG.tar.gz x86-64 skylake
+    - tar cvzf si4ti-$TRAVIS_TAG.tar.gz x86-64 skylake
 
 deploy:
     - provider: releases
       skip_cleanup: true
       file:
-        - simpli-$TRAVIS_TAG.tar.gz
+        - si4ti-$TRAVIS_TAG.tar.gz
       on:
         tags: true
       api_key:

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-project(simpli VERSION 0.0.0 LANGUAGES CXX)
+project(si4ti VERSION 0.0.0 LANGUAGES CXX)
 
 include(CTest)
 include(GNUInstallDirs)

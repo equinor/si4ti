@@ -30,7 +30,7 @@ TEST_CASE( "Conjugate gradient" ) {
         CHECK( x.isApprox( expected, 1e-10 ) );
     }
 
-    SECTION( "Simpli matrix" ) {
+    SECTION( "Si4ti matrix" ) {
         std::vector< matrix< T > > m{ matrix< T >( 2, 2 ),
                                       matrix< T >( 2, 2 ) };
         m[0] << 10, 11, 11, 13; m[1] << 20, 21, 21, 23;
@@ -38,7 +38,7 @@ TEST_CASE( "Conjugate gradient" ) {
         vector< T > x( 64 );
         x.setRandom();
 
-        SimpliImpMatrix< T > rbdm( m, 2, 4, 4, 0.05, 0.0001, 4.0, false );
+        Si4tiImpMatrix< T > rbdm( m, 2, 4, 4, 0.05, 0.0001, 4.0, false );
 
         vector< T > b = rbdm * x;
         vector< T > expected = x;

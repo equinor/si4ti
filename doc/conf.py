@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'simpli'
+project = 'si4ti'
 copyright = '2018, Sveinung Styve Rundhovde and Jørgen Kvalsvik'
 author = 'Sveinung Styve Rundhovde and Jørgen Kvalsvik'
 
@@ -102,7 +102,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'simplidoc'
+htmlhelp_basename = 'si4tidoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------

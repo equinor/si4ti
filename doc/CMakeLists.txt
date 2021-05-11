@@ -1,4 +1,4 @@
-project(simpli-doc)
+project(si4ti-doc)
 
 if(NOT BUILD_DOC)
     return()

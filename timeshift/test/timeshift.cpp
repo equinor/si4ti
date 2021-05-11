@@ -485,7 +485,7 @@ SCENARIO("Preconditioning") {
                                              2,
                                              2, 5 );
 
-            SimpliPreconditioner< double > pcon;
+            Si4tiPreconditioner< double > pcon;
             pcon.initialize( bbm );
             const auto result = pcon.solve( b );
             CHECK( result.isApprox( x ) );
@@ -514,7 +514,7 @@ SCENARIO("Preconditioning") {
                                              3,
                                              2, 5 );
 
-            SimpliPreconditioner< double > pcon;
+            Si4tiPreconditioner< double > pcon;
             pcon.initialize( bbm );
             const auto result = pcon.solve( b );
             CHECK( result.isApprox( x ) );

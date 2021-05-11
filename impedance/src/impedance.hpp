@@ -367,11 +367,11 @@ struct QuietReporter {
 };
 
 template< typename T, typename Reporter = QuietReporter >
-struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter > > {
+struct Si4tiImpMatrix : public Eigen::EigenBase< Si4tiImpMatrix< T, Reporter > > {
     using Scalar = T;
     using RealScalar = T;
     using StorageIndex = std::ptrdiff_t;
-    using Index = typename Eigen::EigenBase< SimpliImpMatrix >::Index;
+    using Index = typename Eigen::EigenBase< Si4tiImpMatrix >::Index;
 
     enum {
         ColsAtCompileTime = Eigen::Dynamic,
@@ -379,7 +379,7 @@ struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter >
         IsRowMajor = false
     };
 
-    SimpliImpMatrix( std::vector< matrix< T > > m,
+    Si4tiImpMatrix( std::vector< matrix< T > > m,
                      int vints,
                      int fast,
                      int slow,
@@ -406,7 +406,7 @@ struct SimpliImpMatrix : public Eigen::EigenBase< SimpliImpMatrix< T, Reporter >
     }
 
     template< typename Rhs >
-    Eigen::Product< SimpliImpMatrix, Rhs, Eigen::AliasFreeProduct >
+    Eigen::Product< Si4tiImpMatrix, Rhs, Eigen::AliasFreeProduct >
     operator*( const Eigen::MatrixBase< Rhs >& x ) const {
         Reporter::report();
         return { *this, x.derived() };
@@ -491,14 +491,14 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
                              trc_start, trc_end );
     }
 
-    SimpliImpMatrix< T, Progress > rbd_L( std::move( L ),
-                                          nvints,
-                                          fast,
-                                          slow,
-                                          damping_4D,
-                                          lat_smooth_3D,
-                                          lat_smooth_4D,
-                                          segmented );
+    Si4tiImpMatrix< T, Progress > rbd_L( std::move( L ),
+                                         nvints,
+                                         fast,
+                                         slow,
+                                         damping_4D,
+                                         lat_smooth_3D,
+                                         lat_smooth_4D,
+                                         segmented );
 
     conjugate_gradient( rbd_L, sol.rj, sol.b, max_iter );
 
@@ -570,29 +570,29 @@ namespace Eigen { namespace internal {
 
 template<>
 template< typename T, typename Reporter >
-struct traits< SimpliImpMatrix< T, Reporter > > :
+struct traits< Si4tiImpMatrix< T, Reporter > > :
     public Eigen::internal::traits< Eigen::SparseMatrix< T > >
 {};
 
 template< typename T, typename Rhs, typename Reporter >
-struct generic_product_impl< SimpliImpMatrix< T, Reporter >,
+struct generic_product_impl< Si4tiImpMatrix< T, Reporter >,
                              Rhs,
                              SparseShape,
                              DenseShape,
                              GemvProduct // GEMV stands for matrix-vector
                            >
      : generic_product_impl_base<
-            SimpliImpMatrix< T, Reporter >,
+            Si4tiImpMatrix< T, Reporter >,
             Rhs,
-            generic_product_impl< SimpliImpMatrix< T, Reporter >, Rhs >
+            generic_product_impl< Si4tiImpMatrix< T, Reporter >, Rhs >
        >
 {
 
-    using Scalar = typename Product< SimpliImpMatrix< T, Reporter >, Rhs >::Scalar;
+    using Scalar = typename Product< Si4tiImpMatrix< T, Reporter >, Rhs >::Scalar;
 
     template< typename Dest >
     static void scaleAndAddTo( Dest& dst,
-                               const SimpliImpMatrix< T, Reporter >& lhs,
+                               const Si4tiImpMatrix< T, Reporter >& lhs,
                                const Rhs& rhs,
                                const Scalar& alpha ) {
 
