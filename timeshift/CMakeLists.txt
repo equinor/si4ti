@@ -72,9 +72,9 @@ if(NOT python)
 endif()
 
 list(APPEND segy-files
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vint0.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vint1.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vint2.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/vint0.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/vint1.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/vint2.sgy
 )
 
 add_custom_target(ts
@@ -85,8 +85,8 @@ add_custom_target(ts
 
 add_custom_target(diff-ts
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-0-ref.sgy timeshift-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-1-ref.sgy timeshift-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/timeshift-0-ref.sgy timeshift-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/timeshift-1-ref.sgy timeshift-1.sgy
     COMMENT "Analysing diff image"
     DEPENDS ts
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
@@ -100,8 +100,8 @@ add_custom_target(ts-4Dcorr
 
 add_custom_target(diff-4Dcorr
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 9e-3
-        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-4Dcorr-0-ref.sgy ts-4Dcorr-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-4Dcorr-1-ref.sgy ts-4Dcorr-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-4Dcorr-0-ref.sgy ts-4Dcorr-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-4Dcorr-1-ref.sgy ts-4Dcorr-1.sgy
     COMMENT "Analysing 4D corrected diff image"
     DEPENDS ts-4Dcorr
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
@@ -115,8 +115,8 @@ add_custom_target(ts-cumulative
 
 add_custom_target(diff-cumulative
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cumulative-0-ref.sgy ts-cumulative-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cumulative-1-ref.sgy ts-cumulative-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-cumulative-0-ref.sgy ts-cumulative-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-cumulative-1-ref.sgy ts-cumulative-1.sgy
     COMMENT "Analysing cumulative diff image"
     DEPENDS ts-cumulative
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
@@ -130,8 +130,8 @@ add_custom_target(ts-custom_norm
 
 add_custom_target(diff-custom_norm
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 6e-5 -m 9e-6
-        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cust_norm-0-ref.sgy ts-cust_norm-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../ts-cust_norm-1-ref.sgy ts-cust_norm-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-cust_norm-0-ref.sgy ts-cust_norm-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-cust_norm-1-ref.sgy ts-cust_norm-1.sgy
     COMMENT "Analysing timeshift with custom normalization"
     DEPENDS ts-custom_norm
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
@@ -145,8 +145,8 @@ add_custom_target(ts-user-specified-output-files
 
 add_custom_target(diff-user-specified-output-files
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-0-ref.sgy out1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-1-ref.sgy out2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/timeshift-0-ref.sgy out1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/timeshift-1-ref.sgy out2.sgy
     COMMENT "Analysing diff image"
     DEPENDS ts-user-specified-output-files
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
@@ -160,8 +160,8 @@ add_custom_target(ts-crosslinesorted
 
 add_custom_target(diff-crosslinesorted
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-0-ref.sgy timeshift-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift-1-ref.sgy timeshift-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/timeshift-0-ref.sgy timeshift-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/timeshift-1-ref.sgy timeshift-1.sgy
     COMMENT "Analysing diff image crosslinesorted"
     DEPENDS ts-crosslinesorted
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
@@ -176,7 +176,7 @@ add_custom_target(apply-ts
 
 add_custom_target(diff-apply-ts
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 3e-4 -m 6e-5
-        ${CMAKE_CURRENT_SOURCE_DIR}/../shifted-ref.sgy shifted.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/shifted-ref.sgy shifted.sgy
     COMMENT "Analysing applied timeshift"
     DEPENDS apply-ts
             ${CMAKE_CURRENT_SOURCE_DIR}/diff.py
