@@ -65,9 +65,9 @@ if(NOT python)
 endif()
 
 list(APPEND segy-files
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vint0.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vint1.sgy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vint2.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/vint0.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/vint1.sgy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/vint2.sgy
 )
 
 add_custom_target(imp-tvw
@@ -78,12 +78,12 @@ add_custom_target(imp-tvw
 
 add_custom_target(imp-tvw-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-0-ref.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-1-ref.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-2-ref.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-0-ref.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-1-ref.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-2-ref.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (time varying wavelet)"
     DEPENDS imp-tvw
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
@@ -97,12 +97,12 @@ add_custom_target(imp-tinw
 
 add_custom_target(imp-tinw-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 4.4
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-0-ref.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-1-ref.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-2-ref.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-0-ref.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-1-ref.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-2-ref.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (time invarant wavelet)"
     DEPENDS imp-tinw
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
@@ -122,12 +122,12 @@ add_custom_target(imp-custom-filenames
 
 add_custom_target(imp-custom-filenames-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-0-ref.sgy r1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-1-ref.sgy r2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-relAI-2-ref.sgy r3.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-0-ref.sgy d1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-1-ref.sgy d2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tinw-dsyn-2-ref.sgy d3.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-0-ref.sgy r1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-1-ref.sgy r2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-2-ref.sgy r3.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-dsyn-0-ref.sgy d1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-dsyn-1-ref.sgy d2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-dsyn-2-ref.sgy d3.sgy
     COMMENT "Analysing impedance diff image (time varying wavelet)"
     DEPENDS imp-custom-filenames
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
@@ -135,12 +135,12 @@ add_custom_target(imp-custom-filenames-diff
 
 add_custom_target(imp-segmented-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-0-ref.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-1-ref.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-2-ref.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-0-ref.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-1-ref.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-2-ref.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image"
     DEPENDS imp-segmented
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
@@ -154,12 +154,12 @@ add_custom_target(xlinesorted
 
 add_custom_target(xlinesorted-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-0-ref.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-1-ref.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-relAI-2-ref.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-0-ref.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-1-ref.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-tvw-dsyn-2-ref.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (crossline sorted)"
     DEPENDS xlinesorted
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
@@ -173,12 +173,12 @@ add_custom_target(imp-segmented-xlinesorted
 
 add_custom_target(imp-segmented-xlinesorted-diff
     COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-0-ref.sgy relAI-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-1-ref.sgy relAI-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-relAI-2-ref.sgy relAI-2.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-0-ref.sgy dsyn-0.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-1-ref.sgy dsyn-1.sgy
-        ${CMAKE_CURRENT_SOURCE_DIR}/../imp-segmented-dsyn-2-ref.sgy dsyn-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-0-ref.sgy relAI-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-1-ref.sgy relAI-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-2-ref.sgy relAI-2.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-dsyn-0-ref.sgy dsyn-0.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-dsyn-1-ref.sgy dsyn-1.sgy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-dsyn-2-ref.sgy dsyn-2.sgy
     COMMENT "Analysing impedance diff image (segmented)"
     DEPENDS imp-segmented-xlinesorted
             ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
