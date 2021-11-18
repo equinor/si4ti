@@ -568,7 +568,6 @@ std::vector< std::pair< std::size_t, std::size_t > > segments( int numseg,
 
 namespace Eigen { namespace internal {
 
-template<>
 template< typename T, typename Reporter >
 struct traits< Si4tiImpMatrix< T, Reporter > > :
     public Eigen::internal::traits< Eigen::SparseMatrix< T > >
