@@ -63,7 +63,6 @@ struct BlockBandedMatrix : public Eigen::EigenBase< BlockBandedMatrix< T, Report
 
 namespace Eigen { namespace internal {
 
-template<>
 template< typename T, typename Reporter >
 struct traits< BlockBandedMatrix< T, Reporter > > :
     public Eigen::internal::traits< Eigen::SparseMatrix< T > >
