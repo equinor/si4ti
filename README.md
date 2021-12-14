@@ -21,7 +21,7 @@ To build si4ti you need:
  * [CMake](https://cmake.org) version 3.5 or greater
  * [Eigen3](https://eigen.tuxfamily.org) version 3.3.4 or greater
  * [OpenMP](https://www.openmp.org)
- * [segyio](https://github.com/equinor/segyio)
+ * [segyio](https://github.com/equinor/segyio) run cmake with EXPERIMENTAL=ON to get the required C++ headers
  * [fftw](https://www.fftw.org)
 
 To build the documentation you also need:
