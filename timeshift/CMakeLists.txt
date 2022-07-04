@@ -7,6 +7,7 @@ target_link_libraries(timeshift ${fftw3f}
                                 segyio::segyio
                                 ${OpenMP_EXE_LINKER_FLAGS}
                                 ${OpenMP_CXX_FLAGS}
+                                Boost::boost
 )
 target_compile_options(timeshift
     PRIVATE ${OpenMP_CXX_FLAGS}
@@ -18,6 +19,7 @@ target_compile_definitions(timeshift
 add_executable(apply_timeshift src/apply_timeshift.cpp)
 target_link_libraries(apply_timeshift Eigen3::Eigen
                                       segyio::segyio
+                                      Boost::boost
 )
 
 install(TARGETS timeshift

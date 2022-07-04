@@ -13,7 +13,7 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
-#include "spline.h"
+#include <boost/math/interpolators/cardinal_cubic_b_spline.hpp>
 
 #include <segyio/segyio.hpp>
 
@@ -479,16 +479,32 @@ template< typename T >
 vector< T >& apply_timeshift( vector< T >& d, const vector< T >& shift ) {
     vector< T > xs = vector< T >::LinSpaced( d.size(), 0, d.size() - 1 );
 
-    std::vector< double > ls( begin( xs ), end( xs ) );
-    std::vector< double > dd( begin( d ), end( d ) );
-    tk::spline s;
-    s.set_points( ls, dd );
+    const T d_0 = d[0];
+    const T d_1 = d[1];
+    const T d_second_last = d[d.size() - 2];
+    const T d_last = d[d.size() - 1];
+
+    boost::math::interpolators::cardinal_cubic_b_spline< T > s(
+        begin(d), end(d),
+        0,
+        xs[1] - xs[0]
+    );
+
+    auto interpolate = [&](T x) {
+        if(x >= 0 and x <= d.size() - 1) {
+            return s(x);
+        }
+        else if(x < 0) {
+            return d_0 + (d_1 - d_0) * x;
+        }
+        else {
+            return d_last + (d_last - d_second_last) * (x - (d.size() - 1));
+        }
+    };
 
     xs += shift;
 
-    std::transform( begin( xs ), end( xs ), begin( d ),
-                    [&]( T x ) { return s( x ); }
-    );
+    std::transform( begin(xs), end(xs), begin(d), interpolate );
 
     return d;
 }
