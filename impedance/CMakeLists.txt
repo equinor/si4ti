@@ -1,19 +1,22 @@
 project(si4ti-impedance LANGUAGES CXX)
 
 add_executable(impedance src/impedance.cpp)
-target_link_libraries(impedance ${fftw3f}
-                                ${fftw3}
-                                Eigen3::Eigen
+target_link_libraries(impedance Eigen3::Eigen
                                 segyio::segyio
                                 ${OpenMP_EXE_LINKER_FLAGS}
                                 ${OpenMP_CXX_FLAGS}
 )
 
+if(USE_FFTW)
+    target_link_libraries(impedance ${fftw3f} ${fftw3})
+
+    target_compile_definitions(impedance
+        PRIVATE EIGEN_FFTW_DEFAULT=1
+    )
+endif()
+
 target_compile_options(impedance
     PRIVATE ${OpenMP_CXX_FLAGS}
-)
-target_compile_definitions(impedance
-    PRIVATE EIGEN_FFTW_DEFAULT=1
 )
 
 install(TARGETS impedance
@@ -32,19 +35,22 @@ add_executable(impedance_tests test/testsuite.cpp
 )
 target_include_directories(impedance_tests PRIVATE src)
 target_link_libraries(impedance_tests catch2
-                                      ${fftw3f}
-                                      ${fftw3}
                                       Eigen3::Eigen
                                       segyio::segyio
                                       ${OpenMP_EXE_LINKER_FLAGS}
                                       ${OpenMP_CXX_FLAGS}
 )
 
+if(USE_FFTW)
+    target_link_libraries(impedance_tests ${fftw3f} ${fftw3})
+
+    target_compile_definitions(impedance_tests
+        PRIVATE EIGEN_FFTW_DEFAULT=1
+    )
+endif()
+
 target_compile_options(impedance_tests
     PRIVATE ${OpenMP_CXX_FLAGS}
-)
-target_compile_definitions(impedance_tests
-    PRIVATE EIGEN_FFTW_DEFAULT=1
 )
 
 add_test(NAME test COMMAND impedance_tests)

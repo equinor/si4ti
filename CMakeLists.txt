@@ -14,6 +14,7 @@ find_library(fftw3 NAMES fftw3 REQUIRED)
 find_library(fftw3f NAMES fftw3f REQUIRED)
 
 option(BUILD_DOC "Build documentation" OFF)
+option(USE_FFTW "Build with fftw" OFF)
 
 add_custom_target(diff)
 

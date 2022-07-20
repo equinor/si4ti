@@ -1,19 +1,23 @@
 project(si4ti-timeshift LANGUAGES CXX)
 
 add_executable(timeshift src/timeshift.cpp)
-target_link_libraries(timeshift ${fftw3f}
-                                ${fftw3}
-                                Eigen3::Eigen
+target_link_libraries(timeshift Eigen3::Eigen
                                 segyio::segyio
                                 ${OpenMP_EXE_LINKER_FLAGS}
                                 ${OpenMP_CXX_FLAGS}
                                 Boost::boost
 )
+
+if(USE_FFTW)
+    target_link_libraries(timeshift ${fftw3f} ${fftw3})
+
+    target_compile_definitions(timeshift
+        PRIVATE EIGEN_FFTW_DEFAULT=1
+    )
+endif()
+
 target_compile_options(timeshift
     PRIVATE ${OpenMP_CXX_FLAGS}
-)
-target_compile_definitions(timeshift
-    PRIVATE EIGEN_FFTW_DEFAULT=1
 )
 
 add_executable(apply_timeshift src/apply_timeshift.cpp)
@@ -39,18 +43,22 @@ add_executable(tests test/testsuite.cpp
 )
 target_include_directories(tests PRIVATE src)
 target_link_libraries(tests catch2
-                            ${fftw3f}
-                            ${fftw3}
                             Eigen3::Eigen
                             segyio::segyio
                             ${OpenMP_EXE_LINKER_FLAGS}
                             ${OpenMP_CXX_FLAGS}
 )
+
+if(USE_FFTW)
+    target_link_libraries(tests ${fftw3f} ${fftw3})
+
+    target_compile_definitions(tests
+        PRIVATE EIGEN_FFTW_DEFAULT=1
+    )
+endif()
+
 target_compile_options(tests
     PRIVATE ${OpenMP_CXX_FLAGS}
-)
-target_compile_definitions(tests
-    PRIVATE EIGEN_FFTW_DEFAULT=1
 )
 add_test(NAME test COMMAND tests)
 

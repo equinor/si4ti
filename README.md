@@ -22,7 +22,7 @@ To build si4ti you need:
  * [Eigen3](https://eigen.tuxfamily.org) version 3.3.4 or greater
  * [OpenMP](https://www.openmp.org)
  * [segyio](https://github.com/equinor/segyio) run cmake with EXPERIMENTAL=ON to get the required C++ headers
- * [fftw](https://www.fftw.org)
+ * [fftw](https://www.fftw.org) If built with USE_FFTW=True
 
 To build the documentation you also need:
  * [sphinx](https://pypi.org/project/Sphinx)
