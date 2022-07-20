@@ -1,5 +1,5 @@
 ## Introduction ##
-si4ti is a GPL licensed seismic inversion tool for monitoring effects in 4D 
+si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D
 seismic from changes in acoustic properties of a reservoir.
 
 ### Timeshift ###
