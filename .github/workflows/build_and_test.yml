@@ -1,0 +1,46 @@
+name: Build and Test
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential \
+          libboost-all-dev libeigen3-dev libfftw3-dev
+
+    - name: Build and install segyio
+      run: |
+        git clone --branch v1.9.12 https://github.com/equinor/segyio.git
+        cd segyio
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF
+        make
+        sudo make install
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+      
+    - name: Install Python dependencies
+      run: pip install 'segyio==1.9.12'
+
+    - name: Build and test
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make
+        ctest --output-on-failure
+        make diff
