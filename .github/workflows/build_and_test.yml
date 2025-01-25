@@ -20,7 +20,7 @@ jobs:
 
     - name: Build and install segyio
       run: |
-        git clone --branch 1.9.12 https://github.com/equinor/segyio.git
+        git clone --branch v1.9.12 https://github.com/equinor/segyio.git
         cd segyio
         mkdir build
         cd build
