@@ -4,7 +4,7 @@ project(si4ti VERSION 0.0.0 LANGUAGES CXX)
 include(CTest)
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Boost 1.76 REQUIRED)
