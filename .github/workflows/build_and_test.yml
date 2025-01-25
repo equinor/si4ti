@@ -19,6 +19,17 @@ jobs:
         sudo apt-get install -y cmake build-essential \
           libboost-all-dev libeigen3-dev libfftw3-dev
 
+    - name: Build and install cppcheck
+      run: |
+        git clone https://github.com/danmar/cppcheck.git cppcheck-src
+        mkdir cppcheck-build && cd cppcheck-build
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_CXX_FLAGS="-w" \
+              ../cppcheck-src
+        make
+        sudo make install
+        cd ..
+
     - name: Build and install segyio
       run: |
         git clone --branch v1.9.12 https://github.com/equinor/segyio.git
@@ -41,7 +52,23 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake -DBUILD_SHARED_LIBS=OFF \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              ..
         make
         ctest --output-on-failure
         make diff
+
+    - name: Run cppcheck
+      working-directory: build
+      run: |
+        cppcheck --enable=style,portability,performance,warning \
+                 --library=posix \
+                 --inline-suppr \
+                 --project=compile_commands.json \
+                 --error-exitcode=1 \
+                 --suppressions-list=../cppcheck/suppressions.txt \
+                 --verbose \
+                 --template="{file}:{line} [{severity}] {message}" \
+                 2>&1
