@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - build-and-test-in-ci
   pull_request:
   workflow_dispatch:
 
