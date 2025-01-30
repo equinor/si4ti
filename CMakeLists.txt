@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(si4ti VERSION 0.0.0 LANGUAGES CXX)
 
-include(CTest)
 include(GNUInstallDirs)
+
+option(BUILD_TESTING "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,8 +20,12 @@ option(USE_FFTW "Build with fftw" OFF)
 
 add_custom_target(diff)
 
-enable_testing()
-add_subdirectory(external/catch2)
+if(BUILD_TESTING)
+    include(CTest)
+    enable_testing()
+    add_subdirectory(external/catch2)
+endif()
+
 add_subdirectory(timeshift)
 add_subdirectory(doc)
 add_subdirectory(impedance)
