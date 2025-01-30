@@ -18,12 +18,11 @@ find_library(fftw3f NAMES fftw3f REQUIRED)
 option(BUILD_DOC "Build documentation" OFF)
 option(USE_FFTW "Build with fftw" OFF)
 
-add_custom_target(diff)
-
 if(BUILD_TESTING)
     include(CTest)
     enable_testing()
     add_subdirectory(external/catch2)
+    add_custom_target(diff)
 endif()
 
 add_subdirectory(timeshift)
