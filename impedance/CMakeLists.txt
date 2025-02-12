@@ -3,8 +3,7 @@ project(si4ti-impedance LANGUAGES CXX)
 add_executable(impedance src/impedance.cpp)
 target_link_libraries(impedance Eigen3::Eigen
                                 segyio::segyio
-                                ${OpenMP_EXE_LINKER_FLAGS}
-                                ${OpenMP_CXX_FLAGS}
+                                OpenMP::OpenMP_CXX
 )
 
 if(USE_FFTW)
@@ -14,10 +13,6 @@ if(USE_FFTW)
         PRIVATE EIGEN_FFTW_DEFAULT=1
     )
 endif()
-
-target_compile_options(impedance
-    PRIVATE ${OpenMP_CXX_FLAGS}
-)
 
 install(TARGETS impedance
         EXPORT impedance
@@ -37,8 +32,7 @@ target_include_directories(impedance_tests PRIVATE src)
 target_link_libraries(impedance_tests catch2
                                       Eigen3::Eigen
                                       segyio::segyio
-                                      ${OpenMP_EXE_LINKER_FLAGS}
-                                      ${OpenMP_CXX_FLAGS}
+                                      OpenMP::OpenMP_CXX
 )
 
 if(USE_FFTW)
@@ -48,10 +42,6 @@ if(USE_FFTW)
         PRIVATE EIGEN_FFTW_DEFAULT=1
     )
 endif()
-
-target_compile_options(impedance_tests
-    PRIVATE ${OpenMP_CXX_FLAGS}
-)
 
 add_test(NAME test COMMAND impedance_tests)
 
