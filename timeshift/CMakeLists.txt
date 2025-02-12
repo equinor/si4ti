@@ -19,6 +19,7 @@ add_executable(apply_timeshift src/apply_timeshift.cpp)
 target_link_libraries(apply_timeshift Eigen3::Eigen
                                       segyio::segyio
                                       Boost::boost
+                                      OpenMP::OpenMP_CXX
 )
 
 install(TARGETS timeshift
