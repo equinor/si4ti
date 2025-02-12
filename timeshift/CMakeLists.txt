@@ -3,8 +3,7 @@ project(si4ti-timeshift LANGUAGES CXX)
 add_executable(timeshift src/timeshift.cpp)
 target_link_libraries(timeshift Eigen3::Eigen
                                 segyio::segyio
-                                ${OpenMP_EXE_LINKER_FLAGS}
-                                ${OpenMP_CXX_FLAGS}
+                                OpenMP::OpenMP_CXX
                                 Boost::boost
 )
 
@@ -17,14 +16,11 @@ if(USE_FFTW)
     )
 endif()
 
-target_compile_options(timeshift
-    PRIVATE ${OpenMP_CXX_FLAGS}
-)
-
 add_executable(apply_timeshift src/apply_timeshift.cpp)
 target_link_libraries(apply_timeshift Eigen3::Eigen
                                       segyio::segyio
                                       Boost::boost
+                                      OpenMP::OpenMP_CXX
 )
 
 install(TARGETS timeshift
@@ -46,8 +42,7 @@ target_include_directories(tests PRIVATE src)
 target_link_libraries(tests catch2
                             Eigen3::Eigen
                             segyio::segyio
-                            ${OpenMP_EXE_LINKER_FLAGS}
-                            ${OpenMP_CXX_FLAGS}
+                            OpenMP::OpenMP_CXX
 )
 
 if(USE_FFTW)
@@ -59,9 +54,6 @@ if(USE_FFTW)
     )
 endif()
 
-target_compile_options(tests
-    PRIVATE ${OpenMP_CXX_FLAGS}
-)
 add_test(NAME test COMMAND tests)
 
 configure_file(test/vintage1.sgy test-data/vintage1.sgy COPYONLY)

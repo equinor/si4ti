@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Boost 1.76 REQUIRED)
 find_package(Eigen3 3.3.4 REQUIRED)
-find_package(OpenMP REQUIRED)
+find_package(OpenMP COMPONENTS CXX REQUIRED)
 find_package(segyio REQUIRED)
 # TODO: If we can rely on the presence of FFTW installations that provide
 # `.cmake` files for FFTW we can use `find_package(FFTW REQUIRED)`. This will
