@@ -8,6 +8,7 @@ target_link_libraries(impedance Eigen3::Eigen
 
 if(USE_FFTW)
     target_link_libraries(impedance ${fftw3f} ${fftw3})
+    target_include_directories(impedance PRIVATE ${fftw3_includes})
 
     target_compile_definitions(impedance
         PRIVATE EIGEN_FFTW_DEFAULT=1
@@ -37,6 +38,7 @@ target_link_libraries(impedance_tests catch2
 
 if(USE_FFTW)
     target_link_libraries(impedance_tests ${fftw3f} ${fftw3})
+    target_include_directories(impedance_tests PRIVATE ${fftw3_includes})
 
     target_compile_definitions(impedance_tests
         PRIVATE EIGEN_FFTW_DEFAULT=1
