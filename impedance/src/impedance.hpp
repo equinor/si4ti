@@ -15,9 +15,6 @@
 #include <segyio/segyio.hpp>
 
 using namespace segyio::literals;
-using input_file = segyio::basic_volume< segyio::readonly >;
-using output_file = segyio::basic_volume< segyio::trace_writer,
-                                          segyio::write_always >;
 
 namespace {
 
@@ -62,8 +59,8 @@ vector< T > myhamn( int n ){
     return 0.5 * (1 - filter.array().cos());
 }
 
-template< typename T >
-vector< T > timeinvariant_wavelet( input_file& survey ) {
+template< typename T, typename INFILE_TYPE >
+vector< T > timeinvariant_wavelet( INFILE_TYPE& survey ) {
 
     const auto tracelen = survey.samplecount();
 
@@ -83,8 +80,8 @@ vector< T > timeinvariant_wavelet( input_file& survey ) {
     return freqwav;
 }
 
-template< typename T >
-matrix< T > timevarying_wavelet( input_file& survey ) {
+template< typename T, typename INFILE_TYPE >
+matrix< T > timevarying_wavelet( INFILE_TYPE& survey ) {
 
     const auto tracelen = survey.samplecount();
     const int win_size = 101;
@@ -145,8 +142,8 @@ matrix< T > timevarying_wavelet( input_file& survey ) {
     return freqwav;
 }
 
-template< typename T >
-std::vector< matrix< T > > wavelets( std::vector< input_file >& vintages,
+template< typename T, typename INFILE_TYPE >
+std::vector< matrix< T > > wavelets( std::vector< INFILE_TYPE >& vintages,
                                      bool tv_wavelet,
                                      int polarity ) {
     std::vector< matrix< T > > wvlets;
@@ -271,8 +268,8 @@ struct solution_1D {
     vector< T > rj;
 };
 
-template< typename T >
-solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
+template< typename T, typename INFILE_TYPE >
+solution_1D< T > solve_1D( std::vector< INFILE_TYPE >&  vintages,
                            const std::vector< matrix< T > >& L,
                            const std::vector< matrix< T > >& A,
                            T damping,
@@ -318,8 +315,8 @@ solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
     return sol;
 }
 
-template< typename T >
-void add_boundary_inline( std::vector< output_file >& relAI_files,
+template< typename T, typename OUTFILE_TYPE >
+void add_boundary_inline( std::vector< OUTFILE_TYPE >& relAI_files,
                           vector< T >& b,
                           T norm,
                           T lat_smooth_3D, T lat_smooth_4D,
@@ -451,9 +448,9 @@ vector< T > conjugate_gradient( const MatrixType& L,
     return x;
 }
 
-template< typename T >
-vector< T > compute_impedance( std::vector< input_file >& vintages,
-                               std::vector< output_file >& relAI_files,
+template< typename T, typename INFILE_TYPE, typename OUTFILE_TYPE >
+vector< T > compute_impedance( std::vector< INFILE_TYPE >& vintages,
+                               std::vector< OUTFILE_TYPE >& relAI_files,
                                const std::vector< matrix< T > >& A,
                                T norm,
                                int max_iter,
@@ -505,9 +502,9 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
     return sol.rj / norm;
 }
 
-template< typename Vector >
+template< typename Vector, typename OUTFILE_TYPE >
 void writefile( const Vector& v,
-                output_file& f,
+                OUTFILE_TYPE& f,
                 int trc_start, int trc_end ) {
 
     auto itr = v.data();
