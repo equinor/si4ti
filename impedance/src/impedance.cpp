@@ -162,33 +162,14 @@ output_file create_file( std::string filename,
 
 }
 
-int main( int argc, char** argv ) {
+template<typename INFILE_TYPE, typename OUTFILE_TYPE>
+void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
+                                    std::vector< OUTFILE_TYPE >& relAI_files,
+                                    std::vector< OUTFILE_TYPE >& dsyn_files,
+                                    const options& opts ) {
     using T = float;
 
-    auto opts = parseopts( argc, argv );
-
-    if( opts.overlap < 0 ) opts.overlap = opts.max_iter;
-
     Progress::expected += opts.segments * ( opts.max_iter + 25 );
-
-    std::vector< input_file > files;
-
-    for( const auto& file : opts.files ) {
-        files.emplace_back( segyio::path{ file },
-                            segyio::config{}.with( opts.ilbyte )
-                                            .with( opts.xlbyte ) );
-
-        auto& back = files.back();
-        auto& front = files.front();
-
-        if( not (front.sorting()        == back.sorting())
-            or   front.crosslinecount() != back.crosslinecount()
-            or   front.inlinecount()    != back.inlinecount()
-            or   front.tracecount()     != back.tracecount() )
-            
-            throw std::invalid_argument( "Input files must all "
-                                         "have equal structure" );
-    }
 
     std::vector< matrix< T > > wvlets = wavelets< T >( files,
                                                        opts.tv_wavelet,
@@ -202,36 +183,6 @@ int main( int argc, char** argv ) {
     std::vector< matrix< T > > A = forward_operators< T >( wvlets,
                                                            vintages,
                                                            norm );
-
-    std::vector< output_file > relAI_files;
-    std::vector< output_file > dsyn_files;
-
-    for( int i = 0; i < vintages; ++i ) {
-
-        std::string relAI_fname;
-        std::string dsyn_fname;
-
-        if( opts.output_files.empty() ) {
-            relAI_fname = "relAI-" + std::to_string( i ) + ".sgy";
-            dsyn_fname = "dsyn-" + std::to_string( i ) + ".sgy";
-        }
-        else {
-            relAI_fname = opts.output_files[ i ];
-            dsyn_fname = opts.output_files[ i + vintages ];
-        }
-
-        auto relAI_file = create_file( relAI_fname,
-                                       opts.files.front(),
-                                       opts.ilbyte,
-                                       opts.xlbyte );
-        auto dsyn_file = create_file( dsyn_fname,
-                                      opts.files.front(),
-                                      opts.ilbyte,
-                                      opts.xlbyte );
-
-        relAI_files.emplace_back( std::move( relAI_file ) );
-        dsyn_files.emplace_back( std::move( dsyn_file ) );
-    }
 
     const bool xl_sorted = files.front().sorting() == segyio::sorting::xline();
     const std::size_t fast = xl_sorted ? files.front().crosslinecount()
@@ -278,4 +229,63 @@ int main( int argc, char** argv ) {
         }
         Progress::report( 5 );
     }
+}
+
+int main( int argc, char** argv ) {
+    auto opts = parseopts( argc, argv );
+
+    if( opts.overlap < 0 ) opts.overlap = opts.max_iter;
+
+    std::vector< input_file > files;
+
+    for( const auto& file : opts.files ) {
+        files.emplace_back( segyio::path{ file },
+                            segyio::config{}.with( opts.ilbyte )
+                                            .with( opts.xlbyte ) );
+
+        auto& back = files.back();
+        auto& front = files.front();
+
+        if( not (front.sorting()        == back.sorting())
+            or   front.crosslinecount() != back.crosslinecount()
+            or   front.inlinecount()    != back.inlinecount()
+            or   front.tracecount()     != back.tracecount() )
+
+            throw std::invalid_argument( "Input files must all "
+                                         "have equal structure" );
+    }
+
+    std::vector< output_file > relAI_files;
+    std::vector< output_file > dsyn_files;
+
+    const int vintages = files.size();
+    for( int i = 0; i < vintages; ++i ) {
+
+        std::string relAI_fname;
+        std::string dsyn_fname;
+
+        if( opts.output_files.empty() ) {
+            relAI_fname = "relAI-" + std::to_string( i ) + ".sgy";
+            dsyn_fname = "dsyn-" + std::to_string( i ) + ".sgy";
+        }
+        else {
+            relAI_fname = opts.output_files[ i ];
+            dsyn_fname = opts.output_files[ i + vintages ];
+        }
+
+        auto relAI_file = create_file( relAI_fname,
+                                       opts.files.front(),
+                                       opts.ilbyte,
+                                       opts.xlbyte );
+        auto dsyn_file = create_file( dsyn_fname,
+                                      opts.files.front(),
+                                      opts.ilbyte,
+                                      opts.xlbyte );
+
+        relAI_files.emplace_back( std::move( relAI_file ) );
+        dsyn_files.emplace_back( std::move( dsyn_file ) );
+    }
+
+    compute_impedance_of_full_cube(files, relAI_files, dsyn_files, opts);
+
 }
