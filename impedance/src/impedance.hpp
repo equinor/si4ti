@@ -1,3 +1,5 @@
+#ifndef IMPEDANCE_HPP
+#define IMPEDANCE_HPP
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -678,3 +680,4 @@ struct generic_product_impl< Si4tiImpMatrix< T, Reporter >,
 };
 
 } }
+#endif /* IMPEDANCE_HPP */

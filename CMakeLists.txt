@@ -4,6 +4,7 @@ project(si4ti VERSION 0.0.0 LANGUAGES CXX)
 include(GNUInstallDirs)
 
 option(BUILD_TESTING "Build tests" ON)
+option(PYTHON_BINDINGS "Build Python bindings" OFF)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +21,10 @@ if(USE_FFTW)
     find_library(fftw3 NAMES fftw3 REQUIRED)
     find_library(fftw3f NAMES fftw3f REQUIRED)
     find_path(fftw3_includes NAMES "fftw3.h" REQUIRED)
+endif()
+
+if(PYTHON_BINDINGS)
+    add_subdirectory(python)
 endif()
 
 if(BUILD_TESTING)
