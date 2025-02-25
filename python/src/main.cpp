@@ -1,15 +1,17 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-
+#include <cassert>
 #include <utility>
 
-//#include "impedance.hpp"
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include <segyio/segyio.hpp>
 
-template<typename INFILE_TYPE, typename OUTFILE_TYPE, typename OPTIONS>
-void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
-                                     std::vector< OUTFILE_TYPE >& relAI_files,
-                                     std::vector< OUTFILE_TYPE >& dsyn_files,
-                                     OPTIONS& opts );
+#include "impedance.hpp"
+
+//template<typename INFILE_TYPE, typename OUTFILE_TYPE, typename OPTIONS>
+//void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
+//                                     std::vector< OUTFILE_TYPE >& relAI_files,
+//                                     std::vector< OUTFILE_TYPE >& dsyn_files,
+//                                     OPTIONS& opts );
 
 
 
@@ -28,6 +30,116 @@ struct ImpedanceOptions {
     double          latsmooth_4D         = 4;
     int             max_iter             = 50;
 };
+
+// TODO: Investigate if we can avoid copies
+class NumpyIOFile {
+    // The actual memory is being held/allocated somewhere else
+    py::array_t<float> data_;
+
+public:
+    NumpyIOFile(py::array_t<float> data)
+        : data_(data)
+    {
+    }
+
+    // Takes ownerwhip of the data
+    NumpyIOFile(py::array_t<float>&& data)
+    : data_(std::move(data))
+    {
+    }
+
+    segyio::sorting sorting() const {
+        // TODO: We arbitrarily set the sorting to some value here. This has to
+        // be corrected!
+        return segyio::sorting::iline();
+    }
+
+    int inlinecount() const {
+        return (this->sorting() == segyio::sorting::iline()) ? this->data_.shape(0) : this->data_.shape(1);
+        //if (this->sorting() == segyio::sorting::iline()) {
+        //    return this->data_.shape(0);
+        //} else {
+        //    return this->data_.shape(1);
+        //}
+    }
+
+    int crosslinecount() const {
+        return (this->sorting() == segyio::sorting::iline()) ? this->data_.shape(1) : this->data_.shape(0);
+        //if (this->sorting() == segyio::sorting::iline()) {
+        //    return this->data_.shape(1);
+        //} else {
+        //    return this->data_.shape(0);
+        //}
+    }
+
+    int tracecount() const {
+        return this->inlinecount() * this->crosslinecount();
+    }
+
+    int samplecount() const {
+        return this->data_.shape(2);
+    }
+
+
+
+    //OutputIt trace_reader< Derived >::get( int i, OutputIt out ) noexcept(false) {
+    float* put(int tracenr, float* in) {
+        //auto r = this->data_.unchecked<3>();
+        //const auto offset = this->trace_offset(tracenr);
+        //std::copy_n(in, this->samplecount(), &r[offset]);
+        //return in + this->samplecount();
+        auto r = this->data_.mutable_unchecked<3>();
+        const auto [inlinenr, crosslinenr] = this->to_inline_crossline_nr(tracenr);
+        std::copy_n(in, this->samplecount(), r.mutable_data(inlinenr, crosslinenr, 0));
+        return in + this->samplecount();
+    }
+
+    float* get(int tracenr, float* out) const {
+        // TODO: This needs to do some copying of data.
+        //auto r = this->data_.unchecked<3>();
+        //const auto offset = this->trace_offset(tracenr);
+        //return std::copy_n(&r[offset], this->samplecount(), out);
+
+        auto r = this->data_.unchecked<3>();
+        const auto [inlinenr, crosslinenr] = this->to_inline_crossline_nr(tracenr);
+        return std::copy_n(r.data(inlinenr, crosslinenr, 0), this->samplecount(), out);
+    }
+
+    //segyio::sorting sorting() const noexcept(true) {
+    //    // We artificially set the sorting to some value
+    //    return segyio::sorting::xline();
+    //}
+    //int inlinecount()         const noexcept(true) {
+    //    return this->data_.shape(0);
+    //}
+    //int crosslinecount()      const noexcept(true) {
+    //    return this->data_.shape(1);
+    //}
+
+    //int offsetcount()         const noexcept(true) {
+    //    return this->data_.shape(2);
+    //}
+    //OutputIt trace_reader< Derived >::get( int i, OutputIt out ) noexcept(false) {
+
+private:
+    std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
+        assert(tracenr < this->inlinecount() * this->crosslinecount());
+        if (this->sorting() == segyio::sorting::iline()) {
+            const std::size_t crosslinenr = tracenr % this->crosslinecount();
+            const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
+            return std::pair{inlinenr, crosslinenr};
+        } else {
+            // crossline sorted
+            const std::size_t inlinenr = tracenr % this->inlinecount();
+            const std::size_t crosslinenr = (tracenr - inlinenr) / this->inlinecount();
+            return std::pair{inlinenr, crosslinenr};
+        }
+
+        //return static_cast<std::size_t>(tracenr) * this->samplecount();
+    }
+
+};
+
 
 
 std::pair<py::list, py::list> impedance(

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-import xtgeo
+import xtgeo  # type: ignore[import-untyped]
 
 # from si4ti import impedanct, ImpedanceOptions
-from si4ti import compute_impedance
+from si4ti import compute_impedance  # type: ignore[import-not-found]
 
 INPUT_FILES = [
     "../test-data/vint0.sgy",
