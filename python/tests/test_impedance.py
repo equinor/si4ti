@@ -27,6 +27,8 @@ def compare_cubes(bases, references, avg_diff=8e-3, max_diff=8e-3):
     for base, reference in zip(bases, references):
         diff = np.abs(base.values - reference.values)
         s = np.sum(sum(diff)) / np.sum(np.sum(reference.values))
+
+        print(f"Avg: {s}, Max: {diff.max()}")
         if s > avg_diff:
             msg = f"Error: Average too high {s}"
             raise ValueError(msg)
@@ -37,8 +39,6 @@ def compare_cubes(bases, references, avg_diff=8e-3, max_diff=8e-3):
                 f"{diff.max()} >= {max_diff}"
             )
             raise ValueError(msg)
-
-        print(f"Avg: {s}, Max: {diff.max()}")
 
 
 def test_playing_with_cubes(input_cubes):
@@ -84,3 +84,22 @@ def test_timevarying_wavelet_default_options(input_cubes):
 
     compare_cubes(relAI_cubes, ref_relAI_cubes)
     compare_cubes(dsyn_cubes, ref_dsyn_cubes)
+
+
+def test_timevarying_wavelet_segmented(input_cubes):
+    options = ImpedanceOptions()
+    options.segments = 2
+    options.max_iter = 3
+    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, options)
+
+    ref_relAI_cubes = [
+        xtgeo.cube_from_file(f"../test-data/imp-segmented-relAI-{i}-ref.sgy")
+        for i in range(3)
+    ]
+    ref_dsyn_cubes = [
+        xtgeo.cube_from_file(f"../test-data/imp-segmented-dsyn-{i}-ref.sgy")
+        for i in range(3)
+    ]
+
+    compare_cubes(relAI_cubes, ref_relAI_cubes, avg_diff=28)
+    compare_cubes(dsyn_cubes, ref_dsyn_cubes, avg_diff=28)
