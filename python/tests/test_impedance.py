@@ -88,6 +88,7 @@ def test_timeinvariant_wavelet_default_options(input_cubes):
 
 def test_timevarying_wavelet_segmented(input_cubes):
     options = ImpedanceOptions()
+    options.tv_wavelet = True
     options.segments = 2
     options.max_iter = 3
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, options)
@@ -101,5 +102,5 @@ def test_timevarying_wavelet_segmented(input_cubes):
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, ref_relAI_cubes, avg_diff=28)
-    compare_cubes(dsyn_cubes, ref_dsyn_cubes, avg_diff=28)
+    compare_cubes(relAI_cubes, ref_relAI_cubes)
+    compare_cubes(dsyn_cubes, ref_dsyn_cubes)
