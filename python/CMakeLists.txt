@@ -48,6 +48,7 @@ if (USE_FFTW)
     target_include_directories(_core PRIVATE ${fftw3_includes})
     target_compile_definitions(_core PRIVATE EIGEN_FFTW_DEFAULT=1)
 endif()
+add_compile_definitions(MUTE_PROGRESS)
 #target_link_libraries(_core PRIVATE _impedance)# OpenMP::OpenMP_CXX Eigen3::Eigen)
 
 install(TARGETS _core DESTINATION ${SKBUILD_PROJECT_NAME})

@@ -43,13 +43,17 @@ struct Progress {
     static int count;
 
     static void report() {
+#ifndef MUTE_PROGRESS
         count++;
         if( count % (expected/20) == 0 )
             std::cout << "Progress: " << (count*100)/expected << "%\n";
+#endif
     }
 
     static void report( int n ) {
+#ifndef MUTE_PROGRESS
         for( int i = 0; i < n; ++i ) report();
+#endif
     }
 };
 
