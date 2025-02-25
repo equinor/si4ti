@@ -53,22 +53,6 @@ def test_playing_with_cubes(input_cubes):
     print([np.mean(c.values) for c in dsyn_cubes])
 
 
-def test_timeinvariant_wavelet_default_options(input_cubes):
-    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
-
-    ref_relAI_cubes = [
-        xtgeo.cube_from_file(f"../test-data/imp-tinw-relAI-{i}-ref.sgy")
-        for i in range(3)
-    ]
-    ref_dsyn_cubes = [
-        xtgeo.cube_from_file(f"../test-data/imp-tinw-dsyn-{i}-ref.sgy")
-        for i in range(3)
-    ]
-
-    compare_cubes(relAI_cubes, ref_relAI_cubes)
-    compare_cubes(dsyn_cubes, ref_dsyn_cubes)
-
-
 def test_timevarying_wavelet_default_options(input_cubes):
     options = ImpedanceOptions()
     options.tv_wavelet = True
@@ -80,6 +64,22 @@ def test_timevarying_wavelet_default_options(input_cubes):
     ]
     ref_dsyn_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-tvw-dsyn-{i}-ref.sgy") for i in range(3)
+    ]
+
+    compare_cubes(relAI_cubes, ref_relAI_cubes)
+    compare_cubes(dsyn_cubes, ref_dsyn_cubes)
+
+
+def test_timeinvariant_wavelet_default_options(input_cubes):
+    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
+
+    ref_relAI_cubes = [
+        xtgeo.cube_from_file(f"../test-data/imp-tinw-relAI-{i}-ref.sgy")
+        for i in range(3)
+    ]
+    ref_dsyn_cubes = [
+        xtgeo.cube_from_file(f"../test-data/imp-tinw-dsyn-{i}-ref.sgy")
+        for i in range(3)
     ]
 
     compare_cubes(relAI_cubes, ref_relAI_cubes)

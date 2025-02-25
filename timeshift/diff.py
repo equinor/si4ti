@@ -36,6 +36,8 @@ def main():
         diff = abs(xs - ys)
 
         s = sum(sum(diff)) / sum(sum(ys))
+
+        print(f"Avg: {s}, Max: {diff.max()}")
         if s > args.avg:
             msg = 'Error in {}, avg too high: {}'
             sys.exit(msg.format(base, s))
