@@ -298,7 +298,7 @@ PYBIND11_MODULE(_core, m) {
             R"pbdoc(
                 Impedance options
             )pbdoc")
-        .def_readwrite("polarity", &ImpedanceOptions::polarity, "asdf")
+        .def_readwrite("polarity", &ImpedanceOptions::polarity)
         .def_readwrite("segments", &ImpedanceOptions::segments)
         .def_readwrite("overlap", &ImpedanceOptions::overlap)
         .def_readwrite("tv_wavelet", &ImpedanceOptions::tv_wavelet)
