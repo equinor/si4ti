@@ -6,9 +6,6 @@ using input_file = segyio::basic_volume< segyio::readonly >;
 using output_file = segyio::basic_volume< segyio::trace_writer,
                                           segyio::write_always >;
 
-int Progress::count = 0;
-int Progress::expected = 10;
-
 namespace {
 
 void printhelp(){

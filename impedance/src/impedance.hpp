@@ -53,6 +53,10 @@ struct Progress {
     }
 };
 
+int Progress::count = 0;
+int Progress::expected = 10;
+
+
 template< typename T >
 using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
 template< typename T >

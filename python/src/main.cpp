@@ -42,12 +42,15 @@ public:
     {
     }
 
-    // Takes ownerwhip of the data
-    NumpyIOFile(py::array_t<float>&& data)
-    : data_(std::move(data))
-    {
-    }
+    //// Takes ownerwhip of the data
+    //NumpyIOFile(py::array_t<float>&& data)
+    //: data_(std::move(data))
+    //{
+    //}
 
+    const py::array_t<float>& data() const {
+        return this->data_;
+    }
     segyio::sorting sorting() const {
         // TODO: We arbitrarily set the sorting to some value here. This has to
         // be corrected!
@@ -83,7 +86,8 @@ public:
 
 
     //OutputIt trace_reader< Derived >::get( int i, OutputIt out ) noexcept(false) {
-    float* put(int tracenr, float* in) {
+    template<typename InputIt>
+    InputIt* put(int tracenr, InputIt* in) {
         //auto r = this->data_.unchecked<3>();
         //const auto offset = this->trace_offset(tracenr);
         //std::copy_n(in, this->samplecount(), &r[offset]);
@@ -94,7 +98,8 @@ public:
         return in + this->samplecount();
     }
 
-    float* get(int tracenr, float* out) const {
+    template<typename OutputIt>
+    OutputIt* get(int tracenr, OutputIt* out) const {
         // TODO: This needs to do some copying of data.
         //auto r = this->data_.unchecked<3>();
         //const auto offset = this->trace_offset(tracenr);
@@ -144,58 +149,102 @@ private:
 
 std::pair<py::list, py::list> impedance(
     const py::list& input,
-    const ImpedanceOptions& options
+    ImpedanceOptions options
 ) {
 
     // Check input dimensions.
     //if (input1.ndim() != 1 || input2.ndim() != 1)
     //    throw std::runtime_error("Input should be 1-D NumPy arrays.");
 
-    py::list output1;
-    py::list output2;
+    //py::list output1;
+    //py::list output2;
+
+    std::vector<NumpyIOFile> input_files;
+
+    std::vector<NumpyIOFile> output_1;
+    std::vector<NumpyIOFile> output_2;
+
     for (py::handle item: input) {
         if (!py::isinstance<py::array>(item)) {
             throw std::runtime_error("All items in the input list must be NumPy arrays.");
         }
 
-        py::array_t<float, py::array::c_style> arr = py::cast<py::array>(item);
+        py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
+        input_files.push_back(NumpyIOFile(numpy_array));
 
-        //if (arr.ndim() != 3)
-        //    throw std::runtime_error("Input should be 3D NumPy arrays.");
+        //constexpr size_t elsize = sizeof(double);
+        //size_t shape[3]{100, 1000, 1000};
+        //size_t strides[3]{1000 * 1000 * elsize, 1000 * elsize, elsize};
 
-        //auto buf = arr.request();
-        auto r = arr.unchecked<3>();
-        auto result1 = std::vector<float>(r.size());
+        //auto out_1 = py::array_t<float>(numpy_array.shape(), numpy_array.strides());
+        const py::ssize_t shape[3]{numpy_array.shape(0), numpy_array.shape(1), numpy_array.shape(2)};
+        const py::ssize_t strides[3]{numpy_array.strides(0), numpy_array.strides(1), numpy_array.strides(2)};
+        auto out_1 = py::array_t<float>(shape, strides);
+        auto out_2 = py::array_t<float>(shape, strides);
 
-        // Example processing: scale and cast the elements of the input arrays.
-
-        for (py::ssize_t i = 0; i < r.shape(0); i++) {
-            for (py::ssize_t j = 0; j < r.shape(1); j++) {
-                for (py::ssize_t k = 0; k < r.shape(2); k++) {
-                    //sum += r(i, j, k);
-                    result1[i * r.shape(1) * r.shape(2) + j * r.shape(2) + k] = static_cast<float>(2.0 * r(i, j, k));
-                }
-            }
-        }
-
-//        for (ssize_t i = 0; i < buf.size; i++)
-//            result1[i] = static_cast<float>(2.0 * static_cast<float*>(buf.ptr)[i]);
-
-        // Create NumPy arrays from the std::vector results.
-
-        {
-            auto tmp = py::array_t<float>(result1.size(), result1.data())
-                .reshape({r.shape(0), r.shape(1), r.shape(2)});
-;
-            output1.append(tmp.reshape({r.shape(0), r.shape(1), r.shape(2)}));
-            //output1.append( tmp );
-        }
-        {
-            auto tmp = py::array_t<float>(result1.size(), result1.data())
-                .reshape({r.shape(0), r.shape(1), r.shape(2)});
-            output2.append( tmp );
-        }
+        output_1.push_back(out_1);
+        output_2.push_back(out_2);
     }
+
+    // Do stuff
+    compute_impedance_of_full_cube(input_files, output_1, output_2, options);
+
+    // Copy data back
+    py::list output1;
+    py::list output2;
+
+    for (const auto& out: output_1) {
+        output1.append(out.data());
+    }
+
+    for (const auto& out: output_2) {
+        output2.append(out.data());
+    }
+
+    //for (py::handle item: input) {
+    //    if (!py::isinstance<py::array>(item)) {
+    //        throw std::runtime_error("All items in the input list must be NumPy arrays.");
+    //    }
+
+    //    py::array_t<float, py::array::c_style> arr = py::cast<py::array>(item);
+
+    //    //if (arr.ndim() != 3)
+    //    //    throw std::runtime_error("Input should be 3D NumPy arrays.");
+
+    //    //auto buf = arr.request();
+    //    auto r = arr.unchecked<3>();
+    //    auto result1 = std::vector<float>(r.size());
+
+    //    // Example processing: scale and cast the elements of the input arrays.
+
+    //    for (py::ssize_t i = 0; i < r.shape(0); i++) {
+    //        for (py::ssize_t j = 0; j < r.shape(1); j++) {
+    //            for (py::ssize_t k = 0; k < r.shape(2); k++) {
+    //                //sum += r(i, j, k);
+    //                result1[i * r.shape(1) * r.shape(2) + j * r.shape(2) + k] = static_cast<float>(2.0 * r(i, j, k));
+    //            }
+    //        }
+    //    }
+
+//  //      for (ssize_t i = 0; i < buf.size; i++)
+//  //          result1[i] = static_cast<float>(2.0 * static_cast<float*>(buf.ptr)[i]);
+
+    //    // Create NumPy arrays from the std::vector results.
+
+    //    {
+    //        auto tmp = py::array_t<float>(result1.size(), result1.data())
+    //            .reshape({r.shape(0), r.shape(1), r.shape(2)});
+;
+    //        output1.append(tmp.reshape({r.shape(0), r.shape(1), r.shape(2)}));
+    //        //output1.append( tmp );
+    //    }
+    //    {
+    //        auto tmp = py::array_t<float>(result1.size(), result1.data())
+    //            .reshape({r.shape(0), r.shape(1), r.shape(2)});
+    //        output2.append( tmp );
+    //    }
+    //}
+
 
     return {output1, output2};
 }
