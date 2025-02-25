@@ -45,10 +45,18 @@ def test_timevarying_wavelet_default_options(input_cubes):
     print([np.mean(c.values) for c in dsyn_cubes])
 
     ref_relAI_cubes = [
-        xtgeo.cube_from_file(f"../test-data/imp-tvw-relAI-{i}-ref.sgy")
+        xtgeo.cube_from_file(f"../test-data/imp-tinw-relAI-{i}-ref.sgy")
         for i in range(3)
     ]
     print([c.values.shape for c in ref_relAI_cubes])
     print("Reference relAI cubes")
     print([np.mean(c.values) for c in ref_relAI_cubes])
+
+    ref_dsyn_cubes = [
+        xtgeo.cube_from_file(f"../test-data/imp-tinw-dsyn-{i}-ref.sgy")
+        for i in range(3)
+    ]
+    print([c.values.shape for c in ref_dsyn_cubes])
+    print("Reference dsyn cubes")
+    print([np.mean(c.values) for c in ref_dsyn_cubes])
     # for input_cube, relAI_cube in zip(input_cubes, relAI_cubes)
