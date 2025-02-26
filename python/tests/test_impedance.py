@@ -5,7 +5,7 @@ import pytest
 import xtgeo  # type: ignore[import-untyped]
 
 # from si4ti import impedanct, ImpedanceOptions
-from si4ti import ImpedanceOptions, compute_impedance  # type: ignore[import-not-found]
+from si4ti import compute_impedance  # type: ignore[import-not-found]
 
 INPUT_FILES = [
     "../test-data/vint0.sgy",
@@ -41,22 +41,20 @@ def compare_cubes(bases, references, avg_diff=8e-3, max_diff=8e-3):
             raise ValueError(msg)
 
 
-def test_playing_with_cubes(input_cubes):
-    # import os
-    # dir_path = os.path.dirname(os.path.realpath(__file__))
-    print([c.values.shape for c in input_cubes])
-    print([np.mean(c.values) for c in input_cubes])
-    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
-    print([c.values.shape for c in relAI_cubes])
-    print([np.mean(c.values) for c in relAI_cubes])
-    print([c.values.shape for c in dsyn_cubes])
-    print([np.mean(c.values) for c in dsyn_cubes])
+# def test_playing_with_cubes(input_cubes):
+#    # import os
+#    # dir_path = os.path.dirname(os.path.realpath(__file__))
+#    print([c.values.shape for c in input_cubes])
+#    print([np.mean(c.values) for c in input_cubes])
+#    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
+#    print([c.values.shape for c in relAI_cubes])
+#    print([np.mean(c.values) for c in relAI_cubes])
+#    print([c.values.shape for c in dsyn_cubes])
+#    print([np.mean(c.values) for c in dsyn_cubes])
 
 
-def test_timevarying_wavelet_default_options(input_cubes):
-    options = ImpedanceOptions()
-    options.tv_wavelet = True
-    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, options)
+def test_timevarying_wavelet_default_options_inline_sorted(input_cubes):
+    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, tv_wavelet=True)
 
     ref_relAI_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-tvw-relAI-{i}-ref.sgy")
@@ -70,7 +68,7 @@ def test_timevarying_wavelet_default_options(input_cubes):
     compare_cubes(dsyn_cubes, ref_dsyn_cubes)
 
 
-def test_timeinvariant_wavelet_default_options(input_cubes):
+def test_timeinvariant_wavelet_default_options_inline_sorted(input_cubes):
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
 
     ref_relAI_cubes = [
@@ -86,12 +84,13 @@ def test_timeinvariant_wavelet_default_options(input_cubes):
     compare_cubes(dsyn_cubes, ref_dsyn_cubes)
 
 
-def test_timevarying_wavelet_segmented(input_cubes):
-    options = ImpedanceOptions()
-    options.tv_wavelet = True
-    options.segments = 2
-    options.max_iter = 3
-    relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, options)
+def test_timevarying_wavelet_segmented_inline_sorted(input_cubes):
+    relAI_cubes, dsyn_cubes = compute_impedance(
+        input_cubes,
+        tv_wavelet=True,
+        segments=2,
+        max_iter=3,
+    )
 
     ref_relAI_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-segmented-relAI-{i}-ref.sgy")
