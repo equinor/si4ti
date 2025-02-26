@@ -54,7 +54,7 @@ class Si4tiNumpyWrapper {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
         const std::size_t crosslinenr = tracenr % this->crosslinecount();
         const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
-        return std::pair{inlinenr, crosslinenr};
+        return {inlinenr, crosslinenr};
     }
 
 public:
@@ -102,7 +102,9 @@ public:
     template<typename InputIt>
     InputIt* put(int tracenr, InputIt* in) {
         auto r = this->data_.mutable_unchecked<3>();
-        const auto [inlinenr, crosslinenr] = this->to_inline_crossline_nr(tracenr);
+        const auto numbers = this->to_inline_crossline_nr(tracenr);
+        const auto inlinenr = numbers.first;
+        const auto crosslinenr = numbers.second;
         std::copy_n(in, this->samplecount(), r.mutable_data(inlinenr, crosslinenr, 0));
         return in + this->samplecount();
     }
@@ -110,7 +112,9 @@ public:
     template<typename OutputIt>
     OutputIt* get(int tracenr, OutputIt* out) const {
         auto r = this->data_.unchecked<3>();
-        const auto [inlinenr, crosslinenr] = this->to_inline_crossline_nr(tracenr);
+        const auto numbers = this->to_inline_crossline_nr(tracenr);
+        const auto inlinenr = numbers.first;
+        const auto crosslinenr = numbers.second;
         return std::copy_n(r.data(inlinenr, crosslinenr, 0), this->samplecount(), out);
     }
 };
