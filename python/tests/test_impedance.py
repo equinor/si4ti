@@ -37,7 +37,7 @@ def compare_cubes(actuals, references, rtol=1e-8, atol=1e-3, strict=True):
 #    print([np.mean(c.values) for c in dsyn_cubes])
 
 
-def test_timevarying_wavelet_default_options_inline_sorted(input_cubes):
+def test_timevarying_wavelet_default_options(input_cubes):
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, tv_wavelet=True)
 
     expected_relAI_cubes = [
@@ -52,7 +52,7 @@ def test_timevarying_wavelet_default_options_inline_sorted(input_cubes):
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
-def test_timeinvariant_wavelet_default_options_inline_sorted(input_cubes):
+def test_timeinvariant_wavelet_default_options(input_cubes):
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
 
     expected_relAI_cubes = [
@@ -68,7 +68,7 @@ def test_timeinvariant_wavelet_default_options_inline_sorted(input_cubes):
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
-def test_timevarying_wavelet_segmented_inline_sorted(input_cubes):
+def test_timevarying_wavelet_segmented(input_cubes):
     relAI_cubes, dsyn_cubes = compute_impedance(
         input_cubes,
         tv_wavelet=True,

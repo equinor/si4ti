@@ -54,9 +54,7 @@ public:
     //    // be corrected!
     //    return segyio::sorting::iline();
     //}
-    bool xlinesorted() const noexcept(true) {
-        // TODO: We arbitrarily set the sorting to some value here. This has to
-        // be corrected!
+    static constexpr bool xlinesorted() const noexcept(true) {
         return false;
     }
 
@@ -152,6 +150,7 @@ private:
 
 std::pair<py::list, py::list> impedance(
     const py::list& input,
+    const bool inline_sorted,
     ImpedanceOptions options
 ) {
 
@@ -173,7 +172,7 @@ std::pair<py::list, py::list> impedance(
         }
 
         py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
-        input_files.push_back(NumpyIOFile(numpy_array));
+        input_files.push_back(NumpyIOFile(numpy_array, inline_sorted));
 
         //constexpr size_t elsize = sizeof(double);
         //size_t shape[3]{100, 1000, 1000};
