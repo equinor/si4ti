@@ -1,0 +1,52 @@
+exclude: 'test-data/.*|doc/.*|external/.*|cppcheck/.*|.*.sgy|LICENSE|README.md|timeshift/diff.py|.github/workflows/build_and_test.yml'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: "v5.0.0"
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: name-tests-test
+        args: ["--pytest-test-first"]
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
+  # Fast linting and format checking, see https://github.com/astral-sh/ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.9.7
+    hooks:
+    # Run the linter.
+    - id: ruff
+      language_version: python3.12
+      types_or: [ python, pyi, jupyter ]
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format
+      language_version: python3.12
+      types_or: [ python, pyi, jupyter ]
+  # Static typing for Python, see https://github.com/python/mypy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+    - id: mypy
+      language_version: python3.12
+      # Overwrite args to also warn on missing imports.
+      args: []
+      # pre-commit runs mypy in an insulated environment where our dependencies
+      # are not installed. Therefore, we install additional dependencies with
+      # same version as poetry to improve the type checking.
+      additional_dependencies: [
+        typing_extensions,
+        xtgeo,
+        pytest,
+      ]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+    - id: gitleaks
