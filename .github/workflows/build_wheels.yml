@@ -55,13 +55,19 @@ jobs:
       - name: Build wheels
         env:
           CIBW_BEFORE_BUILD: pip install pybind11
+          CIBW_BEFORE_BUILD_LINUX: apt-get install cmake build-essential libboost-dev libeigen3-dev libfftw3-dev
+          CIBW_BEFORE_BUILD_MACOS: brew install fftw cmake boost eigen
           CIBW_ENVIRONMENT_WINDOWS: >
             CMAKE_GENERATOR="${{ matrix.cmake_generator }}"
             CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
           CIBW_SKIP: pp* *-musllinux_* cp36-* cp37-* cp38-*
           CIBW_ARCHS: ${{ matrix.arch }}
         run: |
-            python -m cibuildwheel --output-dir wheelhouse python/
+            python -m cibuildwheel --output-dir wheelhouse \
+            -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
+            -Ccmake.define.CMAKE_BUILD_TYPE=Release \
+            -Ccmake.define.USE_FFTW=OFF \
+            python/
 
       - uses: actions/upload-artifact@v4
         with:
