@@ -65,9 +65,6 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
         run: |
             python -m cibuildwheel --output-dir wheelhouse \
-            -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
-            -Ccmake.define.CMAKE_BUILD_TYPE=Release \
-            -Ccmake.define.USE_FFTW=OFF \
             python/
 
       - uses: actions/upload-artifact@v4
