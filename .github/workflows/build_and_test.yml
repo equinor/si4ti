@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: C++, FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
         fftw: ["ON", "OFF"]
