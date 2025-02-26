@@ -41,32 +41,32 @@ def compare_cubes(actuals, references, rtol=1e-8, atol=1e-3, strict=True):
 def test_timevarying_wavelet_default_options_inline_sorted(input_cubes):
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, tv_wavelet=True)
 
-    ref_relAI_cubes = [
+    expected_relAI_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-tvw-relAI-{i}-ref.sgy")
         for i in range(3)
     ]
-    ref_dsyn_cubes = [
+    expected_dsyn_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-tvw-dsyn-{i}-ref.sgy") for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, ref_relAI_cubes)
-    compare_cubes(dsyn_cubes, ref_dsyn_cubes)
+    compare_cubes(relAI_cubes, expected_relAI_cubes)
+    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
 def test_timeinvariant_wavelet_default_options_inline_sorted(input_cubes):
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
 
-    ref_relAI_cubes = [
+    expected_relAI_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-tinw-relAI-{i}-ref.sgy")
         for i in range(3)
     ]
-    ref_dsyn_cubes = [
+    expected_dsyn_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-tinw-dsyn-{i}-ref.sgy")
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, ref_relAI_cubes)
-    compare_cubes(dsyn_cubes, ref_dsyn_cubes)
+    compare_cubes(relAI_cubes, expected_relAI_cubes)
+    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
 def test_timevarying_wavelet_segmented_inline_sorted(input_cubes):
@@ -77,14 +77,14 @@ def test_timevarying_wavelet_segmented_inline_sorted(input_cubes):
         max_iter=3,
     )
 
-    ref_relAI_cubes = [
+    expected_relAI_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-segmented-relAI-{i}-ref.sgy")
         for i in range(3)
     ]
-    ref_dsyn_cubes = [
+    expected_dsyn_cubes = [
         xtgeo.cube_from_file(f"../test-data/imp-segmented-dsyn-{i}-ref.sgy")
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, ref_relAI_cubes)
-    compare_cubes(dsyn_cubes, ref_dsyn_cubes)
+    compare_cubes(relAI_cubes, expected_relAI_cubes)
+    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
