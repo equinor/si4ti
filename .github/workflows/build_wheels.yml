@@ -63,3 +63,4 @@ jobs:
         with:
           name: wheel-${{ matrix.os }}-${{ matrix.arch }}
           path: ./wheelhouse/*.whl
+          retention-days: 1
