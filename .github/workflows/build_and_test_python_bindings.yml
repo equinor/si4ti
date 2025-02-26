@@ -1,4 +1,4 @@
-name: Build and Test Python bindings
+name: Build and Test
 on:
   push:
     branches:
@@ -26,7 +26,7 @@ jobs:
         pre-commit run --all-files
 
   build:
-    name: Build and test (Python), FFTW ${{ matrix.fftw }}
+    name: Python bindings, FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
         fftw: ["ON", "OFF"]
