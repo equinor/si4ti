@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy as np
+import numpy.testing as npt
 import pytest
 import xtgeo  # type: ignore[import-untyped]
 
@@ -19,26 +19,11 @@ def input_cubes():
     return [xtgeo.cube_from_file(filename) for filename in INPUT_FILES]
 
 
-def compare_cubes(bases, references, avg_diff=8e-3, max_diff=8e-3):
-    if len(bases) != len(references):
-        msg = "Nonmatching number of base and reference cubes"
-        raise ValueError(msg)
-
-    for base, reference in zip(bases, references):
-        diff = np.abs(base.values - reference.values)
-        s = np.sum(sum(diff)) / np.sum(np.sum(reference.values))
-
-        print(f"Avg: {s}, Max: {diff.max()}")
-        if s > avg_diff:
-            msg = f"Error: Average too high {s}"
-            raise ValueError(msg)
-
-        if not diff.max() < max_diff:
-            msg = (
-                "Error: Maximum absolute difference between cubes too high "
-                f"{diff.max()} >= {max_diff}"
-            )
-            raise ValueError(msg)
+def compare_cubes(actuals, references, rtol=1e-8, atol=1e-3, strict=True):
+    for actual, expected in zip(actuals, references):
+        npt.assert_allclose(
+            actual.values, expected.values, rtol=rtol, atol=atol, strict=strict
+        )
 
 
 # def test_playing_with_cubes(input_cubes):
