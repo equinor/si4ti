@@ -20,7 +20,7 @@ if(USE_FFTW)
 endif()
 
 pybind11_add_module(_core MODULE src/main.cpp)
-target_include_directories(_core PRIVATE ../impedance/src
+target_include_directories(_core PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
 )
 target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
 if (USE_FFTW)

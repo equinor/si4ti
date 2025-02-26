@@ -7,7 +7,7 @@ name = "si4ti"
 #dynamic = ["version"]
 version = "0.1.0a1"
 description = "si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D seismic from changes in acoustic properties of a reservoir."
-readme = "../README.md"
+readme = "README.md"
 authors = [
   { name = "My Name", email = "me@email.com" },
 ]
