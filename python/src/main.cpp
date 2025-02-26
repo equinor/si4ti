@@ -3,16 +3,8 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-//#include <segyio/segyio.hpp>
 
 #include "impedance.hpp"
-
-//template<typename INFILE_TYPE, typename OUTFILE_TYPE, typename OPTIONS>
-//void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
-//                                     std::vector< OUTFILE_TYPE >& relAI_files,
-//                                     std::vector< OUTFILE_TYPE >& dsyn_files,
-//                                     OPTIONS& opts );
-
 
 
 namespace py = pybind11;
@@ -27,21 +19,52 @@ struct ImpedanceOptions {
     double          latsmooth_3D         = 0.05;
     double          latsmooth_4D         = 4;
     int             max_iter             = 50;
+
+    /*
+    ImpedanceOptions(
+        int    polarity_,
+        int    segments_,
+        int    overlap_,
+        bool   tv_wavelet_,
+        double damping_3D_,
+        double damping_4D_,
+        double latsmooth_3D_,
+        double latsmooth_4D_,
+        int    max_iter_
+    ) :
+        polarity(polarity_),
+        segments(segments_),
+        overlap(overlap_),
+        tv_wavelet(tv_wavelet_),
+        damping_3D(damping_3D_),
+        damping_4D(damping_4D_),
+        latsmooth_3D(latsmooth_3D_),
+        latsmooth_4D(latsmooth_4D_),
+        max_iter(max_iter_)
+    {}
+    */
 };
 
 // TODO: Investigate if we can avoid copies
-class NumpyIOFile {
+class Si4tiNumpyWrapper {
     // The actual memory is being held/allocated somewhere else
     py::array_t<float> data_;
 
+    std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
+        assert(tracenr < this->inlinecount() * this->crosslinecount());
+        const std::size_t crosslinenr = tracenr % this->crosslinecount();
+        const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
+        return std::pair{inlinenr, crosslinenr};
+    }
+
 public:
-    NumpyIOFile(py::array_t<float> data)
+    Si4tiNumpyWrapper(py::array_t<float> data)
         : data_(data)
     {
     }
 
     //// Takes ownerwhip of the data
-    //NumpyIOFile(py::array_t<float>&& data)
+    //Si4tiNumpyWrapper(py::array_t<float>&& data)
     //: data_(std::move(data))
     //{
     //}
@@ -78,10 +101,6 @@ public:
     //OutputIt trace_reader< Derived >::get( int i, OutputIt out ) noexcept(false) {
     template<typename InputIt>
     InputIt* put(int tracenr, InputIt* in) {
-        //auto r = this->data_.unchecked<3>();
-        //const auto offset = this->trace_offset(tracenr);
-        //std::copy_n(in, this->samplecount(), &r[offset]);
-        //return in + this->samplecount();
         auto r = this->data_.mutable_unchecked<3>();
         const auto [inlinenr, crosslinenr] = this->to_inline_crossline_nr(tracenr);
         std::copy_n(in, this->samplecount(), r.mutable_data(inlinenr, crosslinenr, 0));
@@ -90,24 +109,10 @@ public:
 
     template<typename OutputIt>
     OutputIt* get(int tracenr, OutputIt* out) const {
-        // TODO: This needs to do some copying of data.
-        //auto r = this->data_.unchecked<3>();
-        //const auto offset = this->trace_offset(tracenr);
-        //return std::copy_n(&r[offset], this->samplecount(), out);
-
         auto r = this->data_.unchecked<3>();
         const auto [inlinenr, crosslinenr] = this->to_inline_crossline_nr(tracenr);
         return std::copy_n(r.data(inlinenr, crosslinenr, 0), this->samplecount(), out);
     }
-
-private:
-    std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
-        assert(tracenr < this->inlinecount() * this->crosslinecount());
-        const std::size_t crosslinenr = tracenr % this->crosslinecount();
-        const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
-        return std::pair{inlinenr, crosslinenr};
-    }
-
 };
 
 
@@ -116,14 +121,6 @@ std::pair<py::list, py::list> impedance(
     const py::list& input,
     ImpedanceOptions options
 ) {
-
-    // Check input dimensions.
-    //if (input1.ndim() != 1 || input2.ndim() != 1)
-    //    throw std::runtime_error("Input should be 1-D NumPy arrays.");
-
-    //py::list output1;
-    //py::list output2;
-
     std::vector<Si4tiNumpyWrapper> input_files;
 
     std::vector<Si4tiNumpyWrapper> output_1;
@@ -137,11 +134,6 @@ std::pair<py::list, py::list> impedance(
         py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
         input_files.push_back(Si4tiNumpyWrapper(numpy_array));
 
-        //constexpr size_t elsize = sizeof(double);
-        //size_t shape[3]{100, 1000, 1000};
-        //size_t strides[3]{1000 * 1000 * elsize, 1000 * elsize, elsize};
-
-        //auto out_1 = py::array_t<float>(numpy_array.shape(), numpy_array.strides());
         const py::ssize_t shape[3]{numpy_array.shape(0), numpy_array.shape(1), numpy_array.shape(2)};
         const py::ssize_t strides[3]{numpy_array.strides(0), numpy_array.strides(1), numpy_array.strides(2)};
         auto out_1 = py::array_t<float>(shape, strides);
@@ -166,51 +158,6 @@ std::pair<py::list, py::list> impedance(
         output2.append(out.data());
     }
 
-    //for (py::handle item: input) {
-    //    if (!py::isinstance<py::array>(item)) {
-    //        throw std::runtime_error("All items in the input list must be NumPy arrays.");
-    //    }
-
-    //    py::array_t<float, py::array::c_style> arr = py::cast<py::array>(item);
-
-    //    //if (arr.ndim() != 3)
-    //    //    throw std::runtime_error("Input should be 3D NumPy arrays.");
-
-    //    //auto buf = arr.request();
-    //    auto r = arr.unchecked<3>();
-    //    auto result1 = std::vector<float>(r.size());
-
-    //    // Example processing: scale and cast the elements of the input arrays.
-
-    //    for (py::ssize_t i = 0; i < r.shape(0); i++) {
-    //        for (py::ssize_t j = 0; j < r.shape(1); j++) {
-    //            for (py::ssize_t k = 0; k < r.shape(2); k++) {
-    //                //sum += r(i, j, k);
-    //                result1[i * r.shape(1) * r.shape(2) + j * r.shape(2) + k] = static_cast<float>(2.0 * r(i, j, k));
-    //            }
-    //        }
-    //    }
-
-//  //      for (ssize_t i = 0; i < buf.size; i++)
-//  //          result1[i] = static_cast<float>(2.0 * static_cast<float*>(buf.ptr)[i]);
-
-    //    // Create NumPy arrays from the std::vector results.
-
-    //    {
-    //        auto tmp = py::array_t<float>(result1.size(), result1.data())
-    //            .reshape({r.shape(0), r.shape(1), r.shape(2)});
-;
-    //        output1.append(tmp.reshape({r.shape(0), r.shape(1), r.shape(2)}));
-    //        //output1.append( tmp );
-    //    }
-    //    {
-    //        auto tmp = py::array_t<float>(result1.size(), result1.data())
-    //            .reshape({r.shape(0), r.shape(1), r.shape(2)});
-    //        output2.append( tmp );
-    //    }
-    //}
-
-
     return {output1, output2};
 }
 
@@ -232,19 +179,6 @@ PYBIND11_MODULE(_core, m) {
         R"pbdoc(
             TBD: Write documentation of impedance functions
     )pbdoc");
-
-
-    //py::class_<ImpedanceOptions>(m, "ImpedanceOptions")
-    //    .def(py::init<>())
-    //    .def_readwrite("polarity", &ImpedanceOptions::polarity, "asdf")
-    //    .def_readwrite("segments", &ImpedanceOptions::segments)
-    //    .def_readwrite("overlap", &ImpedanceOptions::overlap)
-    //    .def_readwrite("tv_wavelet", &ImpedanceOptions::tv_wavelet)
-    //    .def_readwrite("damping_3D", &ImpedanceOptions::damping_3D)
-    //    .def_readwrite("damping_4D", &ImpedanceOptions::damping_4D)
-    //    .def_readwrite("latsmooth_3D", &ImpedanceOptions::latsmooth_3D)
-    //    .def_readwrite("latsmooth_4D", &ImpedanceOptions::latsmooth_4D)
-    //    .def_readwrite("max_iter", &ImpedanceOptions::max_iter);
 
     py::class_<ImpedanceOptions>(m, "ImpedanceOptions")
         .def(py::init<>(),
