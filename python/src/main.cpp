@@ -150,7 +150,6 @@ private:
 
 std::pair<py::list, py::list> impedance(
     const py::list& input,
-    const bool inline_sorted,
     ImpedanceOptions options
 ) {
 
@@ -172,7 +171,7 @@ std::pair<py::list, py::list> impedance(
         }
 
         py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
-        input_files.push_back(NumpyIOFile(numpy_array, inline_sorted));
+        input_files.push_back(NumpyIOFile(numpy_array));
 
         //constexpr size_t elsize = sizeof(double);
         //size_t shape[3]{100, 1000, 1000};
