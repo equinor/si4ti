@@ -3,7 +3,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
-#include <segyio/segyio.hpp>
+//#include <segyio/segyio.hpp>
 
 #include "impedance.hpp"
 
@@ -51,14 +51,19 @@ public:
     const py::array_t<float>& data() const {
         return this->data_;
     }
-    segyio::sorting sorting() const {
+    //segyio::sorting sorting() const {
+    //    // TODO: We arbitrarily set the sorting to some value here. This has to
+    //    // be corrected!
+    //    return segyio::sorting::iline();
+    //}
+    bool xlinesorted() const noexcept(true) {
         // TODO: We arbitrarily set the sorting to some value here. This has to
         // be corrected!
-        return segyio::sorting::iline();
+        return false;
     }
 
     int inlinecount() const {
-        return (this->sorting() == segyio::sorting::iline()) ? this->data_.shape(0) : this->data_.shape(1);
+        return (not this->xlinesorted()) ? this->data_.shape(0) : this->data_.shape(1);
         //if (this->sorting() == segyio::sorting::iline()) {
         //    return this->data_.shape(0);
         //} else {
@@ -67,7 +72,7 @@ public:
     }
 
     int crosslinecount() const {
-        return (this->sorting() == segyio::sorting::iline()) ? this->data_.shape(1) : this->data_.shape(0);
+        return (not this->xlinesorted()) ? this->data_.shape(1) : this->data_.shape(0);
         //if (this->sorting() == segyio::sorting::iline()) {
         //    return this->data_.shape(1);
         //} else {
@@ -129,7 +134,7 @@ public:
 private:
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
-        if (this->sorting() == segyio::sorting::iline()) {
+        if (not this->xlinesorted()) {
             const std::size_t crosslinenr = tracenr % this->crosslinecount();
             const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
             return std::pair{inlinenr, crosslinenr};

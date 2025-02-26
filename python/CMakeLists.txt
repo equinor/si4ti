@@ -11,7 +11,7 @@ find_package(pybind11 CONFIG REQUIRED)
 find_package(Boost 1.76 REQUIRED COMPONENTS math)
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
-find_package(segyio REQUIRED)
+#find_package(segyio REQUIRED)
 
 option(USE_FFTW "Build with fftw" OFF)
 
@@ -42,7 +42,7 @@ endif()
 pybind11_add_module(_core MODULE src/main.cpp)
 target_include_directories(_core PRIVATE ../impedance/src
 )
-target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen segyio::segyio)
+target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen) # segyio::segyio)
 if (USE_FFTW)
     target_link_libraries(_core PRIVATE ${fftw3f} ${fftw3})
     target_include_directories(_core PRIVATE ${fftw3_includes})
