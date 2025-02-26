@@ -56,9 +56,9 @@ jobs:
         env:
           #CIBW_BEFORE_BUILD: pip install pybind11
           #CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
-          CIBW_BEFORE_BUILD_LINUX: apt-get install cmake build-essential libboost-dev libeigen3-dev libfftw3-dev; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
+          CIBW_BEFORE_BUILD_LINUX: yum install -y cmake gcc gcc-c++ make boost-math eigen3-dev; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
 
-          CIBW_BEFORE_BUILD_MACOS: brew install fftw cmake boost eigen; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
+          CIBW_BEFORE_BUILD_MACOS: brew install fftw cmake boost eigen libomp; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/opt/homebrew/opt/libomp"
 
           CIBW_ENVIRONMENT_WINDOWS: >
             CMAKE_GENERATOR="${{ matrix.cmake_generator }}"
