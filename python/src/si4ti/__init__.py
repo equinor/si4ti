@@ -15,11 +15,32 @@ default_options = ImpedanceOptions()
 
 
 def compute_impedance(
-    input_cubes: list[xtgeo.Cube], options: ImpedanceOptions = default_options
+    input_cubes: list[xtgeo.Cube],
+    # options: ImpedanceOptions = default_options,
+    polarity: int = 1,
+    segments: int = 1,
+    overlap: int = -1,
+    tv_wavelet: bool = False,
+    damping_3D: float = 0.0001,
+    damping_4D: float = 0.0001,
+    latsmooth_3D: float = 0.05,
+    latsmooth_4D: float = 4.0,
+    max_iter: int = 50,
 ) -> tuple[list[xtgeo.Cube], list[xtgeo.Cube]]:
     """Compute impedance from input cubes"""
     # return _compute_impedance(input_cubes, options)
     cubes_as_numpy_arrays = [c.values for c in input_cubes]
+    options = ImpedanceOptions()
+    options.polarity = polarity
+    options.segments = segments
+    options.overlap = overlap
+    options.tv_wavelet = tv_wavelet
+    options.damping_3D = damping_3D
+    options.damping_4D = damping_4D
+    options.latsmooth_3D = latsmooth_3D
+    options.latsmooth_4D = latsmooth_4D
+    options.max_iter = max_iter
+
     relAI_cubes, dsyn_cubes = impedance(cubes_as_numpy_arrays, options)
 
     def convert_cubes_to_xtgeo(
@@ -63,7 +84,7 @@ def py_subtract(i, j):
 
 
 __all__ = [
-    "ImpedanceOptions",
+    # "ImpedanceOptions",
     # TODO: Find out if we need the `__doc__` property
     # "__doc__",
     "__version__",
