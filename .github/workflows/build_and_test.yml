@@ -34,7 +34,7 @@ jobs:
         python-version: '3.11'
       
     - name: Install Python dependencies
-      run: pip install 'segyio==1.9.12'
+      run: pip install 'segyio==1.9.13'
 
     - name: Build and test
       run: |
