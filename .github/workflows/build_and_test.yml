@@ -82,4 +82,4 @@ jobs:
           -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
           -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
           python/ --verbose
-        python -m pytest tests
+        python -m pytest python/tests

@@ -10,9 +10,9 @@ from si4ti import compute_impedance  # type: ignore[import-not-found]
 @pytest.fixture
 def input_cubes():
     INPUT_FILES = [
-        "../test-data/vint0.sgy",
-        "../test-data/vint1.sgy",
-        "../test-data/vint2.sgy",
+        "../../test-data/vint0.sgy",
+        "../../test-data/vint1.sgy",
+        "../../test-data/vint2.sgy",
     ]
     return [xtgeo.cube_from_file(filename) for filename in INPUT_FILES]
 
