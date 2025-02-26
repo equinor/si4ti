@@ -73,7 +73,7 @@ jobs:
         cache: 'pip'
 
     - name: Install Python dependencies
-      run: pip install 'segyio==1.9.13' pybind11 pytest xtgeo
+      run: pip install pybind11 pytest xtgeo
 
     - name: Build and test
       run: |

@@ -46,7 +46,7 @@ Homepage = "https://github.com/equinor/si4ti"
 "Bug Tracker" = "https://github.com/equinor/si4ti/issues"
 
 [tool.cibuildwheel.linux]
-before-build = "apt install cmake build-essential libboost-dev libeigen3-dev libfftw3-dev"
+before-build = "sudo apt-get install cmake build-essential libboost-dev libeigen3-dev libfftw3-dev"
 
 [tool.cibuildwheel.macos]
 before-build = "brew install fftw cmake boost eigen"
