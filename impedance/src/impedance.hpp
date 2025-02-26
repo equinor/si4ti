@@ -14,9 +14,6 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
-#include <segyio/segyio.hpp>
-
-using namespace segyio::literals;
 
 namespace {
 
