@@ -8,6 +8,7 @@ on:
 
 jobs:
   pre-commit:
+    name: Style checks
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -25,6 +26,10 @@ jobs:
         pre-commit run --all-files
 
   build:
+    strategy:
+      matrix:
+        fttw: ["ON", "OFF"]
+    name: Build and test (fftw ${{ matrix.fftw }})
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -41,11 +46,19 @@ jobs:
         python-version: '3.11'
 
     - name: Install Python dependencies
-      run: pip install 'segyio==1.9.13' pybind11 pytest
+      run: pip install 'segyio==1.9.13' pybind11 pytest xtgeo
+
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit/
+        key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Build and test
       run: |
         cd python
-        pip install -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
-          -Ccmake.define.CMAKE_BUILD_TYPE=Debug . --verbose
+        pip install \
+          -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
+          -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
+          -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
+          . --verbose
         python -m pytest tests
