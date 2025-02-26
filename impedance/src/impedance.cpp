@@ -2,9 +2,23 @@
 
 #include <getopt.h>
 
-using input_file = segyio::basic_volume< segyio::readonly >;
+template< typename Derived >
+struct xlinesorted_checker {
+    bool xlinesorted() const noexcept(true);
+};
+
+template< typename Derived >
+bool xlinesorted_checker< Derived >::xlinesorted() const noexcept(true) {
+    const auto* self = static_cast< const Derived* >( this );
+    return self->sorting() == segyio::sorting::xline();
+}
+
+
+using input_file = segyio::basic_volume< segyio::readonly,
+                                         xlinesorted_checker >;
 using output_file = segyio::basic_volume< segyio::trace_writer,
-                                          segyio::write_always >;
+                                          segyio::write_always,
+                                          xlinesorted_checker >;
 
 namespace {
 
