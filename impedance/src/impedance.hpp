@@ -20,24 +20,6 @@ using namespace segyio::literals;
 
 namespace {
 
-struct options {
-    std::vector< std::string > files;
-    std::vector< std::string > output_files;
-    int             verbosity            = 0;
-    segyio::ilbyte  ilbyte               = segyio::ilbyte();
-    segyio::xlbyte  xlbyte               = segyio::xlbyte();
-    int             polarity             = 1;
-    int             segments             = 1;
-    int             overlap              = -1;
-    bool            tv_wavelet           = false;
-    double          damping_3D           = 0.0001;
-    double          damping_4D           = 0.0001;
-    double          latsmooth_3D         = 0.05;
-    double          latsmooth_4D         = 4;
-    int             max_iter             = 50;
-};
-
-
 struct Progress {
     static int expected;
     static int count;
