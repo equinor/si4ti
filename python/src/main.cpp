@@ -124,10 +124,10 @@ std::pair<py::list, py::list> impedance(
     //py::list output1;
     //py::list output2;
 
-    std::vector<NumpyIOFile> input_files;
+    std::vector<Si4tiNumpyWrapper> input_files;
 
-    std::vector<NumpyIOFile> output_1;
-    std::vector<NumpyIOFile> output_2;
+    std::vector<Si4tiNumpyWrapper> output_1;
+    std::vector<Si4tiNumpyWrapper> output_2;
 
     for (py::handle item: input) {
         if (!py::isinstance<py::array>(item)) {
@@ -135,7 +135,7 @@ std::pair<py::list, py::list> impedance(
         }
 
         py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
-        input_files.push_back(NumpyIOFile(numpy_array));
+        input_files.push_back(Si4tiNumpyWrapper(numpy_array));
 
         //constexpr size_t elsize = sizeof(double);
         //size_t shape[3]{100, 1000, 1000};
