@@ -9,7 +9,7 @@ option(PYTHON_BINDINGS "Build Python bindings" OFF)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Boost 1.76 REQUIRED)
+find_package(Boost 1.76 REQUIRED CONFIG)
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 find_package(segyio REQUIRED)

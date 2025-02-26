@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 CONFIG REQUIRED)
 
-find_package(Boost 1.76 REQUIRED COMPONENTS math)
+find_package(Boost 1.76 REQUIRED CONFIG)
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 #find_package(segyio REQUIRED)
