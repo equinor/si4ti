@@ -26,10 +26,10 @@ jobs:
         pre-commit run --all-files
 
   build:
-    name: Build and test, FFTW ${{ matrix.fftw }}
+    name: Build and test (Python), FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
-        fttw: ["ON", "OFF"]
+        fftw: ["ON", "OFF"]
 
     runs-on: ubuntu-latest
     steps:
