@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.10.0", "pybind11"]
+requires = ["scikit-build-core>=0.10.0", "pybind11", "cmake", "eigen3", "boost>=1.76", "fftw3"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -44,6 +44,12 @@ minimum-version = "build-system.requires"
 [project.urls]
 Homepage = "https://github.com/equinor/si4ti"
 "Bug Tracker" = "https://github.com/equinor/si4ti/issues"
+
+[tool.cibuildwheel.linux]
+before-build = "apt install cmake build-essential libboost-dev libeigen3-dev libfftw3-dev"
+
+[tool.cibuildwheel.macos]
+before-build = "brew install fftw cmake boost eigen"
 
 [tool.ruff.lint]
 extend-select = [
