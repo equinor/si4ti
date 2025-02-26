@@ -49,31 +49,20 @@ public:
     const py::array_t<float>& data() const {
         return this->data_;
     }
-    //segyio::sorting sorting() const {
-    //    // TODO: We arbitrarily set the sorting to some value here. This has to
-    //    // be corrected!
-    //    return segyio::sorting::iline();
-    //}
-    static constexpr bool xlinesorted() const noexcept(true) {
+    // For NumPy arrays the notion of inline or crossline sorted does not exist
+    // the same way as for SEG-Y files. The first index, i.e., is the slowest
+    // and the last index is the fastest index. In this sense, NumPy arrays
+    // should always appear as inline sorted.
+    static constexpr bool xlinesorted() noexcept(true) {
         return false;
     }
 
     int inlinecount() const {
-        return (not this->xlinesorted()) ? this->data_.shape(0) : this->data_.shape(1);
-        //if (this->sorting() == segyio::sorting::iline()) {
-        //    return this->data_.shape(0);
-        //} else {
-        //    return this->data_.shape(1);
-        //}
+        return this->data_.shape(0);
     }
 
     int crosslinecount() const {
-        return (not this->xlinesorted()) ? this->data_.shape(1) : this->data_.shape(0);
-        //if (this->sorting() == segyio::sorting::iline()) {
-        //    return this->data_.shape(1);
-        //} else {
-        //    return this->data_.shape(0);
-        //}
+        return this->data_.shape(1);
     }
 
     int tracecount() const {
@@ -111,37 +100,12 @@ public:
         return std::copy_n(r.data(inlinenr, crosslinenr, 0), this->samplecount(), out);
     }
 
-    //segyio::sorting sorting() const noexcept(true) {
-    //    // We artificially set the sorting to some value
-    //    return segyio::sorting::xline();
-    //}
-    //int inlinecount()         const noexcept(true) {
-    //    return this->data_.shape(0);
-    //}
-    //int crosslinecount()      const noexcept(true) {
-    //    return this->data_.shape(1);
-    //}
-
-    //int offsetcount()         const noexcept(true) {
-    //    return this->data_.shape(2);
-    //}
-    //OutputIt trace_reader< Derived >::get( int i, OutputIt out ) noexcept(false) {
-
 private:
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
-        if (not this->xlinesorted()) {
-            const std::size_t crosslinenr = tracenr % this->crosslinecount();
-            const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
-            return std::pair{inlinenr, crosslinenr};
-        } else {
-            // crossline sorted
-            const std::size_t inlinenr = tracenr % this->inlinecount();
-            const std::size_t crosslinenr = (tracenr - inlinenr) / this->inlinecount();
-            return std::pair{inlinenr, crosslinenr};
-        }
-
-        //return static_cast<std::size_t>(tracenr) * this->samplecount();
+        const std::size_t crosslinenr = tracenr % this->crosslinecount();
+        const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
+        return std::pair{inlinenr, crosslinenr};
     }
 
 };
