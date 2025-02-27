@@ -12,10 +12,6 @@ option(SI4TI_BUILD_IMPEDANCE "Build impedace code" ON)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(SI4TI_BUILD_TIMESHIFT)
-    find_package(Boost 1.76 REQUIRED CONFIG)
-endif()
-
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 find_package(segyio REQUIRED)

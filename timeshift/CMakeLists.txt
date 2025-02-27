@@ -1,5 +1,7 @@
 project(si4ti-timeshift LANGUAGES CXX)
 
+find_package(Boost 1.76 REQUIRED CONFIG)
+
 add_executable(timeshift src/timeshift.cpp)
 target_link_libraries(timeshift Eigen3::Eigen
                                 segyio::segyio
