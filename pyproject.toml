@@ -114,7 +114,10 @@ before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
 environment = { CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release" }
 
 [tool.cibuildwheel.macos]
-before-all = "brew install eigen libomp cmake && pip install pybind11"
+before-all = [
+  "brew install eigen libomp cmake",
+  "pip install pybind11",
+]
 environment = { CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/opt/homebrew/opt/libomp/" }
 
 [tool.cibuildwheel.windows]
