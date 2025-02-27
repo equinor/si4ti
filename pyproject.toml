@@ -117,8 +117,9 @@ environment = { CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release" }
 before-all = [
   "brew install eigen libomp cmake",
   "pip install pybind11",
+  "pybind11-config --cmakedir",
 ]
-environment = { CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/opt/homebrew/opt/libomp/" }
+#environment = { CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/opt/homebrew/opt/libomp/" }
 
 [tool.cibuildwheel.windows]
 before-all = "choco install eigen -y"
