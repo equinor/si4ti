@@ -41,9 +41,10 @@ repos:
       # are not installed. Therefore, we install additional dependencies with
       # same version as poetry to improve the type checking.
       additional_dependencies: [
+        numpy,
+        pytest,
         typing_extensions,
         xtgeo,
-        pytest,
       ]
 
   - repo: https://github.com/gitleaks/gitleaks

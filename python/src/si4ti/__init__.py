@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as nptype
 import xtgeo  # type: ignore[import-untyped]
 
 from ._core import (  # type: ignore[import-not-found]
@@ -11,7 +12,7 @@ from ._core import (  # type: ignore[import-not-found]
 
 
 def _numpy_cubes_to_xtgeo_cubes(
-    input_cubes: list[xtgeo.Cube], numpy_cubes: list[np.ndarray]
+    input_cubes: list[xtgeo.Cube], numpy_cubes: list[nptype.NDArray[np.float32]]
 ) -> list[xtgeo.Cube]:
     xtgeo_cubes = []
     for input_cube, values in zip(input_cubes, numpy_cubes):
