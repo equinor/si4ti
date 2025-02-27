@@ -17,10 +17,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2019
-            cmake_generator: "Visual Studio 16 2019"
-            cmake_generator_platform: "x64"
-            arch: AMD64
+          #- os: windows-2019
+          #  cmake_generator: "Visual Studio 16 2019"
+          #  cmake_generator_platform: "x64"
+          #  arch: AMD64
           #- os: windows-2019
           #  cmake_generator: "Visual Studio 16 2019"
           #  cmake_generator_platform: "Win32"
