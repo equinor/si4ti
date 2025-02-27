@@ -30,4 +30,4 @@ if (USE_FFTW)
 endif()
 add_compile_definitions(MUTE_PROGRESS)
 
-install(TARGETS _core DESTINATION ${SKBUILD_PROJECT_NAME})
+install(TARGETS _core DESTINATION ${SKBUILD_PROJECT_NAME} COMPONENT python)

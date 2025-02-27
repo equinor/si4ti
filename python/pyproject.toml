@@ -29,7 +29,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
+  #"Programming Language :: Python :: 3.13", # Not yet supported due to xtgeo
 ]
 
 [project.optional-dependencies]
@@ -40,6 +40,9 @@ test = [
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
 minimum-version = "build-system.requires"
+wheel.license-files = ["LICENSE"]
+install.components = ["python"]
+build-dir = "build/{wheel_tag}"
 
 [project.urls]
 Homepage = "https://github.com/equinor/si4ti"
@@ -97,9 +100,22 @@ ignore_missing_imports = true
 
 
 [tool.cibuildwheel.linux]
-before-all = "yum  install -y make gcc gcc-c++ make eigen3-devel"
+before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
 environment = { CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release" }
 
 [tool.cibuildwheel.macos]
 before-all = "brew install eigen libomp cmake"
 environment = { OpenMP_ROOT="/opt/homebrew/opt/libomp/" }
+
+[tool.cibuildwheel.windows]
+before-all = "choco install eigen -y"
+test-command = "cd /d {project}\python && pytest tests --color=yes -v"
+
+[tool.cibuildwheel]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+build = "*"
+skip = "pp* *-win32 *_i686 *musllinux* cp313-*" # Don't build for PyPy, Win32, i686, cannot build for Python 3.13 due to missing xtgeo release
+test-requires = "pytest"
+test-command = "cd {project}/python && pytest tests --color=yes -v"
+build-verbosity = 1

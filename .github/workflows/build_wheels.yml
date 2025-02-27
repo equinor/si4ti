@@ -17,10 +17,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          #- os: windows-2019
-          #  cmake_generator: "Visual Studio 16 2019"
-          #  cmake_generator_platform: "x64"
-          #  arch: AMD64
+          - os: windows-2019
+            cmake_generator: "Visual Studio 16 2019"
+            cmake_generator_platform: "x64"
+            arch: AMD64
           #- os: windows-2019
           #  cmake_generator: "Visual Studio 16 2019"
           #  cmake_generator_platform: "Win32"
@@ -66,11 +66,10 @@ jobs:
           #CIBW_ENVIRONMENT_WINDOWS: >
           #  CMAKE_GENERATOR="${{ matrix.cmake_generator }}"
           #  CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
-          CIBW_SKIP: pp* *-musllinux_* cp36-* cp37-* cp38-*
+          #CIBW_SKIP: pp* *-musllinux_* cp36-* cp37-* cp38-*
           CIBW_ARCHS: ${{ matrix.arch }}
         run: |
-            python -m cibuildwheel --output-dir wheelhouse \
-            python/
+            python -m cibuildwheel --output-dir wheelhouse python/
 
       - uses: actions/upload-artifact@v4
         with:
