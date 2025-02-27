@@ -94,3 +94,12 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = [ "numpy.*", ]
 ignore_missing_imports = true
+
+
+[tool.cibuildwheel.linux]
+before-all = "yum  install -y make gcc gcc-c++ make eigen3-devel"
+environment = { CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release" }
+
+[tool.cibuildwheel.macos]
+before-all = "brew install eigen libomp cmake"
+environment = { OpenMP_ROOT="/opt/homebrew/opt/libomp/" }

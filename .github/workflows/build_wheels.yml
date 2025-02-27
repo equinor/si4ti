@@ -29,12 +29,12 @@ jobs:
             arch: x86_64
           - os: ubuntu-24.04-arm
             arch: aarch64
-          - os: ubuntu-latest
-            arch: i686
+          #- os: ubuntu-latest
+          #  arch: i686
           # macos-latest runs on arm64 architecture and cibuildwheel cross
           # compiling for x86_64 fails
-          - os: macos-13
-            arch: x86_64
+          #- os: macos-13
+          #  arch: x86_64
           - os: macos-latest
             arch: arm64
 
@@ -57,15 +57,15 @@ jobs:
           #CIBW_BEFORE_BUILD: pip install pybind11
           #CIBW_BEFORE_BUILD: CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"
           #CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
-          CIBW_BEFORE_BUILD_LINUX: yum install -y cmake gcc gcc-c++ make boost-math eigen3-devel; pip install pybind11; export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir)"
-          #CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
+          #CIBW_BEFORE_BUILD_LINUX: yum install -y cmake gcc gcc-c++ make boost-math eigen3-devel; pip install pybind11; export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir)"
+          ##CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
 
-          CIBW_BEFORE_BUILD_MACOS: brew install cmake boost eigen libomp; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"; export LDFLAGS="-L/usr/local/opt/libomp/lib;-L/opt/homebrew/opt/libomp/lib"; export CPPFLAGS="-I/usr/local/opt/libomp/include;-I/opt/homebrew/opt/libomp/include"; echo "Printing OpenMP paths"; echo "/opt/homebrew/opt"; ls -l /opt/homebrew/opt/ 2> /dev/null; echo "/opt/homebrew/opt/libomp"; ls -l /opt/homebrew/opt/libomp/ 2> /dev/null; echo "/usr/local/opt/"; ls -l /usr/local/opt 2> /dev/null; echo "/usr/local/opt/libomp/"; ls -l /usr/local/opt/libomp/ 2> /dev/null; echo "Done printing"; export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/usr/local/opt/libomp/;/opt/homebrew/opt/libomp/"
+          #CIBW_BEFORE_BUILD_MACOS: brew install cmake boost eigen libomp; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"; export LDFLAGS="-L/usr/local/opt/libomp/lib;-L/opt/homebrew/opt/libomp/lib"; export CPPFLAGS="-I/usr/local/opt/libomp/include;-I/opt/homebrew/opt/libomp/include"; echo "Printing OpenMP paths"; echo "/opt/homebrew/opt"; ls -l /opt/homebrew/opt/ 2> /dev/null; echo "/opt/homebrew/opt/libomp"; ls -l /opt/homebrew/opt/libomp/ 2> /dev/null; echo "/usr/local/opt/"; ls -l /usr/local/opt 2> /dev/null; echo "/usr/local/opt/libomp/"; ls -l /usr/local/opt/libomp/ 2> /dev/null; echo "Done printing"; export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/usr/local/opt/libomp/;/opt/homebrew/opt/libomp/"
 
 
-          CIBW_ENVIRONMENT_WINDOWS: >
-            CMAKE_GENERATOR="${{ matrix.cmake_generator }}"
-            CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
+          #CIBW_ENVIRONMENT_WINDOWS: >
+          #  CMAKE_GENERATOR="${{ matrix.cmake_generator }}"
+          #  CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
           CIBW_SKIP: pp* *-musllinux_* cp36-* cp37-* cp38-*
           CIBW_ARCHS: ${{ matrix.arch }}
         run: |
