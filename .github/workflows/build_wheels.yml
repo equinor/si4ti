@@ -55,10 +55,12 @@ jobs:
       - name: Build wheels
         env:
           #CIBW_BEFORE_BUILD: pip install pybind11
+          #CIBW_BEFORE_BUILD: CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"
           #CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
-          CIBW_BEFORE_BUILD_LINUX: yum install -y cmake gcc gcc-c++ make boost-math eigen3-devel fftw-devel; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
+          CIBW_BEFORE_BUILD_LINUX: yum install -y cmake gcc gcc-c++ make boost-math eigen3-devel fftw-devel; pip install pybind11; export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir)"
+          #CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
 
-          CIBW_BEFORE_BUILD_MACOS: brew install fftw cmake boost eigen libomp; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"; export LDFLAGS="-L/usr/local/opt/libomp/lib;-L/opt/homebrew/opt/libomp/lib"; export CPPFLAGS="-I/usr/local/opt/libomp/include;-I/opt/homebrew/opt/libomp/include"; echo "Printing OpenMP paths"; echo "/opt/homebrew/opt"; ls -l /opt/homebrew/opt/ 2> /dev/null; echo "/opt/homebrew/opt/libomp"; ls -l /opt/homebrew/opt/libomp/ 2> /dev/null; echo "/usr/local/opt/"; ls -l /usr/local/opt 2> /dev/null; echo "/usr/local/opt/libomp/"; ls -l /usr/local/opt/libomp/ 2> /dev/null; echo "Done printing"
+          CIBW_BEFORE_BUILD_MACOS: brew install fftw cmake boost eigen libomp; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"; export LDFLAGS="-L/usr/local/opt/libomp/lib;-L/opt/homebrew/opt/libomp/lib"; export CPPFLAGS="-I/usr/local/opt/libomp/include;-I/opt/homebrew/opt/libomp/include"; echo "Printing OpenMP paths"; echo "/opt/homebrew/opt"; ls -l /opt/homebrew/opt/ 2> /dev/null; echo "/opt/homebrew/opt/libomp"; ls -l /opt/homebrew/opt/libomp/ 2> /dev/null; echo "/usr/local/opt/"; ls -l /usr/local/opt 2> /dev/null; echo "/usr/local/opt/libomp/"; ls -l /usr/local/opt/libomp/ 2> /dev/null; echo "Done printing"; export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"
 
 
           CIBW_ENVIRONMENT_WINDOWS: >
