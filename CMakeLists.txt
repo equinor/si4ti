@@ -4,7 +4,7 @@ project(si4ti VERSION 0.0.0 LANGUAGES CXX)
 include(GNUInstallDirs)
 
 option(BUILD_TESTING "Build tests" ON)
-option(PYTHON_BINDINGS "Build Python bindings" OFF)
+option(SI4TI_PYTHON_BINDINGS "Build Python bindings" OFF)
 
 option(SI4TI_BUILD_TIMESHIFT "Build timeshift code" ON)
 option(SI4TI_BUILD_IMPEDANCE "Build impedace code" ON)
@@ -14,7 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
-find_package(segyio REQUIRED)
+
+if(SI4TI_BUILD_TIMESHIFT OR SI4TI_BUILD_IMPEDANCE)
+    find_package(segyio REQUIRED)
+endif()
 
 option(BUILD_DOC "Build documentation" OFF)
 
@@ -33,7 +36,7 @@ if(SI4TI_USE_FFTW)
     find_path(fftw3_includes NAMES "fftw3.h" REQUIRED)
 endif()
 
-if(PYTHON_BINDINGS)
+if(SI4TI_PYTHON_BINDINGS)
     add_subdirectory(python)
 endif()
 

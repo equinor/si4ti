@@ -43,6 +43,15 @@ minimum-version = "build-system.requires"
 wheel.license-files = ["LICENSE"]
 install.components = ["python"]
 build-dir = "build/{wheel_tag}"
+wheel.install-dir = "si4ti"
+
+[tool.scikit-build.cmake.define]
+SI4TI_PYTHON_BINDINGS = true
+# The Python interface does not require the CLI tools.
+SI4TI_BUILD_TIMESHIFT = false
+SI4TI_BUILD_IMPEDANCE = false
+# The Python interface does not need the C++ tests.
+BUILD_TESTING= false
 
 [project.urls]
 Homepage = "https://github.com/equinor/si4ti"
@@ -83,10 +92,10 @@ typing-modules = ["mypackage._compat.typing"]
 isort.required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["T20"]
+"python/tests/**" = ["T20"]
 
 [tool.mypy]
-files = "src"
+files = "python/src"
 python_version = "3.9"
 strict = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -109,7 +118,7 @@ environment = { OpenMP_ROOT="/opt/homebrew/opt/libomp/" }
 
 [tool.cibuildwheel.windows]
 before-all = "choco install eigen -y"
-test-command = "cd /d {project}\python && pytest tests --color=yes -v"
+test-command = "cd /d {project}/python && pytest tests --color=yes -v"
 
 [tool.cibuildwheel]
 manylinux-x86_64-image = "manylinux_2_28"

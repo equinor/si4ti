@@ -20,7 +20,7 @@ if(USE_FFTW)
 endif()
 
 pybind11_add_module(_core MODULE src/main.cpp)
-target_include_directories(_core PRIVATE ${CMAKE_SOURCE_DIR}/../impedance/src
+target_include_directories(_core PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
 )
 target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
 if (USE_FFTW)
@@ -30,4 +30,11 @@ if (USE_FFTW)
 endif()
 add_compile_definitions(MUTE_PROGRESS)
 
-install(TARGETS _core DESTINATION ${SKBUILD_PROJECT_NAME} COMPONENT python)
+if(DEFINED SKBUILD_PROJECT_NAME)
+    set(PYTHON_INSTALL_DIR .)
+elseif(NOT DEFINED PYTHON_INSTALL_DIR)
+    set(PYTHON_INSTALL_DIR lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
+endif()
+
+install(TARGETS _core DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
+install(FILES src/si4ti/__init__.py DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)

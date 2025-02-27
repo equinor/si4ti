@@ -81,6 +81,6 @@ jobs:
           -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
           -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
           -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
-          python/ --verbose
+          . --verbose
         cd python
         python -m pytest tests/
