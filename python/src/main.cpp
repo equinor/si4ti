@@ -58,7 +58,7 @@ class Si4tiNumpyWrapper {
     }
 
 public:
-    Si4tiNumpyWrapper(py::array_t<float> data)
+    explicit Si4tiNumpyWrapper(py::array_t<float> data)
         : data_(data)
     {
     }
