@@ -6,10 +6,16 @@ include(GNUInstallDirs)
 option(BUILD_TESTING "Build tests" ON)
 option(PYTHON_BINDINGS "Build Python bindings" OFF)
 
+option(SI4TI_BUILD_TIMESHIFT "Build timeshift code" ON)
+option(SI4TI_BUILD_IMPEDANCE "Build impedace code" ON)
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Boost 1.76 REQUIRED CONFIG)
+if(SI4TI_BUILD_TIMESHIFT)
+    find_package(Boost 1.76 REQUIRED CONFIG)
+endif()
+
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 find_package(segyio REQUIRED)
@@ -34,6 +40,12 @@ if(BUILD_TESTING)
     add_custom_target(diff)
 endif()
 
-add_subdirectory(timeshift)
+if(SI4TI_BUILD_TIMESHIFT)
+    add_subdirectory(timeshift)
+endif()
+
+if(SI4TI_BUILD_IMPEDANCE)
+    add_subdirectory(impedance)
+endif()
+
 add_subdirectory(doc)
-add_subdirectory(impedance)
