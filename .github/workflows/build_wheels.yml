@@ -58,7 +58,7 @@ jobs:
           #CIBW_ENVIRONMENT: CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
           CIBW_BEFORE_BUILD_LINUX: yum install -y cmake gcc gcc-c++ make boost-math eigen3-devel fftw-devel; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)"
 
-          CIBW_BEFORE_BUILD_MACOS: brew install fftw cmake boost eigen libomp; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/usr/local/opt/libomp;/opt/homebrew/opt/libomp"; export LDFLAGS="-L/usr/local/opt/libomp/lib;-L/opt/homebrew/opt/libomp/lib"; export CPPFLAGS="-I/usr/local/opt/libomp/include;-I/opt/homebrew/opt/libomp/include"; echo "Printing OpenMP paths"; echo "/opt/homebrew/opt"; ls -l /opt/homebrew/opt; echo "/opt/homebrew/opt/libomp"; ls -l /opt/homebrew/opt/libomp; echo "/usr/local/opt/"; ls -l /usr/local/opt; echo "/usr/local/opt/libomp/"; ls -l /usr/local/opt/libomp
+          CIBW_BEFORE_BUILD_MACOS: brew install fftw cmake boost eigen libomp; pip install pybind11; export CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/opt/homebrew/opt/libomp"; export LDFLAGS="-L/usr/local/opt/libomp/lib;-L/opt/homebrew/opt/libomp/lib"; export CPPFLAGS="-I/usr/local/opt/libomp/include;-I/opt/homebrew/opt/libomp/include"; echo "Printing OpenMP paths"; echo "/opt/homebrew/opt"; ls -l /opt/homebrew/opt/; echo "/opt/homebrew/opt/libomp"; ls -l /opt/homebrew/opt/libomp/; echo "/usr/local/opt/"; ls -l /usr/local/opt; echo "/usr/local/opt/libomp/"; ls -l /usr/local/opt/libomp/
 
 
           CIBW_ENVIRONMENT_WINDOWS: >
