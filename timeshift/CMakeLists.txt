@@ -9,7 +9,7 @@ target_link_libraries(timeshift Eigen3::Eigen
                                 Boost::boost
 )
 
-if(USE_FFTW)
+if(SI4TI_USE_FFTW)
     target_link_libraries(timeshift ${fftw3f} ${fftw3})
     target_include_directories(timeshift PRIVATE ${fftw3_includes})
 
@@ -48,7 +48,7 @@ target_link_libraries(tests catch2
                             Boost::boost
 )
 
-if(USE_FFTW)
+if(SI4TI_USE_FFTW)
     target_link_libraries(tests ${fftw3f} ${fftw3})
     target_include_directories(tests PRIVATE ${fftw3_includes})
 

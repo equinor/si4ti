@@ -17,9 +17,17 @@ find_package(OpenMP COMPONENTS CXX REQUIRED)
 find_package(segyio REQUIRED)
 
 option(BUILD_DOC "Build documentation" OFF)
-option(USE_FFTW "Build with fftw" OFF)
 
-if(USE_FFTW)
+option(USE_FFTW "Build with fftw" OFF)
+option(SI4TI_USE_FFTW "Build with fftw" OFF)
+
+if (USE_FFTW)
+    message(DEPRECATION "Flag 'USE_FFTW' is deprecated. Use 'SI4TI_USE_FFTW' instead")
+    set(SI4TI_USE_FFTW ${USE_FFTW})
+endif()
+
+
+if(SI4TI_USE_FFTW)
     find_library(fftw3 NAMES fftw3 REQUIRED)
     find_library(fftw3f NAMES fftw3f REQUIRED)
     find_path(fftw3_includes NAMES "fftw3.h" REQUIRED)
