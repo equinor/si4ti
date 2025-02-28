@@ -122,7 +122,7 @@ environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/Library/Frameworks/Python.frame
 # Skip testing on:
 # - Python 3.9: Issues with h5py during testing (xtgeo dependency)
 # - Python 3.13: xtgeo not available yet and thus testing fails
-skip_test = "cp39-* cp313-*"
+test-skip = "cp39-* cp313-*"
 
 [tool.cibuildwheel.windows]
 before-all = "choco install eigen -y"
