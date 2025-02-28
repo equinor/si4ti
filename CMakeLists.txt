@@ -9,11 +9,16 @@ option(SI4TI_PYTHON_BINDINGS "Build Python bindings" OFF)
 option(SI4TI_BUILD_TIMESHIFT "Build timeshift code" ON)
 option(SI4TI_BUILD_IMPEDANCE "Build impedace code" ON)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
+
+
+if (SI4TI_BUILD_TIMESIFT)
+    find_package(Boost 1.76 REQUIRED CONFIG)
+endif()
 
 if(SI4TI_BUILD_TIMESHIFT OR SI4TI_BUILD_IMPEDANCE)
     find_package(segyio REQUIRED)
