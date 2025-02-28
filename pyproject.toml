@@ -118,7 +118,10 @@ before-all = [ "brew install eigen libomp cmake", "pip install pybind11"]
 # Minimum supported macOS version set to 14.0 due to OpenMP installed via
 # Homebrew
 environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/pybind11/share/cmake/pybind11;/opt/homebrew/opt/libomp/", MACOSX_DEPLOYMENT_TARGET="14.0" }
-skip = "cp39-*" # Skip Python 3.9 due to issues with h5py during testing (xtgeo dependency)
+# Skip testing on:
+# - Python 3.9: Issues with h5py during testing (xtgeo dependency)
+# - Python 3.13: xtgeo not available yet and thus testing fails
+skip_test = "cp39-* cp313-*"
 
 [tool.cibuildwheel.windows]
 before-all = "choco install eigen -y"
