@@ -117,8 +117,7 @@ before-all = [ "brew install eigen libomp cmake", "pip install pybind11"]
 
 # Minimum supported macOS version set to 14.0 due to OpenMP installed via
 # Homebrew
-environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/pybind11/share/cmake/pybind11;/opt/homebrew/opt/libomp/",
-  MACOSX_DEPLOYMENT_TARGET="14.0" }
+environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/pybind11/share/cmake/pybind11;/opt/homebrew/opt/libomp/", MACOSX_DEPLOYMENT_TARGET="14.0" }
 
 [tool.cibuildwheel.windows]
 before-all = "choco install eigen -y"
