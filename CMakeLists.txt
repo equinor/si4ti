@@ -16,9 +16,14 @@ find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 
 
-if (SI4TI_BUILD_TIMESIFT)
+if (SI4TI_BUILD_TIMESHIFT)
     find_package(Boost 1.76 REQUIRED CONFIG)
+    # From Boost 1.82.0 Boost.math requires C++14 support
+    if (Boost_VERSION VERSION_GREATER_EQUAL 1.82.0)
+        set(CMAKE_CXX_STANDARD 14)
+    endif()
 endif()
+
 
 if(SI4TI_BUILD_TIMESHIFT OR SI4TI_BUILD_IMPEDANCE)
     find_package(segyio REQUIRED)
