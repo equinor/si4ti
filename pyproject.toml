@@ -18,7 +18,8 @@ requires-python = ">=3.9"
 
 dependencies = [
   "typing_extensions",
-  "xtgeo"
+  "numpy>=1.20<3",
+  "xtgeo",
 ]
 
 classifiers = [
