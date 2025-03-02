@@ -78,5 +78,4 @@ jobs:
                  --error-exitcode=1 \
                  --suppressions-list=../cppcheck/suppressions.txt \
                  --verbose \
-                 --template="{file}:{line} [{severity}] {message}" \
-                 2>&1
+                 --template="{file}:{line} [{severity}] {message}"
