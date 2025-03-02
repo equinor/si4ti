@@ -66,6 +66,7 @@ jobs:
               -DUSE_FFTW=YES \
               -DCMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
               ..
+        make -j
 
     - name: Run cppcheck
       working-directory: build
