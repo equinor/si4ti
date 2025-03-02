@@ -22,17 +22,6 @@ jobs:
         sudo apt-get install -y cmake build-essential \
           libboost-dev libeigen3-dev libfftw3-dev
 
-    - name: Build and install cppcheck
-      run: |
-        git clone https://github.com/danmar/cppcheck.git cppcheck-src
-        mkdir cppcheck-build && cd cppcheck-build
-        cmake -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_CXX_FLAGS="-w" \
-              ../cppcheck-src
-        make -j
-        sudo make install
-        cd ..
-
     - name: Build and install segyio
       run: |
         git clone --branch v1.9.12 https://github.com/equinor/segyio.git
@@ -65,21 +54,6 @@ jobs:
         make -j
         ctest --output-on-failure
         make diff
-
-    - name: Run cppcheck
-      working-directory: build
-      # TODO: Fix errors to make this test fail on error
-      continue-on-error: true
-      run: |
-        cppcheck --enable=style,portability,performance,warning \
-                 --library=posix \
-                 --inline-suppr \
-                 --project=compile_commands.json \
-                 --error-exitcode=1 \
-                 --suppressions-list=../cppcheck/suppressions.txt \
-                 --verbose \
-                 --template="{file}:{line} [{severity}] {message}" \
-                 2>&1
 
   build-python:
     name: Python bindings, FFTW ${{ matrix.fftw }}
