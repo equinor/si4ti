@@ -70,7 +70,6 @@ jobs:
     - name: Run cppcheck
       working-directory: build
       # TODO: Fix errors to make this test fail on error
-      continue-on-error: true
       run: |
         cppcheck --enable=style,portability,performance,warning \
                  --library=posix \
