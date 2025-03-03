@@ -24,7 +24,7 @@ dependencies = [
 
 classifiers = [
   "Development Status :: 4 - Beta",
-  "License :: OSI Approved :: LGPL-2.1",
+  "License :: OSI Approved :: LGPL-2.1-only",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
