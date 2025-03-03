@@ -187,6 +187,7 @@ PYBIND11_MODULE(_core, m) {
         "A function that processes two NumPy arrays and returns two NumPy arrays.",
         py::arg("input"),
         py::arg("options"),
+        py::return_value_policy::move,
         R"pbdoc(
             TBD: Write documentation of impedance functions
     )pbdoc");
