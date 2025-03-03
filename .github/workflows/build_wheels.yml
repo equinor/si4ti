@@ -92,9 +92,9 @@ jobs:
     runs-on: ubuntu-latest
     #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
 
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/p/si4ti
+    #environment:
+    #  name: testpypi
+    #  url: https://test.pypi.org/p/si4ti
 
     #permissions:
     #  id-token: write
