@@ -46,11 +46,10 @@ struct ImpedanceOptions {
 };
 
 // TODO: Investigate if we can avoid copies
-template<typename T>
 class Si4tiNumpyWrapper {
     // The actual memory is being held/allocated somewhere else
     //py::array_t<float> data_;
-    T data_;
+    py::array_t<float> data_;
 
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
@@ -60,7 +59,7 @@ class Si4tiNumpyWrapper {
     }
 
 public:
-    explicit Si4tiNumpyWrapper(T data)
+    explicit Si4tiNumpyWrapper(py::array_t<float> data)
         : data_(data)
     {
     }
@@ -71,7 +70,7 @@ public:
     //{
     //}
 
-    const T& data() const {
+    const py::array_t<float>& data() const {
         return this->data_;
     }
     // For NumPy arrays the notion of inline or crossline sorted does not exist
@@ -98,7 +97,7 @@ public:
         return this->data_.shape(2);
     }
 
-    T&& data() {
+    py::array_t<float>&& data() {
         return std::move(this->data_);
     }
 
@@ -130,10 +129,10 @@ std::pair<py::list, py::list> impedance(
     const py::list& input,
     ImpedanceOptions options
 ) {
-    std::vector<Si4tiNumpyWrapper<py::array_t<float>>> input_files;
+    std::vector<Si4tiNumpyWrapper> input_files;
 
-    std::vector<Si4tiNumpyWrapper<py::array_t<float>>> output_1;
-    std::vector<Si4tiNumpyWrapper<py::array_t<float>>> output_2;
+    std::vector<Si4tiNumpyWrapper> output_1;
+    std::vector<Si4tiNumpyWrapper> output_2;
 
     for (py::handle item: input) {
         if (!py::isinstance<py::array>(item)) {
@@ -142,15 +141,15 @@ std::pair<py::list, py::list> impedance(
 
         //py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
         py::array_t<float> numpy_array = py::cast<py::array_t<float>>(item);
-        input_files.push_back(Si4tiNumpyWrapper<py::array_t<float>>(numpy_array));
+        input_files.push_back(Si4tiNumpyWrapper(numpy_array));
 
         const py::ssize_t shape[3]{numpy_array.shape(0), numpy_array.shape(1), numpy_array.shape(2)};
         const py::ssize_t strides[3]{numpy_array.strides(0), numpy_array.strides(1), numpy_array.strides(2)};
         //auto out_1 = py::array_t<float>(shape, strides);
         //auto out_2 = py::array_t<float>(shape, strides);
 
-        output_1.push_back(Si4tiNumpyWrapper<py::array_t<float>>(std::move(py::array_t<float>(shape, strides))));
-        output_2.push_back(Si4tiNumpyWrapper<py::array_t<float>>(std::move(py::array_t<float>(shape, strides))));
+        output_1.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float>(shape, strides))));
+        output_2.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float>(shape, strides))));
         //output_2.push_back(out_2);
     }
 
