@@ -564,7 +564,9 @@ void correct( int start, int end,
             file.get( t, begin( trace ) );
             derived = (trace /= normalizer);
             // derived is updated in-place
-            auto _ = derive( derived, omega );
+            {
+                auto _ = derive( derived, omega );
+            }
 
             if( i != 0 ) {
                 const int r = t * localsize + (i-1) * vintpairsize;
@@ -572,7 +574,9 @@ void correct( int start, int end,
             }
 
             // trace is updated in-place
-            trace = apply_timeshift( trace, shift );
+            {
+                auto _ = apply_timeshift( trace, shift );
+            }
         }
 
         for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
