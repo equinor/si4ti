@@ -10,9 +10,6 @@ using namespace segyio::literals;
 #include "matrices.hpp"
 #include "matchers.hpp"
 
-int Progress::count = 0;
-int Progress::expected = 100000; // Set high to avoid progress printouts
-
 TEST_CASE("Regression test") {
 
     SECTION("BSpline") {

@@ -35,6 +35,7 @@ target_link_libraries(impedance_tests catch2
                                       segyio::segyio
                                       OpenMP::OpenMP_CXX
 )
+target_compile_definitions(impedance_tests PRIVATE MUTE_PROGRESS)
 
 if(SI4TI_USE_FFTW)
     target_link_libraries(impedance_tests ${fftw3f} ${fftw3})

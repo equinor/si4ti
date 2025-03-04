@@ -5,9 +5,6 @@
 
 #include <impedance.hpp>
 
-//int Progress::count = 0;
-//int Progress::expected = 100000; // Set high to avoid progress printouts
-
 using T = double;
 
 TEST_CASE( "Conjugate gradient" ) {

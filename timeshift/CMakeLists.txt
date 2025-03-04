@@ -47,6 +47,7 @@ target_link_libraries(tests catch2
                             OpenMP::OpenMP_CXX
                             Boost::boost
 )
+target_compile_definitions(tests PRIVATE MUTE_PROGRESS)
 
 if(SI4TI_USE_FFTW)
     target_link_libraries(tests ${fftw3f} ${fftw3})
