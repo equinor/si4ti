@@ -51,7 +51,44 @@ def compute_impedance(
     latsmooth_4D: float = 4.0,
     max_iter: int = 50,
 ) -> tuple[list[xtgeo.Cube], list[xtgeo.Cube]]:
-    """Compute impedance from input cubes"""
+    """Compute impedance from provided cubes and parameters
+
+    Parameters
+    ----------
+    input_cubes : list[xtgeo.Cube]
+        List of input cubes
+    inverse-polarity : bool, optional
+        Invert polarity of the data, by default False
+    segments : int, optional
+        Data domain splitting will be performed. Takes the number of segments
+        as an argument, by default 1
+    overlap : int, optional
+        Number of inlines (crosslines if crossline sorted) overlap between
+        segments when performing data domain splitting. Defaults to maximum
+        number of iterations of the linear solver, by default -1
+    tv_wavelet : bool, optional
+        Use windowed time-varying wavelet. If set to false, time-invariant
+        wavelet is used, by default False
+    damping_3D : float, optional
+        Constrains the relative acoustic impedance on each vintage so it does
+        not deviate too much from zero, by default 0.0001
+    damping_4D : float, optional
+        constraint on the difference in relative acoustic impedance between
+        vintages, by default 0.0001
+    latsmooth_3D : float, optional
+        Horizontal smoothing factor, by default 0.05
+    latsmooth_4D : float, optional
+        4D extension of the horizontal smoothing. This will give preference to
+        a solution with similar lateral smoothness at corresponding points on
+        the vintages, by default 4.0
+    max_iter : int, optional
+        Maximum number of iterations for liner solver, by default 50
+
+    Returns
+    -------
+    Relative acoustic impedances and XXX: tuple[list[xtgeo.Cube], list[xtgeo.Cube]]
+        Tuple of relAI and dsyn cubes
+    """
     options = ImpedanceOptions()
     options.polarity = -1 if inverse_polarity else 1
     options.segments = segments
