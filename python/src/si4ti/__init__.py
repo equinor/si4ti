@@ -41,7 +41,7 @@ def _numpy_cubes_to_xtgeo_cubes(
 
 def compute_impedance(
     input_cubes: list[xtgeo.Cube],
-    polarity: int = 1,
+    inverse_polarity: bool = False,
     segments: int = 1,
     overlap: int = -1,
     tv_wavelet: bool = False,
@@ -53,7 +53,7 @@ def compute_impedance(
 ) -> tuple[list[xtgeo.Cube], list[xtgeo.Cube]]:
     """Compute impedance from input cubes"""
     options = ImpedanceOptions()
-    options.polarity = polarity
+    options.polarity = -1 if inverse_polarity else 1
     options.segments = segments
     options.overlap = overlap
     options.tv_wavelet = tv_wavelet
