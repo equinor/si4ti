@@ -72,7 +72,7 @@ void printhelp(){
         "                              splitting. Defaults to maximum number\n"
         "                              of iterations of the linear solver \n"
         "-p, --inverse-polarity        invert polarity of the data\n"
-        "-m, --max-iter                maximum number of itarations for\n"
+        "-m, --max-iter                maximum number of iterations for\n"
         "                              linear solver\n"
         "-O, --output-files            space separated list of filenames. The\n"
         "                              list is terminated by a double dash\n"
