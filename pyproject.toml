@@ -5,7 +5,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "si4ti"
 #dynamic = ["version"]
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D seismic from changes in acoustic properties of a reservoir."
 readme = "README.md"
 authors = [
