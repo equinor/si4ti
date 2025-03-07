@@ -36,6 +36,7 @@ classifiers = [
 [project.optional-dependencies]
 test = [
   "pytest",
+  "pytest-memray",
 ]
 
 [tool.scikit-build]

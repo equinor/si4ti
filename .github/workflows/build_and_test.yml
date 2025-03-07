@@ -77,7 +77,7 @@ jobs:
         cache: 'pip'
 
     - name: Install Python dependencies
-      run: pip install pybind11 pytest xtgeo
+      run: pip install pybind11 pytest pytest-memray xtgeo
 
     - name: Build and test
       run: |
@@ -87,4 +87,4 @@ jobs:
           -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
           . --verbose
         cd python
-        python -m pytest tests/
+        python -m pytest --memray tests/

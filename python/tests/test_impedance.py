@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy.testing as npt
 import pytest
 import xtgeo  # type: ignore[import-untyped]
-from si4ti import compute_impedance  # type: ignore[import-not-found]
+from si4ti import compute_impedance
 
 
 @pytest.fixture
@@ -29,6 +29,7 @@ def compare_cubes(
         )
 
 
+@pytest.mark.limit_memory("10.5 MB")
 def test_timevarying_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -> None:
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes, tv_wavelet=True)
 
@@ -44,6 +45,7 @@ def test_timevarying_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -> 
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
+@pytest.mark.limit_memory("9.8 MB")
 def test_timeinvariant_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -> None:
     relAI_cubes, dsyn_cubes = compute_impedance(input_cubes)
 
@@ -60,6 +62,7 @@ def test_timeinvariant_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
+@pytest.mark.limit_memory("9.6 MB")
 def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
     relAI_cubes, dsyn_cubes = compute_impedance(
         input_cubes,
