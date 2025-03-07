@@ -53,8 +53,10 @@ class Si4tiNumpyWrapper {
 
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
-        const std::size_t crosslinenr = tracenr % this->crosslinecount();
-        const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
+        const std::size_t inlinenr = tracenr % this->inlinecount();
+        const std::size_t crosslinenr = (tracenr - inlinenr) / this->inlinecount();
+        assert(inlinenr < this->inlinecount());
+        assert(crosslinenr < this->crosslinecount());
         return {inlinenr, crosslinenr};
     }
 
@@ -78,7 +80,7 @@ public:
     // and the last index is the fastest index. In this sense, NumPy arrays
     // should always appear as inline sorted.
     static constexpr bool xlinesorted() noexcept(true) {
-        return false;
+        return true;
     }
 
     int inlinecount() const {

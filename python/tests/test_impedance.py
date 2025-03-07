@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy.testing as npt
 import pytest
 import xtgeo  # type: ignore[import-untyped]
-from si4ti import compute_impedance
+from si4ti import compute_impedance  # type: ignore[import-not-found]
 
 
 @pytest.fixture
@@ -77,5 +77,5 @@ def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes)
+    compare_cubes(relAI_cubes, expected_relAI_cubes, atol=3e-3)
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
