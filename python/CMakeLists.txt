@@ -1,4 +1,3 @@
-message("Project name: ${SKBUILD_PROJECT_NAME}")
 project(${SKBUILD_PROJECT_NAME} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14)
