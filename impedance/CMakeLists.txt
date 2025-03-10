@@ -6,7 +6,7 @@ target_link_libraries(impedance Eigen3::Eigen
                                 OpenMP::OpenMP_CXX
 )
 
-if(SI4TI_USE_FFTW)
+if(USE_FFTW)
     target_link_libraries(impedance ${fftw3f} ${fftw3})
     target_include_directories(impedance PRIVATE ${fftw3_includes})
 
@@ -37,7 +37,7 @@ target_link_libraries(impedance_tests catch2
 )
 target_compile_definitions(impedance_tests PRIVATE MUTE_PROGRESS)
 
-if(SI4TI_USE_FFTW)
+if(USE_FFTW)
     target_link_libraries(impedance_tests ${fftw3f} ${fftw3})
     target_include_directories(impedance_tests PRIVATE ${fftw3_includes})
 

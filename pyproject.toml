@@ -48,10 +48,10 @@ build-dir = "build/{wheel_tag}"
 wheel.install-dir = "si4ti"
 
 [tool.scikit-build.cmake.define]
-SI4TI_PYTHON_BINDINGS = true
+BUILD_PYTHON = true
 # The Python interface does not require the CLI tools.
-SI4TI_BUILD_TIMESHIFT = false
-SI4TI_BUILD_IMPEDANCE = false
+BUILD_TIMESHIFT = false
+BUILD_IMPEDANCE = false
 # The Python interface does not need the C++ tests.
 BUILD_TESTING = false
 

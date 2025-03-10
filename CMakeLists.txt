@@ -4,10 +4,13 @@ project(si4ti VERSION 0.0.0 LANGUAGES CXX)
 include(GNUInstallDirs)
 
 option(BUILD_TESTING "Build tests" ON)
-option(SI4TI_PYTHON_BINDINGS "Build Python bindings" OFF)
+option(BUILD_PYTHON "Build Python bindings" OFF)
 
-option(SI4TI_BUILD_TIMESHIFT "Build timeshift code" ON)
-option(SI4TI_BUILD_IMPEDANCE "Build impedace code" ON)
+option(BUILD_TIMESHIFT "Build timeshift code" ON)
+option(BUILD_IMPEDANCE "Build impedace code" ON)
+
+option(BUILD_DOC "Build documentation" OFF)
+option(USE_FFTW "Build with fftw" OFF)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,8 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 
-
-if (SI4TI_BUILD_TIMESHIFT)
+if (BUILD_TIMESHIFT)
     find_package(Boost 1.76 REQUIRED CONFIG)
     # From Boost 1.82.0 Boost.math requires C++14 support
     if (Boost_VERSION VERSION_GREATER_EQUAL 1.82.0)
@@ -24,29 +26,17 @@ if (SI4TI_BUILD_TIMESHIFT)
     endif()
 endif()
 
-
-if(SI4TI_BUILD_TIMESHIFT OR SI4TI_BUILD_IMPEDANCE)
+if(BUILD_TIMESHIFT OR BUILD_IMPEDANCE)
     find_package(segyio REQUIRED)
 endif()
 
-option(BUILD_DOC "Build documentation" OFF)
-
-option(USE_FFTW "Build with fftw" OFF)
-option(SI4TI_USE_FFTW "Build with fftw" OFF)
-
-if (USE_FFTW)
-    message(DEPRECATION "Flag 'USE_FFTW' is deprecated. Use 'SI4TI_USE_FFTW' instead")
-    set(SI4TI_USE_FFTW ${USE_FFTW})
-endif()
-
-
-if(SI4TI_USE_FFTW)
+if(USE_FFTW)
     find_library(fftw3 NAMES fftw3 REQUIRED)
     find_library(fftw3f NAMES fftw3f REQUIRED)
     find_path(fftw3_includes NAMES "fftw3.h" REQUIRED)
 endif()
 
-if(SI4TI_PYTHON_BINDINGS)
+if(BUILD_PYTHON)
     add_subdirectory(python)
 endif()
 
@@ -57,11 +47,11 @@ if(BUILD_TESTING)
     add_custom_target(diff)
 endif()
 
-if(SI4TI_BUILD_TIMESHIFT)
+if(BUILD_TIMESHIFT)
     add_subdirectory(timeshift)
 endif()
 
-if(SI4TI_BUILD_IMPEDANCE)
+if(BUILD_IMPEDANCE)
     add_subdirectory(impedance)
 endif()
 
