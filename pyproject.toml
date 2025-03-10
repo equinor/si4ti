@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.10.0", "pybind11"]
+requires = ["scikit-build-core>=0.10.0", "pybind11"] # also CMake, OpenMP, and Eigen. Optional: FFTW3
 build-backend = "scikit_build_core.build"
 
 [project]
