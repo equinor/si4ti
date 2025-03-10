@@ -19,14 +19,14 @@ if(USE_FFTW)
     find_path(fftw3_includes NAMES "fftw3.h" REQUIRED)
 endif()
 
-pybind11_add_module(_core MODULE src/main.cpp)
-target_include_directories(_core PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
+pybind11_add_module(_impedance_core MODULE src/main.cpp)
+target_include_directories(_impedance_core PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
 )
-target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
+target_link_libraries(_impedance_core PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
 if (USE_FFTW)
-    target_link_libraries(_core PRIVATE ${fftw3f} ${fftw3})
-    target_include_directories(_core PRIVATE ${fftw3_includes})
-    target_compile_definitions(_core PRIVATE EIGEN_FFTW_DEFAULT=1)
+    target_link_libraries(_impedance_core PRIVATE ${fftw3f} ${fftw3})
+    target_include_directories(_impedance_core PRIVATE ${fftw3_includes})
+    target_compile_definitions(_impedance_core PRIVATE EIGEN_FFTW_DEFAULT=1)
 endif()
 add_compile_definitions(MUTE_PROGRESS)
 
@@ -36,5 +36,5 @@ elseif(NOT DEFINED PYTHON_INSTALL_DIR)
     set(PYTHON_INSTALL_DIR lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
 endif()
 
-install(TARGETS _core DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
+install(TARGETS _impedance_core DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
 install(FILES src/si4ti/__init__.py DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)

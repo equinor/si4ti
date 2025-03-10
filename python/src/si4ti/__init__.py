@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as nptype
 import xtgeo  # type: ignore[import-untyped]
 
-from ._core import (  # type: ignore[import-not-found]
+from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
     __version__,
     impedance,
