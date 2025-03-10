@@ -19,41 +19,15 @@ struct ImpedanceOptions {
     double          latsmooth_3D         = 0.05;
     double          latsmooth_4D         = 4;
     int             max_iter             = 50;
-
-    /*
-    ImpedanceOptions(
-        int    polarity_,
-        int    segments_,
-        int    overlap_,
-        bool   tv_wavelet_,
-        double damping_3D_,
-        double damping_4D_,
-        double latsmooth_3D_,
-        double latsmooth_4D_,
-        int    max_iter_
-    ) :
-        polarity(polarity_),
-        segments(segments_),
-        overlap(overlap_),
-        tv_wavelet(tv_wavelet_),
-        damping_3D(damping_3D_),
-        damping_4D(damping_4D_),
-        latsmooth_3D(latsmooth_3D_),
-        latsmooth_4D(latsmooth_4D_),
-        max_iter(max_iter_)
-    {}
-    */
 };
 
-// TODO: Investigate if we can avoid copies
 class Si4tiNumpyWrapper {
-    // The actual memory is being held/allocated somewhere else
-    //py::array_t<float> data_;
-    py::array_t<float> data_;
+    py::array_t<float, py::array::c_style> data_;
 
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
         const std::size_t inlinenr = tracenr % this->inlinecount();
+        assert(tracenr >= inlinenr);
         const std::size_t crosslinenr = (tracenr - inlinenr) / this->inlinecount();
         assert(inlinenr < this->inlinecount());
         assert(crosslinenr < this->crosslinecount());
@@ -61,18 +35,12 @@ class Si4tiNumpyWrapper {
     }
 
 public:
-    explicit Si4tiNumpyWrapper(py::array_t<float> data)
+    explicit Si4tiNumpyWrapper(py::array_t<float, py::array::c_style> data)
         : data_(data)
     {
     }
 
-    //// Takes ownerwhip of the data
-    //Si4tiNumpyWrapper(py::array_t<float>&& data)
-    //: data_(std::move(data))
-    //{
-    //}
-
-    const py::array_t<float>& data() const {
+    const py::array_t<float, py::array::c_style>& data() const {
         return this->data_;
     }
     // For NumPy arrays the notion of inline or crossline sorted does not exist
@@ -99,12 +67,11 @@ public:
         return this->data_.shape(2);
     }
 
-    py::array_t<float>&& data() {
+    py::array_t<float, py::array::c_style>&& data() {
         return std::move(this->data_);
     }
 
 
-    //OutputIt trace_reader< Derived >::get( int i, OutputIt out ) noexcept(false) {
     template<typename InputIt>
     InputIt* put(int tracenr, InputIt* in) {
         auto r = this->data_.template mutable_unchecked<3>();
@@ -126,6 +93,13 @@ public:
 };
 
 
+py::list to_python_list(std::vector<Si4tiNumpyWrapper>&& data) {
+    py::list tmp;
+    for (const auto& d: data) {
+        tmp.append(std::move(d.data()));
+    }
+    return tmp;
+}
 
 std::pair<py::list, py::list> impedance(
     const py::list& input,
@@ -133,44 +107,30 @@ std::pair<py::list, py::list> impedance(
 ) {
     std::vector<Si4tiNumpyWrapper> input_files;
 
-    std::vector<Si4tiNumpyWrapper> output_1;
-    std::vector<Si4tiNumpyWrapper> output_2;
+    std::vector<Si4tiNumpyWrapper> relAI_arrays;
+    std::vector<Si4tiNumpyWrapper> dsyn_arrays;
 
     for (py::handle item: input) {
         if (!py::isinstance<py::array>(item)) {
             throw std::runtime_error("All items in the input list must be NumPy arrays.");
         }
 
-        //py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
-        py::array_t<float> numpy_array = py::cast<py::array_t<float>>(item);
+        py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
         input_files.push_back(Si4tiNumpyWrapper(numpy_array));
 
         const py::ssize_t shape[3]{numpy_array.shape(0), numpy_array.shape(1), numpy_array.shape(2)};
         const py::ssize_t strides[3]{numpy_array.strides(0), numpy_array.strides(1), numpy_array.strides(2)};
-        //auto out_1 = py::array_t<float>(shape, strides);
-        //auto out_2 = py::array_t<float>(shape, strides);
 
-        output_1.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float>(shape, strides))));
-        output_2.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float>(shape, strides))));
-        //output_2.push_back(out_2);
+        relAI_arrays.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float, py::array::c_style>(shape, strides))));
+        dsyn_arrays.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float, py::array::c_style>(shape, strides))));
     }
 
-    // Do stuff
-    compute_impedance_of_full_cube(input_files, output_1, output_2, options);
+    compute_impedance_of_full_cube(input_files, relAI_arrays, dsyn_arrays, options);
 
-    // Copy data back
-    py::list output1;
-    py::list output2;
-
-    for (const auto& out: output_1) {
-        output1.append(std::move(out.data()));
-    }
-
-    for (const auto& out: output_2) {
-        output2.append(std::move(out.data()));
-    }
-
-    return {output1, output2};
+    return {
+        to_python_list(std::move(relAI_arrays)),
+        to_python_list(std::move(dsyn_arrays))
+    };
 }
 
 PYBIND11_MODULE(_core, m) {
