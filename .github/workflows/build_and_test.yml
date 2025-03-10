@@ -54,6 +54,59 @@ jobs:
         ctest --output-on-failure
         make diff
 
+  # Compatibility with Red Hat Enterprise Linux 8
+  build-almalinux-8:
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:8
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        dnf -y update
+        dnf group install 'Development Tools'
+        dnf install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
+
+    - name: Install Boost
+      run: |
+        wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz
+        tar xf boost_1_79_0.tar.gz
+        pushd boost_1_79_0
+        scl enable devtoolset-13 "./bootstrap.sh --with-libraries=math"
+        scl enable devtoolset-13 "./b2 -j 2"
+        scl enable devtoolset-13 "./b2 install"
+        popd
+        rm -rf boost_1_79_0
+
+    - name: Build and install segyio
+      run: |
+        git clone --branch v1.9.13 https://github.com/equinor/segyio.git
+        cd segyio
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF
+        make -j
+        sudo make install
+
+    - name: Install Python dependencies
+      run: |
+        python3.11 -m pip install --upgrade pip
+        python3.11 -m pip install 'segyio==1.9.13' pybind11
+
+    - name: Build and test
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DBUILD_PYTHON=ON \
+              -DCMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
+              ..
+        make -j
+        ctest --output-on-failure
+        make diff
+
   build-python:
     name: Python bindings, FFTW ${{ matrix.fftw }}
     strategy:
@@ -88,3 +141,47 @@ jobs:
           . --verbose
         cd python
         python -m pytest --memray tests/
+
+  build-python-almalinux-8:
+    name: Python bindings, FFTW ${{ matrix.fftw }}
+    strategy:
+      matrix:
+        fftw: ["ON", "OFF"]
+
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:8
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        dnf -y update
+        dnf group install 'Development Tools'
+        dnf install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
+
+    - name: Install Boost
+      run: |
+        wget https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz
+        tar xf boost_1_79_0.tar.gz
+        pushd boost_1_79_0
+        scl enable devtoolset-13 "./bootstrap.sh --with-libraries=math"
+        scl enable devtoolset-13 "./b2 -j 2"
+        scl enable devtoolset-13 "./b2 install"
+        popd
+        rm -rf boost_1_79_0
+
+    - name: Install Python dependencies
+      run: |
+        python3.11 -m pip install --upgrade pip
+        python3.11 -m pip install pybind11 pytest pytest-memray xtgeo
+
+    - name: Build and test
+      run: |
+        python3.11 -m pip install \
+          -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
+          -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
+          -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
+          . --verbose
+        cd python
+        python3.11 -m pytest --memray tests/
