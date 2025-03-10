@@ -1,4 +1,4 @@
-exclude: 'test-data/.*|doc/.*|external/.*|cppcheck/.*|.*.sgy|LICENSE|README.md|timeshift/diff.py|.github/workflows/build_and_test.yml'
+exclude: 'test-data/.*|doc/.*|external/.*|cppcheck/.*|.*.sgy|LICENSE|timeshift/diff.py|.github/workflows/build_and_test.yml'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v5.0.0"

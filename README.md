@@ -3,17 +3,17 @@ si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D
 seismic from changes in acoustic properties of a reservoir.
 
 ### Timeshift ###
-si4ti timeshift computes the dynamic timeshift between traces of different 
-datasets (vintages). It uses vertical and horizontal smoothing constraints, and 
+si4ti timeshift computes the dynamic timeshift between traces of different
+datasets (vintages). It uses vertical and horizontal smoothing constraints, and
 no prior information.
 
 ### Impedance ###
-si4ti impedance uses a statistical wavelet and lateral, horizontal and 4D 
+si4ti impedance uses a statistical wavelet and lateral, horizontal and 4D
 smoothing for computing the relative acoustic impedance of a set of vintages.
 
 ## Installation ##
-Pre-built executables for Linux can be downloaded from 
-[here](https://github.com/equinor/si4ti/releases). 
+Pre-built executables for Linux can be downloaded from
+[here](https://github.com/equinor/si4ti/releases).
 
 ## Build from source ##
 To build si4ti you need:
@@ -33,7 +33,7 @@ To build and install si4ti run the following commands in your console:
 git clone https://github.com/equinor/si4ti
 mkdir si4ti/build
 cd si4ti/build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 make install
 ```
