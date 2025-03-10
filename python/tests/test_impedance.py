@@ -62,7 +62,7 @@ def test_timeinvariant_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
-@pytest.mark.limit_memory("9.6 MB")
+@pytest.mark.limit_memory("8.1 MB")
 def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
     relAI_cubes, dsyn_cubes = compute_impedance(
         input_cubes,
