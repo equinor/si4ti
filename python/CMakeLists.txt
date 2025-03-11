@@ -9,7 +9,7 @@ find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 
-pybind11_add_module(_si4ti_python MODULE src/python_bindings.cpp)
+pybind11_add_module(_si4ti_python MODULE src/python_interface.cpp)
 target_include_directories(_si4ti_python PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
 )
 target_link_libraries(_si4ti_python PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
@@ -28,3 +28,4 @@ endif()
 
 install(TARGETS _si4ti_python DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
 install(FILES src/si4ti/__init__.py DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
+install(FILES src/si4ti/_version.py DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)

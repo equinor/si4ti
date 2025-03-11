@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from importlib.metadata import PackageNotFoundError, version
+__all__ = [
+    "__version__",
+    "impedance",
+]
+# Disable formatting to ensure that __version__ is defined as soon as possible
+# after the __future__ import as per PEP8 [1].
+#
+# [1]: https://peps.python.org/pep-0008/#module-level-dunder-names
+from ._version import __version__  # noqa: I001
 
 import numpy as np
 import numpy.typing as nptype
@@ -12,11 +20,6 @@ from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
     compute_impedance,
 )
-
-try:
-    __version__ = version("si4ti")
-except PackageNotFoundError:
-    __version__ = "unknown"
 
 
 def _numpy_cubes_to_xtgeo_cubes(
@@ -115,9 +118,3 @@ def impedance(
     dsyn_xtgeo_cubes = _numpy_cubes_to_xtgeo_cubes(input_cubes, dsyn_cubes)
 
     return (relAI_xtgeo_cubes, dsyn_xtgeo_cubes)
-
-
-__all__ = [
-    "__version__",
-    "impedance",
-]

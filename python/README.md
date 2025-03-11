@@ -1,17 +1,16 @@
-# si4ti - Python bindings
+# si4ti - Python interface
 
-These are the Python bindings of [si4ti](https://github.com/equinor/si4ti):
+These are the Python interface of [si4ti](https://github.com/equinor/si4ti):
 > si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D
 > seismic from changes in acoustic properties of a reservoir."
 
-The bindings currently only implement a version of si4ti's impedance
-calculation. The timeshift calculation is not included in the Python bindings.
-
+The interface currently only implement a version of si4ti's impedance
+calculation. The timeshift calculation is not included in the Python interface.
 
 ## Installation
 
-It is easiest to install the bindings via `pip`. Note, that only a limit number
-of platforms are supported at the moment.
+It is easiest to install the interface via `pip`. Note, that only a limit
+number of platforms are supported at the moment.
 
 ## Building from source
 
