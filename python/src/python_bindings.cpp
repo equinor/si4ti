@@ -135,9 +135,9 @@ std::pair<py::list, py::list> impedance(
 
 PYBIND11_MODULE(_si4ti_python, m) {
   m.doc() = R"pbdoc(
-      Pybind11 example plugin
+      si4ti Python bindings
       -----------------------
-      .. currentmodule:: python_example
+      .. currentmodule:: _si4ti_python
       .. autosummary::
          :toctree: _generate
   )pbdoc";
@@ -148,15 +148,13 @@ PYBIND11_MODULE(_si4ti_python, m) {
         "A function that processes two NumPy arrays and returns two NumPy arrays.",
         py::arg("input"),
         py::arg("options"),
-        py::return_value_policy::move,
-        R"pbdoc(
-            TBD: Write documentation of impedance functions
-    )pbdoc");
+        py::return_value_policy::move
+    );
 
     py::class_<ImpedanceOptions>(m, "ImpedanceOptions")
         .def(py::init<>(),
             R"pbdoc(
-                Impedance options
+                Impedance options, equivalent to the CLI options.
             )pbdoc")
         .def_readwrite("polarity", &ImpedanceOptions::polarity)
         .def_readwrite("segments", &ImpedanceOptions::segments)
@@ -166,7 +164,8 @@ PYBIND11_MODULE(_si4ti_python, m) {
         .def_readwrite("damping_4D", &ImpedanceOptions::damping_4D)
         .def_readwrite("latsmooth_3D", &ImpedanceOptions::latsmooth_3D)
         .def_readwrite("latsmooth_4D", &ImpedanceOptions::latsmooth_4D)
-        .def_readwrite("max_iter", &ImpedanceOptions::max_iter);
+        .def_readwrite("max_iter", &ImpedanceOptions::max_iter
+    );
 
 
   m.attr("__version__") = "dev";
