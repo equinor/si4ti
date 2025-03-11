@@ -65,10 +65,6 @@ jobs:
     container:
       image: almalinux:8
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
-
     - name: Install dependencies
       run: |
         dnf -y update
@@ -76,6 +72,10 @@ jobs:
         dnf -y config-manager --set-enabled powertools
         dnf -y group install 'Development Tools'
         dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python3.11 python3.11-devel
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
 
     - name: Install Boost
       run: |
