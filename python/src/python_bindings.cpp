@@ -133,7 +133,7 @@ std::pair<py::list, py::list> impedance(
     };
 }
 
-PYBIND11_MODULE(_core, m) {
+PYBIND11_MODULE(_si4ti_python, m) {
   m.doc() = R"pbdoc(
       Pybind11 example plugin
       -----------------------
