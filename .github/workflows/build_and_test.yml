@@ -105,12 +105,12 @@ jobs:
       run: |
         mkdir build
         pushd build
-        scl enable gcc-toolset-13 cmake -DCMAKE_BUILD_TYPE=Release \
+        source scl_source enable gcc-toolset-13 && cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
               -DBUILD_PYTHON=ON \
               -DCMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
               ..
-        scl enable gcc-toolset-13 make -j
+        scl enable gcc-toolset-13 "make -j"
         ctest --output-on-failure
         make diff
 
