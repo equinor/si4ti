@@ -57,6 +57,9 @@ jobs:
   # Compatibility with Red Hat Enterprise Linux 8
   build-almalinux-8:
     name: C++ (RHEL8), FFTW ${{ matrix.fftw }}
+    strategy:
+      matrix:
+        fftw: ["ON", "OFF"]
     runs-on: ubuntu-latest
     container:
       image: almalinux:8
