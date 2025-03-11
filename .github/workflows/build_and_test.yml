@@ -98,8 +98,8 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        python3.11 -m pip install --upgrade pip
-        python3.11 -m pip install 'segyio==1.9.13' pybind11
+        python3.11 -m ensurepip --upgrade
+        python3.11 -m pip install 'segyio==1.9.13' pybind11 pytest pytest-memray xtgeo
 
     - name: Build and test
       run: |
@@ -114,12 +114,7 @@ jobs:
         ctest --output-on-failure
         make diff
 
-    - name: Install Python dependencies
-      run: |
-        python3.11 -m pip install --upgrade pip
-        python3.11 -m pip install pybind11 pytest pytest-memray xtgeo
-
-    - name: Build and test
+    - name: Build and test using pip
       run: |
         scl enable gcc-toolset-13 python3.11 -m pip install \
           -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
