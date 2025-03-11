@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.10.0", "pybind11"] # also CMake, OpenMP, and Eigen. Optional: FFTW3
+requires = ["scikit-build-core>=0.10.0", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -115,9 +115,9 @@ ignore_missing_imports = true
 before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
 
 [tool.cibuildwheel.macos]
-before-all = [ "brew install eigen libomp cmake", "pip install pybind11" ]
+before-all = [ "brew install eigen libomp cmake" ]
 
-environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/pybind11/share/cmake/pybind11;/opt/homebrew/opt/libomp/;/usr/local/opt/libomp/" }
+environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp/;/usr/local/opt/libomp/" }
 # Skip testing on:
 # - Python 3.9: Issues with h5py during testing (xtgeo dependency)
 # - Python 3.13: xtgeo not available yet and thus testing fails

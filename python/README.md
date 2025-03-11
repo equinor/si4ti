@@ -18,7 +18,7 @@ number of platforms are supported at the moment.
 
 -   OpenMP
 -   Eigen3
--   pybind
+-   pybind11
 -   Optional: FFTW3 with single precision (`float`) interface
 
 These are all compile-time dependencies. Once the Python package was built, the
@@ -49,10 +49,9 @@ not installed in a path where CMake picks up the corresponding CMake
 configuration files. On my machines I need to specify the paths fo:
 
 -   OpenMP
--   pybind11
 
 I need a command like this on MacOS:
 
 ```text
-pip install -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir);/opt/homebrew/opt/libomp" -e . --verbose
+pip install -Ccmake.define.CMAKE_PREFIX_PATH="/opt/homebrew/opt/libomp" -e . --verbose
 ```

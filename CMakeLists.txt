@@ -37,6 +37,8 @@ if(USE_FFTW)
 endif()
 
 if(BUILD_PYTHON)
+    set(PYBIND11_FINDPYTHON ON)
+    add_subdirectory(external/pybind11)
     add_subdirectory(python)
 endif()
 

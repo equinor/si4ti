@@ -30,6 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
 
     - name: Install dependencies
       run: |
@@ -53,7 +55,7 @@ jobs:
         cache: "pip"
 
     - name: Install Python dependencies
-      run: pip install 'segyio==1.9.13' pybind11
+      run: pip install 'segyio==1.9.13'
 
     - name: Configure project
       run: |
@@ -63,7 +65,6 @@ jobs:
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
               -DBUILD_PYTHON=ON \
               -DUSE_FFTW=YES \
-              -DCMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
               ..
         make -j
 
