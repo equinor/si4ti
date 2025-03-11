@@ -102,8 +102,12 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        python3.11 -m ensurepip --upgrade
-        python3.11 -m pip install 'segyio==1.9.13' pybind11 pytest pytest-memray xtgeo
+        python -m venv venv
+        source venv/bin/activate
+        python -m ensurepip --upgrade
+        python -m pip install --upgrade pip
+        python -m pip install 'segyio==1.9.13' pybind11 pytest pytest-memray xtgeo
+        echo PATH=${PATH} >> $GITHUB_ENV
 
     - name: Build and test
       run: |
@@ -120,13 +124,13 @@ jobs:
 
     - name: Build and test using pip
       run: |
-        source scl_source enable gcc-toolset-13 && python3.11 -m pip install \
+        source scl_source enable gcc-toolset-13 && python -m pip install \
           -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
           -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
           -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
           . --verbose
         cd python
-        python3.11 -m pytest --memray tests/
+        python -m pytest --memray tests/
 
   build-python:
     name: Python bindings, FFTW ${{ matrix.fftw }}
