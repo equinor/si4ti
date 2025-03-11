@@ -7,7 +7,7 @@ import xtgeo  # type: ignore[import-untyped]
 from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
     __version__,
-    impedance,
+    compute_impedance,
 )
 
 
@@ -39,7 +39,7 @@ def _numpy_cubes_to_xtgeo_cubes(
     return xtgeo_cubes
 
 
-def compute_impedance(
+def impedance(
     input_cubes: list[xtgeo.Cube],
     inverse_polarity: bool = False,
     segments: int = 1,
@@ -101,7 +101,7 @@ def compute_impedance(
     options.max_iter = max_iter
 
     cubes_as_numpy_arrays = [c.values for c in input_cubes]
-    relAI_cubes, dsyn_cubes = impedance(cubes_as_numpy_arrays, options)
+    relAI_cubes, dsyn_cubes = compute_impedance(cubes_as_numpy_arrays, options)
 
     relAI_xtgeo_cubes = _numpy_cubes_to_xtgeo_cubes(input_cubes, relAI_cubes)
     dsyn_xtgeo_cubes = _numpy_cubes_to_xtgeo_cubes(input_cubes, dsyn_cubes)
@@ -113,5 +113,5 @@ __all__ = [
     # TODO: Find out if we need the `__doc__` property
     # "__doc__",
     "__version__",
-    "compute_impedance",
+    "impedance",
 ]
