@@ -103,8 +103,8 @@ jobs:
 
     - name: Build and test
       run: |
+        mkdir build
         pushd build
-        cd build
         scl enable gcc-toolset-13 cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
               -DBUILD_PYTHON=ON \
