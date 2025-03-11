@@ -31,7 +31,7 @@ add_compile_definitions(MUTE_PROGRESS)
 if(DEFINED SKBUILD_PROJECT_NAME)
     set(PYTHON_INSTALL_DIR .)
 elseif(NOT DEFINED PYTHON_INSTALL_DIR)
-    set(PYTHON_INSTALL_DIR lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
+    set(PYTHON_INSTALL_DIR lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/${CMAKE_PROJECT_NAME})
 endif()
 
 install(TARGETS _si4ti_python DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
