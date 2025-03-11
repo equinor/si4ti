@@ -129,7 +129,7 @@ std::pair<py::list, py::list> compute_impedance(
         // Enforce C-style array as safeguard against wrong user input.
         // Strictly required is only contiguous data in trace direction.
         py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
-        input_files.push_back(Si4tiNumpyWrapper(numpy_array));
+        input_files.emplace_back(Si4tiNumpyWrapper(numpy_array));
 
         const py::ssize_t shape[3]{
             numpy_array.shape(0),
@@ -142,8 +142,8 @@ std::pair<py::list, py::list> compute_impedance(
             numpy_array.strides(2)
         };
 
-        relAI_arrays.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float, py::array::c_style>(shape, strides))));
-        dsyn_arrays.push_back(Si4tiNumpyWrapper(std::move(py::array_t<float, py::array::c_style>(shape, strides))));
+        relAI_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float, py::array::c_style>(shape, strides)));
+        dsyn_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float, py::array::c_style>(shape, strides)));
     }
 
     compute_impedance_of_full_cube(input_files, relAI_arrays, dsyn_arrays, options);
