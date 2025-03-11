@@ -61,7 +61,7 @@ jobs:
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-              -DSI4TI_PYTHON_BINDINGS=ON \
+              -DBUILD_PYTHON=ON \
               -DUSE_FFTW=YES \
               -DCMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
               ..
