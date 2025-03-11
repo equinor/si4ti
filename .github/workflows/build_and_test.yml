@@ -56,6 +56,7 @@ jobs:
 
   # Compatibility with Red Hat Enterprise Linux 8
   build-almalinux-8:
+    name: C++ (RHEL8), FFTW ${{ matrix.fftw }}
     runs-on: ubuntu-latest
     container:
       image: almalinux:8
@@ -64,9 +65,10 @@ jobs:
 
     - name: Install dependencies
       run: |
+        dnf -y config-manager --set-enabled powertools
         dnf -y update
         dnf -y group install 'Development Tools'
-        dnf -y install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
+        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python311
 
     - name: Install Boost
       run: |
@@ -143,7 +145,7 @@ jobs:
         python -m pytest --memray tests/
 
   build-python-almalinux-8:
-    name: Python bindings, FFTW ${{ matrix.fftw }}
+    name: Python bindings (RHEL8), FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
         fftw: ["ON", "OFF"]
@@ -156,9 +158,10 @@ jobs:
 
     - name: Install dependencies
       run: |
+        dnf -y config-manager --set-enabled powertools
         dnf -y update
         dnf -y group install 'Development Tools'
-        dnf -y install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
+        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python311
 
     - name: Install Boost
       run: |
