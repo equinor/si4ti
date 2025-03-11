@@ -96,7 +96,6 @@ jobs:
         scl enable gcc-toolset-13 "make -j"
         scl enable gcc-toolset-13 "make install"
 
-
     - name: Patch segyio experimental header
       run: |
           sed -i 's/#include <cstring>/#include <cstdint>\n#include <cstring>/' /usr/local/include/segyio/segyio.hpp
@@ -121,7 +120,7 @@ jobs:
 
     - name: Build and test using pip
       run: |
-        scl enable gcc-toolset-13 python3.11 -m pip install \
+        source scl_source enable gcc-toolset-13 && python3.11 -m pip install \
           -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
           -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
           -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
