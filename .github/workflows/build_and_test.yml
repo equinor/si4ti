@@ -94,7 +94,7 @@ jobs:
         cd build
         scl enable gcc-toolset-13 "cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF"
         scl enable gcc-toolset-13 "make -j"
-        scl enable gcc-toolset-13 sudo make install
+        scl enable gcc-toolset-13 "make install"
 
     - name: Install Python dependencies
       run: |
