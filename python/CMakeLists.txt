@@ -9,14 +9,6 @@ find_package(pybind11 CONFIG REQUIRED)
 find_package(Eigen3 3.3.4 REQUIRED)
 find_package(OpenMP COMPONENTS CXX REQUIRED)
 
-option(USE_FFTW "Build with fftw" OFF)
-
-if(USE_FFTW)
-    find_library(fftw3 NAMES fftw3 REQUIRED)
-    find_library(fftw3f NAMES fftw3f REQUIRED)
-    find_path(fftw3_includes NAMES "fftw3.h" REQUIRED)
-endif()
-
 pybind11_add_module(_si4ti_python MODULE src/python_bindings.cpp)
 target_include_directories(_si4ti_python PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
 )
