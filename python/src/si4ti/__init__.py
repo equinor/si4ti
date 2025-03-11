@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
+
 import numpy as np
 import numpy.typing as nptype
 import xtgeo  # type: ignore[import-untyped]
@@ -10,7 +12,11 @@ from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
     compute_impedance,
 )
-from ._version import __version__
+
+try:
+    __version__ = version("si4ti")
+except PackageNotFoundError:
+    __version__ = "unknown"
 
 
 def _numpy_cubes_to_xtgeo_cubes(
