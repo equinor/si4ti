@@ -65,8 +65,8 @@ jobs:
     - name: Install dependencies
       run: |
         dnf -y update
-        dnf group install 'Development Tools'
-        dnf install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
+        dnf -y group install 'Development Tools'
+        dnf -y install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
 
     - name: Install Boost
       run: |
@@ -157,8 +157,8 @@ jobs:
     - name: Install dependencies
       run: |
         dnf -y update
-        dnf group install 'Development Tools'
-        dnf install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
+        dnf -y group install 'Development Tools'
+        dnf -y install fftw3-devel gcc-toolset13 eigen3-devel cmake wget python311
 
     - name: Install Boost
       run: |
