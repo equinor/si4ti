@@ -77,9 +77,9 @@ jobs:
         ls -l
         tar xf boost_1_79_0.tar.gz
         pushd boost_1_79_0
-        scl enable devtoolset-13 "./bootstrap.sh --with-libraries=math"
-        scl enable devtoolset-13 "./b2 -j 2"
-        scl enable devtoolset-13 "./b2 install"
+        scl enable gcc-toolset-13 "./bootstrap.sh --with-libraries=math"
+        scl enable gcc-toolset-13 "./b2 -j 2"
+        scl enable gcc-toolset-13 "./b2 install"
         popd
         rm -rf boost_1_79_0
 
@@ -89,9 +89,9 @@ jobs:
         cd segyio
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF
-        make -j
-        sudo make install
+        scl enable gcc-toolset-13 "cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF"
+        scl enable gcc-toolset-13 "make -j"
+        scl enable gcc-toolset-13 sudo make install
 
     - name: Install Python dependencies
       run: |
@@ -102,12 +102,12 @@ jobs:
       run: |
         pushd build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Release \
+        scl enable gcc-toolset-13 cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
               -DBUILD_PYTHON=ON \
               -DCMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
               ..
-        make -j
+        scl enable gcc-toolset-13 make -j
         ctest --output-on-failure
         make diff
 
@@ -118,7 +118,7 @@ jobs:
 
     - name: Build and test
       run: |
-        python3.11 -m pip install \
+        scl enable gcc-toolset-13 python3.11 -m pip install \
           -Ccmake.define.CMAKE_PREFIX_PATH="$(pybind11-config --cmakedir)" \
           -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
           -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
@@ -186,9 +186,9 @@ jobs:
   #        wget https://archives.boost.io/release/1.79.0/source/boost_1_79_0.tar.gz
   #        tar xf boost_1_79_0.tar.gz
   #        pushd boost_1_79_0
-  #        scl enable devtoolset-13 "./bootstrap.sh --with-libraries=math"
-  #        scl enable devtoolset-13 "./b2 -j 2"
-  #        scl enable devtoolset-13 "./b2 install"
+  #        scl enable gcc-toolset-13 "./bootstrap.sh --with-libraries=math"
+  #        scl enable gcc-toolset-13 "./b2 -j 2"
+  #        scl enable gcc-toolset-13 "./b2 install"
   #        popd
   #        rm -rf boost_1_79_0
   #
