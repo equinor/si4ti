@@ -1,11 +1,10 @@
 [build-system]
-requires = ["scikit-build-core>=0.10.0", "pybind11"] # also CMake, OpenMP, and Eigen. Optional: FFTW3
+requires = ["scikit-build-core>=0.10.0", "setuptools-scm>=8", "pybind11"] # also CMake, OpenMP, and Eigen. Optional: FFTW3
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "si4ti"
-#dynamic = ["version"]
-version = "0.1.0a2"
+dynamic = ["version"]
 description = "si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D seismic from changes in acoustic properties of a reservoir."
 readme = "python/README.md"
 authors = [
@@ -39,13 +38,19 @@ test = [
   "pytest-memray",
 ]
 
+
 [tool.scikit-build]
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+sdist.include = ["python/src/si4ti/_version.py"]
 wheel.expand-macos-universal-tags = true
 minimum-version = "build-system.requires"
 wheel.license-files = ["LICENSE"]
 install.components = ["python"]
 build-dir = "build/{wheel_tag}"
 wheel.install-dir = "si4ti"
+
+[tool.setuptools_scm]
+write_to = "python/src/si4ti/_version.py"
 
 [tool.scikit-build.cmake.define]
 BUILD_PYTHON = true

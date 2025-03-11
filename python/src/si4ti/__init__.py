@@ -1,3 +1,5 @@
+"""si4ti: Seismic Inversion for Time-lapse Interpretation"""
+
 from __future__ import annotations
 
 import numpy as np
@@ -6,9 +8,9 @@ import xtgeo  # type: ignore[import-untyped]
 
 from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
-    __version__,
     compute_impedance,
 )
+from ._version import __version__
 
 
 def _numpy_cubes_to_xtgeo_cubes(
@@ -110,8 +112,6 @@ def impedance(
 
 
 __all__ = [
-    # TODO: Find out if we need the `__doc__` property
-    # "__doc__",
     "__version__",
     "impedance",
 ]
