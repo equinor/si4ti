@@ -65,8 +65,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        dnf -y config-manager --set-enabled powertools
         dnf -y update
+        dnf -y install dnf-plugins-core
+        dnf -y config-manager --set-enabled powertools
         dnf -y group install 'Development Tools'
         dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python311
 
@@ -158,8 +159,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        dnf -y config-manager --set-enabled powertools
         dnf -y update
+        dnf -y install dnf-plugins-core
+        dnf -y config-manager --set-enabled powertools
         dnf -y group install 'Development Tools'
         dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python311
 
