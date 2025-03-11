@@ -96,6 +96,11 @@ jobs:
         scl enable gcc-toolset-13 "make -j"
         scl enable gcc-toolset-13 "make install"
 
+
+    - name: Patch segyio experimental header
+      run: |
+          sed -i 's/#include <cstring>/#include <cstdint>\n#include <cstring>/' /usr/local/include/segyio/segyio.hpp
+
     - name: Install Python dependencies
       run: |
         python3.11 -m ensurepip --upgrade
