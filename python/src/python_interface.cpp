@@ -25,7 +25,7 @@ struct ImpedanceOptions {
 };
 
 class Si4tiNumpyWrapper {
-    py::array_t<float, py::array::c_style> data_;
+    py::array_t<float> data_;
 
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
@@ -37,12 +37,12 @@ class Si4tiNumpyWrapper {
     }
 
 public:
-    explicit Si4tiNumpyWrapper(py::array_t<float, py::array::c_style> data)
+    explicit Si4tiNumpyWrapper(py::array_t<float> data)
         : data_(data)
     {
     }
 
-    const py::array_t<float, py::array::c_style>& data() const {
+    const py::array_t<float>& data() const {
         return this->data_;
     }
     // For NumPy arrays the notion of inline or crossline sorted does not exist
@@ -82,7 +82,7 @@ public:
         return this->data_.shape(2);
     }
 
-    py::array_t<float, py::array::c_style>&& data() {
+    py::array_t<float>&& data() {
         return std::move(this->data_);
     }
 
@@ -134,13 +134,14 @@ std::pair<py::list, py::list> compute_impedance(
     std::vector<Si4tiNumpyWrapper> dsyn_arrays;
 
     for (py::handle item: input) {
-        if (!py::isinstance<py::array>(item)) {
+        if (not py::isinstance<py::array>(item)) {
             throw std::runtime_error("All items in the input list must be NumPy arrays.");
         }
 
-        // Enforce C-style array as safeguard against wrong user input.
-        // Strictly required is only contiguous data in trace direction.
-        py::array_t<float, py::array::c_style> numpy_array = py::cast<py::array>(item);
+        py::array_t<float> numpy_array = py::cast<py::array>(item);
+        if (numpy_array.strides(2) != sizeof(float)) {
+            throw std::runtime_error("The NumPy arrays must be contiguous in trace direction.");
+        }
         input_files.emplace_back(Si4tiNumpyWrapper(numpy_array));
 
         const py::ssize_t shape[3]{
@@ -154,8 +155,8 @@ std::pair<py::list, py::list> compute_impedance(
             numpy_array.strides(2)
         };
 
-        relAI_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float, py::array::c_style>(shape, strides)));
-        dsyn_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float, py::array::c_style>(shape, strides)));
+        relAI_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float>(shape, strides)));
+        dsyn_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float>(shape, strides)));
     }
 
     compute_impedance_of_full_cube(input_files, relAI_arrays, dsyn_arrays, options);
