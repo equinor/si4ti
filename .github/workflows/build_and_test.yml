@@ -178,37 +178,3 @@ jobs:
       run: |
         cd python
         python -m pytest --memray tests/
-
-  #  build-python-almalinux-8:
-  #    name: Python bindings (RHEL8), FFTW ${{ matrix.fftw }}
-  #    strategy:
-  #      matrix:
-  #        fftw: ["ON", "OFF"]
-  #
-  #    runs-on: ubuntu-latest
-  #    container:
-  #      image: almalinux:8
-  #    steps:
-  #    - uses: actions/checkout@v4
-  #      with:
-  #       submodules: 'true'
-  #
-  #    - name: Install dependencies
-  #      run: |
-  #        dnf -y update
-  #        dnf -y install dnf-plugins-core
-  #        dnf -y config-manager --set-enabled powertools
-  #        dnf -y group install 'Development Tools'
-  #        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python311
-  #
-  #    - name: Install Boost
-  #      run: |
-  #        wget https://archives.boost.io/release/1.79.0/source/boost_1_79_0.tar.gz
-  #        tar xf boost_1_79_0.tar.gz
-  #        pushd boost_1_79_0
-  #        scl enable gcc-toolset-13 "./bootstrap.sh --with-libraries=math"
-  #        scl enable gcc-toolset-13 "./b2 -j 2"
-  #        scl enable gcc-toolset-13 "./b2 install"
-  #        popd
-  #        rm -rf boost_1_79_0
-  #
