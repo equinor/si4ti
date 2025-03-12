@@ -5,7 +5,7 @@ from __future__ import annotations
 __all__ = [
     "__doc__",
     "__version__",
-    "impedance",
+    "compute_impedance",
 ]
 
 import numpy as np
@@ -15,7 +15,7 @@ import xtgeo  # type: ignore[import-untyped]
 from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
     __version__,
-    compute_impedance,
+    impedance,
 )
 
 
@@ -47,7 +47,7 @@ def _numpy_cubes_to_xtgeo_cubes(
     return xtgeo_cubes
 
 
-def impedance(
+def compute_impedance(
     input_cubes: list[xtgeo.Cube],
     inverse_polarity: bool = False,
     segments: int = 1,
@@ -109,7 +109,7 @@ def impedance(
     options.max_iter = max_iter
 
     cubes_as_numpy_arrays = [c.values for c in input_cubes]
-    relAI_cubes, dsyn_cubes = compute_impedance(cubes_as_numpy_arrays, options)
+    relAI_cubes, dsyn_cubes = impedance(cubes_as_numpy_arrays, options)
 
     relAI_xtgeo_cubes = _numpy_cubes_to_xtgeo_cubes(input_cubes, relAI_cubes)
     dsyn_xtgeo_cubes = _numpy_cubes_to_xtgeo_cubes(input_cubes, dsyn_cubes)

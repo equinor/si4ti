@@ -116,7 +116,7 @@ public:
 };
 
 
-std::pair<py::list, py::list> compute_impedance(
+std::pair<py::list, py::list> impedance(
     const py::list& input,
     ImpedanceOptions options
 ) {
@@ -192,8 +192,8 @@ PYBIND11_MODULE(_si4ti_python, m) {
     )pbdoc";
 
     m.def(
-        "compute_impedance",
-        &si4ti::python::compute_impedance,
+        "impedance",
+        &si4ti::python::impedance,
         "Computes the impedance from provided cubes and parameters",
         py::arg("input"),
         py::arg("options"),
