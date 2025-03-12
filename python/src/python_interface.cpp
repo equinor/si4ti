@@ -135,12 +135,16 @@ std::pair<py::list, py::list> compute_impedance(
 
     for (py::handle item: input) {
         if (not py::isinstance<py::array>(item)) {
-            throw std::runtime_error("All items in the input list must be NumPy arrays.");
+            throw std::runtime_error(
+                "All items in the input list must be NumPy arrays."
+            );
         }
 
         py::array_t<float> numpy_array = py::cast<py::array>(item);
         if (numpy_array.strides(2) != sizeof(float)) {
-            throw std::runtime_error("The NumPy arrays must be contiguous in trace direction.");
+            throw std::runtime_error(
+                "The NumPy arrays must be contiguous in trace direction."
+            );
         }
         input_files.emplace_back(Si4tiNumpyWrapper(numpy_array));
 
@@ -155,8 +159,16 @@ std::pair<py::list, py::list> compute_impedance(
             numpy_array.strides(2)
         };
 
-        relAI_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float>(shape, strides)));
-        dsyn_arrays.emplace_back(Si4tiNumpyWrapper(py::array_t<float>(shape, strides)));
+        relAI_arrays.emplace_back(
+            Si4tiNumpyWrapper(
+                py::array_t<float>(shape, strides)
+            )
+        );
+        dsyn_arrays.emplace_back(
+            Si4tiNumpyWrapper(
+                py::array_t<float>(shape, strides)
+            )
+        );
     }
 
     compute_impedance_of_full_cube(input_files, relAI_arrays, dsyn_arrays, options);
