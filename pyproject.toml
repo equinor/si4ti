@@ -47,6 +47,12 @@ install.components = ["python"]
 build-dir = "build/{wheel_tag}"
 wheel.install-dir = "si4ti"
 
+sdist.exclude = [
+  ".github/",
+  "travis/",
+  "travis.yml",
+]
+
 [tool.scikit-build.cmake.define]
 BUILD_PYTHON = true
 # The Python interface does not require the CLI tools.
