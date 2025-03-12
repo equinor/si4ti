@@ -192,5 +192,5 @@ PYBIND11_MODULE(_si4ti_python, m) {
         .def_readwrite("latsmooth_4D", &si4ti::python::ImpedanceOptions::latsmooth_4D)
         .def_readwrite("max_iter", &si4ti::python::ImpedanceOptions::max_iter);
 
-    m.attr("__version__") = "1.1.0.a3";
+    m.attr("__version__") = "1.1.0a3";
 }
