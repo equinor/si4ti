@@ -3,14 +3,10 @@
 from __future__ import annotations
 
 __all__ = [
+    "__doc__",
     "__version__",
     "impedance",
 ]
-# Disable formatting to ensure that __version__ is defined as soon as possible
-# after the __future__ import as per PEP8 [1].
-#
-# [1]: https://peps.python.org/pep-0008/#module-level-dunder-names
-from ._version import __version__  # noqa: I001
 
 import numpy as np
 import numpy.typing as nptype
@@ -18,6 +14,7 @@ import xtgeo  # type: ignore[import-untyped]
 
 from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
+    __version__,
     compute_impedance,
 )
 

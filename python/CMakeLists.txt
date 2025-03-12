@@ -3,8 +3,6 @@ project(${SKBUILD_PROJECT_NAME} LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(PYBIND11_FINDPYTHON ON)
-
 pybind11_add_module(_si4ti_python MODULE src/python_interface.cpp)
 target_include_directories(_si4ti_python PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
 )
@@ -24,4 +22,3 @@ endif()
 
 install(TARGETS _si4ti_python DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
 install(FILES src/si4ti/__init__.py DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
-install(FILES src/si4ti/_version.py DESTINATION ${PYTHON_INSTALL_DIR} COMPONENT python)
