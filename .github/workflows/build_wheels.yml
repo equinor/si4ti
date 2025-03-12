@@ -41,7 +41,7 @@ jobs:
 
       # Minimum supported macOS version set to 13.0 (amd64) and 14.0 (arm64)
       # due to OpenMP installed via Homebrew
-      - name: Set MacOS deployment targetn
+      - name: Set MacOS deployment target
         if: ${{ startsWith(matrix.os, 'macos') }}
         run: |
           echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos_target }}" >> $GITHUB_ENV
