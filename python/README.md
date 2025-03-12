@@ -18,13 +18,11 @@ number of platforms are supported at the moment.
 
 -   OpenMP
 -   Eigen3
--   pybind11
 -   Optional: FFTW3 with single precision (`float`) interface
 
-These are all compile-time dependencies. Once the Python package was built, the
-dependencies are not needed anymore.
-
-Note: OpenMP might be needed after all.
+pybind11 is used to create Python bindings to the C++ core code, but does not
+need to be installed as it is included as submodule in the repository and as
+source code in the source distribution (sdist).
 
 ## Runtime
 
