@@ -51,3 +51,73 @@ timeshift --help
 impedance --help
 apply-timeshift --help
 ```
+
+## Python interface ##
+si4ti provides a Python interface for the impedance calculations. No Python
+interface for the timeshift is provided.
+
+### Instalation from PyPI ###
+
+Pre-built wheels are available for the following platforms:
+
+TBD
+
+#### Dependencies ####
+
+The wheel should be self contained.
+
+#### Installation ####
+
+The pre-built wheels can be installed via `pip`:
+interface via
+
+```text
+pip install si4ti
+```
+
+### Installation from source ###
+
+You can install si4ti via the source distribution (sdist) or the repository.
+This allows to compile the package with FFTW3 support as well as platform
+specific optimisation which may improve the performance.
+
+#### Dependencies ####
+
+-   C++ compiler
+-   CMake
+-   OpenMP
+-   Eigen3
+-   FFTW3 with single precision (`float`) interface (optional)
+
+If you want to run the tests, which is highly recommended, you also need
+
+-   pytest
+-   pytest-memray
+-   NumPy
+-   xtgeo
+
+#### Installation ####
+
+One can specify compile options directly during the `pip` invocation.
+
+The following command builds and installs the Python interface with OpenMP and
+FFTW (both installed via Homebrew) from the root of the repository. It also
+enables platform specific optimisation (`-march=native`) and strict warnings
+(`-Wall -pedantic`).
+
+```text
+pip install -Ccmake.define.CMAKE_PREFIX_PATH="/opt/homebrew/opt/libomp" \
+    -Ccmake.define.USE_FFTW=ON \
+    -Ccmake.define.CMAKE_CXX_FLAGS="-march=native -Wall -pedantic" \
+    .
+```
+
+### Usage ###
+
+The interface is inspired by the command line interface. Please check the
+Python help for details. You can find the Python help via
+
+```python
+import si4ti
+help(si4ti)
+```
