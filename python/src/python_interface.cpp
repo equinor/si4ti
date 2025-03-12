@@ -116,14 +116,6 @@ public:
 };
 
 
-py::list to_python_list(std::vector<Si4tiNumpyWrapper>&& data) {
-    py::list tmp;
-    for (const auto& d: data) {
-        tmp.append(std::move(d.data()));
-    }
-    return tmp;
-}
-
 std::pair<py::list, py::list> compute_impedance(
     const py::list& input,
     ImpedanceOptions options
@@ -172,6 +164,14 @@ std::pair<py::list, py::list> compute_impedance(
     }
 
     compute_impedance_of_full_cube(input_files, relAI_arrays, dsyn_arrays, options);
+
+    auto to_python_list = [](std::vector<Si4tiNumpyWrapper>&& data) {
+        py::list tmp;
+        for (const auto& d: data) {
+            tmp.append(std::move(d.data()));
+        }
+        return tmp;
+    };
 
     return {
         to_python_list(std::move(relAI_arrays)),
