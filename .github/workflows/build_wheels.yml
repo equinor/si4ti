@@ -82,6 +82,32 @@ jobs:
         run: |
           python -m build --sdist
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential libboost-dev \
+            libeigen3-dev libfftw3-dev
+
+      - name: Install and test sdist (FFTW off)
+        run: |
+          python -m venv venv-fftw-off
+          source venv-fftw-off/bin/activate
+          pip install --upgrade pip
+          pip install pytest pytest-memray
+          pip install -Ccmake.define.USE_FFTW=OFF $(ls dist/*) --verbose
+          cd python
+          python -m pytest --memray tests/
+
+      - name: Install and test sdist (FFTW on)
+        run: |
+          python -m venv venv-fftw-on
+          source venv-fftw-on/bin/activate
+          pip install --upgrade pip
+          pip install pytest pytest-memray
+          pip install -Ccmake.define.USE_FFTW=ON $(ls dist/*) --verbose
+          cd python
+          python -m pytest --memray tests/
+
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
