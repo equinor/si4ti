@@ -22,14 +22,16 @@ dependencies = [
 ]
 
 classifiers = [
+  "Intended Audience :: Science/Research",
   "Development Status :: 4 - Beta",
-  #"License :: OSI Approved :: LGPL-2.1-only",
+  "Natural Language :: English",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  #"Programming Language :: Python :: 3.13", # not yet supported by xtgeo
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX :: Linux",
 ]
 
 [project.optional-dependencies]
@@ -110,12 +112,10 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 warn_unreachable = true
 plugins = ["numpy.typing.mypy_plugin"]
 
-
 # You can disable imports or control per-module/file settings here
 [[tool.mypy.overrides]]
 module = [ "numpy.*", ]
 ignore_missing_imports = true
-
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
@@ -126,18 +126,19 @@ before-all = [ "brew install eigen libomp cmake" ]
 environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp/;/usr/local/opt/libomp/" }
 # Skip testing on:
 # - Python 3.9: Issues with h5py during testing (xtgeo dependency)
-# - Python 3.13: xtgeo not available yet and thus testing fails
-test-skip = "cp39-* cp313-*"
+test-skip = "cp39-*"
 
 [tool.cibuildwheel.windows]
 before-all = "choco install eigen -y"
-test-command = "cd /d {project}/python && pytest tests --color=yes -v"
+test-command = "cd /d {project}/python && pytest --memray tests --color=yes -v"
 
 [tool.cibuildwheel]
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 build = "*"
-skip = "pp* *-win32 *_i686 *musllinux* cp313-* *_aarch64" # Don't build for PyPy, Win32, i686, cannot build for Python 3.13 nor linux_aarch64 due to missing xtgeo release
-test-requires = "pytest"
-test-command = "cd {project}/python && pytest tests --color=yes -v"
+# Don't build for PyPy, Win32, i686, cannot build for Python 3.13 nor
+# linux_aarch64 due to missing xtgeo release
+skip = "pp* *-win32 *_i686 *musllinux* cp313-* *_aarch64"
+test-requires = ["pytest", "pytest-memray"]
+test-command = "cd {project}/python && pytest --memray tests --color=yes -v"
 build-verbosity = 1
