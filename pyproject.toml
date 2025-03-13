@@ -8,10 +8,10 @@ version = "1.1.0a3"
 description = "si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D seismic from changes in acoustic properties of a reservoir."
 readme = "python/README.md"
 authors = [
-  { name = "My Name", email = "me@email.com" },
+  { name = "Equinor ASA" },
 ]
 maintainers = [
-  { name = "Equinor ASA", email = "myemail@email.com" },
+  { name = "Equinor ASA" },
 ]
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
