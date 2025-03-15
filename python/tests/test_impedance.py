@@ -82,3 +82,21 @@ def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
 
     compare_cubes(relAI_cubes, expected_relAI_cubes, atol=3e-3)
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
+
+
+@pytest.fixture
+def large_cubes() -> list[xtgeo.Cubes]:
+    INPUT_FILES = [
+        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/94-2001-processing/data/94p01ful.sgy",
+        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/99-2001-processing/data/99p01ful.sgy",
+        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/01-2001-processing/data/01p01ful.sgy",
+    ]
+    return [xtgeo.cube_from_file(filename) for filename in INPUT_FILES]
+
+
+def test_timeinvariant_wavelet_default_options_large_cubes(
+    large_cubes: list[xtgeo.Cubes],
+) -> None:
+    relAI_cubes, dsyn_cubes = compute_impedance(
+        large_cubes,
+    )
