@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import numpy.testing as npt
 import sys
 import segyio
 
@@ -14,7 +15,12 @@ def main():
 
     parser.add_argument('--avg', '-a', type=float, default=8e-3)
 
-    parser.add_argument('--max', '-m', type=float, default=8e-3)
+    parser.add_argument('--max', '-m', type=float, default=4e-4)
+
+    parser.add_argument('--atol', type=float, default=0)
+
+    parser.add_argument('--rtol', type=float, default=1e-7)
+
 
     args = parser.parse_args()
 
@@ -35,7 +41,7 @@ def main():
 
         diff = abs(xs - ys)
 
-        s = sum(sum(diff)) / sum(sum(ys))
+        s = abs(sum(sum(diff)) / sum(sum(ys)))
 
         if s > args.avg:
             msg = 'Error in {}, avg too high: {}'
@@ -44,6 +50,8 @@ def main():
         if not diff.max() < args.max:
             msg = 'Error in {}, max too high: {}'
             sys.exit(msg.format(base, diff.max()))
+
+        npt.assert_allclose(xs, ys, rtol=args.rtol, atol=args.atol, strict=True)
 
 if __name__ == '__main__':
     main()

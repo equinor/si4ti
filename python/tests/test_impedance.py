@@ -19,8 +19,8 @@ def input_cubes() -> list[xtgeo.Cubes]:
 def compare_cubes(
     actuals: list[xtgeo.Cubes],
     references: list[xtgeo.Cubes],
-    rtol: float = 1e-8,
-    atol: float = 1e-3,
+    rtol: float = 1e-7,
+    atol: float = 0,
     strict: bool = True,
 ) -> None:
     for actual, expected in zip(actuals, references):
