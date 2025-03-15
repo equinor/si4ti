@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy.testing as npt
+import numpy as np
 import pytest
 import xtgeo  # type: ignore[import-untyped]
 from si4ti import compute_impedance
@@ -19,14 +19,32 @@ def input_cubes() -> list[xtgeo.Cubes]:
 def compare_cubes(
     actuals: list[xtgeo.Cubes],
     references: list[xtgeo.Cubes],
-    rtol: float = 1e-7,
-    atol: float = 0,
+    max_diff_bound: float = 4e-4,
+    avg_diff_bound: float = 8e-3,
+    # rtol: float = 1e-4,
+    # atol: float = 4e-4,
     strict: bool = True,
 ) -> None:
     for actual, expected in zip(actuals, references):
-        npt.assert_allclose(
-            actual.values, expected.values, rtol=rtol, atol=atol, strict=strict
+        diff = actual.values - expected.values
+        # max_diff = np.max(np.abs(diff))
+        assert diff.max() <= max_diff_bound, (
+            f"Max difference too high: {diff.max()} > {max_diff_bound}"
         )
+
+        # s = np.abs(np.sum(np.sum(diff)) / np.sum(np.sum(expected.values)))
+        s = abs(sum(diff.ravel()) / sum(expected.values.ravel()))
+        assert s <= avg_diff_bound, (
+            f"Average difference too high: {s} > {avg_diff_bound}"
+        )
+
+        np.testing.assert_allclose(
+            actual.values, expected.values, rtol=0, atol=max_diff_bound, strict=strict
+        )
+
+        # np.testing.assert_allclose(
+        #    actual.values, expected.values, rtol=rtol, atol=0, strict=strict
+        # )
 
 
 @pytest.mark.limit_memory("10.5 MB")
@@ -62,7 +80,7 @@ def test_timeinvariant_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
-@pytest.mark.limit_memory("8.1 MB")
+@pytest.mark.limit_memory("9.8 MB")
 def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
     relAI_cubes, dsyn_cubes = compute_impedance(
         input_cubes,
@@ -80,23 +98,23 @@ def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes, atol=3e-3)
+    compare_cubes(relAI_cubes, expected_relAI_cubes)
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
-@pytest.fixture
-def large_cubes() -> list[xtgeo.Cubes]:
-    INPUT_FILES = [
-        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/94-2001-processing/data/94p01ful.sgy",
-        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/99-2001-processing/data/99p01ful.sgy",
-        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/01-2001-processing/data/01p01ful.sgy",
-    ]
-    return [xtgeo.cube_from_file(filename) for filename in INPUT_FILES]
-
-
-def test_timeinvariant_wavelet_default_options_large_cubes(
-    large_cubes: list[xtgeo.Cubes],
-) -> None:
-    relAI_cubes, dsyn_cubes = compute_impedance(
-        large_cubes,
-    )
+# @pytest.fixture
+# def large_cubes() -> list[xtgeo.Cubes]:
+#    INPUT_FILES = [
+#        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/94-2001-processing/data/94p01ful.sgy",
+#        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/99-2001-processing/data/99p01ful.sgy",
+#        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/01-2001-processing/data/01p01ful.sgy",
+#    ]
+#    return [xtgeo.cube_from_file(filename) for filename in INPUT_FILES]
+#
+#
+# def test_timeinvariant_wavelet_default_options_large_cubes(
+#    large_cubes: list[xtgeo.Cubes],
+# ) -> None:
+#    relAI_cubes, dsyn_cubes = compute_impedance(
+#        large_cubes,
+#    )

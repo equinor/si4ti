@@ -32,10 +32,13 @@ class Si4tiNumpyWrapper {
     py::array_t<float> data_;
     bool holds_data_;
 
-    std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
+    std::pair<std::size_t, std::size_t> to_inline_crossline_nr(const int tracenr) const {
+        assert(tracenr > -1);
         assert(tracenr < this->inlinecount() * this->crosslinecount());
-        const std::size_t inlinenr = tracenr % this->inlinecount();
-        const std::size_t crosslinenr = (tracenr - inlinenr) / this->inlinecount();
+        const std::size_t crosslinenr = tracenr % this->crosslinecount();
+        const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
+        //const std::size_t inlinenr = tracenr % this->inlinecount();
+        //const std::size_t crosslinenr = (tracenr - inlinenr) % this->inlinecount();
         assert(inlinenr < this->inlinecount());
         assert(crosslinenr < this->crosslinecount());
         return {inlinenr, crosslinenr};
@@ -65,7 +68,7 @@ public:
     //
     // [1]: https://segyio.readthedocs.io/en/latest/segyio.html#segyio.tools.cube
     static constexpr bool xlinesorted() noexcept(true) {
-        return true;
+        return false;
     }
 
     int inlinecount() const {

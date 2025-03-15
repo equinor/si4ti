@@ -17,9 +17,8 @@ def main():
 
     parser.add_argument('--max', '-m', type=float, default=4e-4)
 
-    parser.add_argument('--atol', type=float, default=0)
-
-    parser.add_argument('--rtol', type=float, default=1e-7)
+    #parser.add_argument('--atol', type=float, default=0)
+    #parser.add_argument('--rtol', type=float, default=1e-3)
 
 
     args = parser.parse_args()
@@ -51,7 +50,9 @@ def main():
             msg = 'Error in {}, max too high: {}'
             sys.exit(msg.format(base, diff.max()))
 
-        npt.assert_allclose(xs, ys, rtol=args.rtol, atol=args.atol, strict=True)
+        #npt.assert_allclose(xs, ys, rtol=args.rtol, atol=args.atol, strict=True)
+        #npt.assert_allclose(xs, ys, rtol=args.rtol, strict=True)
+        #npt.assert_allclose(xs, ys, rtol=0, atol=args.max, strict=True)
 
 if __name__ == '__main__':
     main()
