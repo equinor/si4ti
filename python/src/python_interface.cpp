@@ -24,8 +24,13 @@ struct ImpedanceOptions {
     int             max_iter             = 50;
 };
 
+// Wrapper around a Python array to ensure that has the same interface like the
+// `input_file` and `output_file` types used in the impedance code. This allows
+// us to reuse the impedance code for the Python interface without any major
+// changes.
 class Si4tiNumpyWrapper {
     py::array_t<float> data_;
+    bool holds_data_;
 
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(int tracenr) const {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
@@ -37,14 +42,11 @@ class Si4tiNumpyWrapper {
     }
 
 public:
-    explicit Si4tiNumpyWrapper(py::array_t<float> data)
-        : data_(data)
+    explicit Si4tiNumpyWrapper(py::array_t<float>&& data)
+        : data_(data), holds_data_(true)
     {
     }
 
-    const py::array_t<float>& data() const {
-        return this->data_;
-    }
     // For NumPy arrays the notion of inline or crossline sorted does not exist
     // the same way as for SEG-Y files. For a typical C-style array, the first
     // index, i.e., is the slowest and the last index is the fastest index.
@@ -67,28 +69,34 @@ public:
     }
 
     int inlinecount() const {
+        assert(this->holds_data_);
         return this->data_.shape(0);
     }
 
     int crosslinecount() const {
+        assert(this->holds_data_);
         return this->data_.shape(1);
     }
 
     int tracecount() const {
+        assert(this->holds_data_);
         return this->inlinecount() * this->crosslinecount();
     }
 
     int samplecount() const {
+        assert(this->holds_data_);
         return this->data_.shape(2);
     }
 
-    py::array_t<float>&& data() {
+    py::array_t<float> release_data() {
+        this->holds_data_ = false;
         return std::move(this->data_);
     }
 
 
     template<typename InputIt>
     InputIt* put(int tracenr, InputIt* in) {
+        assert(this->holds_data_);
         auto r = this->data_.template mutable_unchecked<3>();
         const auto numbers = this->to_inline_crossline_nr(tracenr);
         const auto inlinenr = numbers.first;
@@ -103,6 +111,7 @@ public:
 
     template<typename OutputIt>
     OutputIt* get(int tracenr, OutputIt* out) const {
+        assert(this->holds_data_);
         auto r = this->data_.template unchecked<3>();
         const auto numbers = this->to_inline_crossline_nr(tracenr);
         const auto inlinenr = numbers.first;
@@ -138,7 +147,6 @@ std::pair<py::list, py::list> impedance(
                 "The NumPy arrays must be contiguous in trace direction."
             );
         }
-        input_files.emplace_back(Si4tiNumpyWrapper(numpy_array));
 
         const py::ssize_t shape[3]{
             numpy_array.shape(0),
@@ -150,6 +158,8 @@ std::pair<py::list, py::list> impedance(
             numpy_array.strides(1),
             numpy_array.strides(2)
         };
+
+        input_files.emplace_back(Si4tiNumpyWrapper(std::move(numpy_array)));
 
         relAI_arrays.emplace_back(
             Si4tiNumpyWrapper(
@@ -167,8 +177,8 @@ std::pair<py::list, py::list> impedance(
 
     auto to_python_list = [](std::vector<Si4tiNumpyWrapper>&& data) {
         py::list tmp;
-        for (const auto& d: data) {
-            tmp.append(std::move(d.data()));
+        for (auto& d: data) {
+            tmp.append(d.release_data());
         }
         return tmp;
     };
