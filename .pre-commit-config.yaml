@@ -43,6 +43,7 @@ repos:
       additional_dependencies: [
         numpy,
         pytest,
+        segyio,
         typing_extensions,
         xtgeo,
       ]

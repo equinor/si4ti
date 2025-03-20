@@ -38,6 +38,7 @@ classifiers = [
 test = [
   "pytest",
   "pytest-memray",
+  "segyio",
 ]
 
 
