@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+import numpy as np
 import pytest
 import xtgeo  # type: ignore[import-untyped]
 from si4ti import compute_impedance
@@ -68,9 +69,7 @@ def compare_cubes(
     references: list[xtgeo.Cubes],
     max_diff_bound: float = 4e-4,
     avg_diff_bound: float = 8e-3,
-    # rtol: float = 1e-4,
-    # atol: float = 4e-4,
-    # strict: bool = True,
+    strict: bool = False,
 ) -> None:
     for actual, expected in zip(actuals, references):
         diff = actual.values - expected.values
@@ -85,9 +84,9 @@ def compare_cubes(
             f"Average difference too high: {s} > {avg_diff_bound}"
         )
 
-        # np.testing.assert_allclose(
-        #    actual.values, expected.values, rtol=0, atol=max_diff_bound, strict=strict
-        # )
+        np.testing.assert_allclose(
+            actual.values, expected.values, rtol=0, atol=max_diff_bound, strict=strict
+        )
 
         # np.testing.assert_allclose(
         #    actual.values, expected.values, rtol=1e-6, atol=3e-4, strict=strict
