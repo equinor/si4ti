@@ -7,7 +7,7 @@ import pytest
 import xtgeo  # type: ignore[import-untyped]
 from si4ti import compute_impedance
 
-import segyio
+import segyio  #  type: ignore[import-untyped]
 
 
 @pytest.fixture
