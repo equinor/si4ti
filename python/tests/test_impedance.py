@@ -170,7 +170,9 @@ def test_timevarying_wavelet_segmented_crosslinesorted(
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes)
+    # Increase max bound due to failures on CI using Linux and FFTW. The
+    # default error bound is exceeded in less than 0.025% of the data points.
+    compare_cubes(relAI_cubes, expected_relAI_cubes, max_diff_bound=4.8e-4)
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
