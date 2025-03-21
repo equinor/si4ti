@@ -24,10 +24,30 @@ struct ImpedanceOptions {
     int             max_iter             = 50;
 };
 
-// Wrapper around a Python array to ensure that has the same interface like the
+// Wrapper around a NumPy array to ensure that has the same interface like the
 // `input_file` and `output_file` types used in the impedance code. This allows
 // us to reuse the impedance code for the Python interface without any major
 // changes.
+//
+// For NumPy arrays the notion of inline or crossline sorted does not exist
+// the same way as for SEG-Y files. For a typical C-style array, the first
+// index, i.e., is the slowest and the last index is the fastest index.
+//
+// The segyio documentation [1] states the following meaning/order
+// of indices for post-stack cubes is normalised:
+//
+//      If it is post-stack (only the one offset), the dimensions are
+//      normalised to (fast, slow, sample)
+//
+//  This means, from Python, inline-sorted and crossline-sorted files are not
+//  be distinguishable.
+//
+// Making the data appear inline sorted in the wrapper combined with the way a
+// trace number is converted to an inline and crossline number ensures the
+// correct access pattern (increasing the slow index before the fast index)
+// which is crucial for good performance.
+//
+// [1]: https://segyio.readthedocs.io/en/latest/segyio.html#segyio.tools.cube
 class Si4tiNumpyWrapper {
     py::array_t<float> data_;
     bool holds_data_;
@@ -37,8 +57,6 @@ class Si4tiNumpyWrapper {
         assert(tracenr < this->inlinecount() * this->crosslinecount());
         const std::size_t crosslinenr = tracenr % this->crosslinecount();
         const std::size_t inlinenr = (tracenr - crosslinenr) / this->crosslinecount();
-        //const std::size_t inlinenr = tracenr % this->inlinecount();
-        //const std::size_t crosslinenr = (tracenr - inlinenr) % this->inlinecount();
         assert(inlinenr < this->inlinecount());
         assert(crosslinenr < this->crosslinecount());
         return {inlinenr, crosslinenr};
@@ -50,23 +68,6 @@ public:
     {
     }
 
-    // For NumPy arrays the notion of inline or crossline sorted does not exist
-    // the same way as for SEG-Y files. For a typical C-style array, the first
-    // index, i.e., is the slowest and the last index is the fastest index.
-    //
-    // However, the segyio documentation [1] states the following meaning/order
-    // of indices for post-stack cubes:
-    //
-    //      If it is post-stack (only the one offset), the dimensions are
-    //      normalised to (fast, slow, sample)
-    //
-    // Making the data appear xline sorted reduces the memory needed for
-    // segmented processing, but increases the error slightly. Performance was
-    // not investigated deeply, but seems to be unaffected. The deviation from
-    // the reference results is slightly larger compare to using inline-sorted
-    // processing.
-    //
-    // [1]: https://segyio.readthedocs.io/en/latest/segyio.html#segyio.tools.cube
     static constexpr bool xlinesorted() noexcept(true) {
         return false;
     }
