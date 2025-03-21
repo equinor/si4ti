@@ -50,7 +50,6 @@ struct ImpedanceOptions {
 // [1]: https://segyio.readthedocs.io/en/latest/segyio.html#segyio.tools.cube
 class Si4tiNumpyWrapper {
     py::array_t<float> data_;
-    bool holds_data_;
 
     std::pair<std::size_t, std::size_t> to_inline_crossline_nr(const int tracenr) const {
         assert(tracenr > -1);
