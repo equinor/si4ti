@@ -64,7 +64,7 @@ class Si4tiNumpyWrapper {
 
 public:
     explicit Si4tiNumpyWrapper(py::array_t<float>&& data)
-        : data_(data), holds_data_(true)
+        : data_(data)
     {}
 
     static constexpr bool xlinesorted() noexcept(true) {
@@ -72,33 +72,27 @@ public:
     }
 
     int inlinecount() const {
-        assert(this->holds_data_);
         return this->data_.shape(0);
     }
 
     int crosslinecount() const {
-        assert(this->holds_data_);
         return this->data_.shape(1);
     }
 
     int tracecount() const {
-        assert(this->holds_data_);
         return this->inlinecount() * this->crosslinecount();
     }
 
     int samplecount() const {
-        assert(this->holds_data_);
         return this->data_.shape(2);
     }
 
     py::array_t<float> release_data() {
-        this->holds_data_ = false;
         return std::move(this->data_);
     }
 
     template<typename InputIt>
     InputIt* put(int tracenr, InputIt* in) {
-        assert(this->holds_data_);
         auto r = this->data_.template mutable_unchecked<3>();
         const auto numbers = this->to_inline_crossline_nr(tracenr);
         const auto inlinenr = numbers.first;
@@ -113,7 +107,6 @@ public:
 
     template<typename OutputIt>
     OutputIt* get(int tracenr, OutputIt* out) const {
-        assert(this->holds_data_);
         auto r = this->data_.template unchecked<3>();
         const auto numbers = this->to_inline_crossline_nr(tracenr);
         const auto inlinenr = numbers.first;
