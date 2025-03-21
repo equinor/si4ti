@@ -38,7 +38,6 @@ def _numpy_cubes_to_xtgeo_cubes(
             values=values,
             ilines=input_cube.ilines,
             xlines=input_cube.xlines,
-            filesrc="si4ti impedance computation",
             yflip=input_cube.yflip,
         )
 
