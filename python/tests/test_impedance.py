@@ -4,10 +4,9 @@ import typing
 
 import numpy as np
 import pytest
+import segyio  #  type: ignore[import-untyped]
 import xtgeo  # type: ignore[import-untyped]
 from si4ti import compute_impedance
-
-import segyio  #  type: ignore[import-untyped]
 
 
 @pytest.fixture
