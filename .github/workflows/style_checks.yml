@@ -17,6 +17,7 @@ jobs:
         python-version: "3.12"
         cache: "pip"
     - run: |
+        pip install --upgrade pip
         pip install pre-commit
     - uses: actions/cache@v4
       with:
