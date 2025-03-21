@@ -65,8 +65,7 @@ class Si4tiNumpyWrapper {
 public:
     explicit Si4tiNumpyWrapper(py::array_t<float>&& data)
         : data_(data), holds_data_(true)
-    {
-    }
+    {}
 
     static constexpr bool xlinesorted() noexcept(true) {
         return false;
@@ -96,7 +95,6 @@ public:
         this->holds_data_ = false;
         return std::move(this->data_);
     }
-
 
     template<typename InputIt>
     InputIt* put(int tracenr, InputIt* in) {
