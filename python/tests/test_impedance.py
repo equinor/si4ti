@@ -71,7 +71,7 @@ def compare_cubes(
     strict: bool = False,
 ) -> None:
     for actual, expected in zip(actuals, references):
-        diff = actual.values - expected.values
+        diff = abs(actual.values - expected.values)
         # max_diff = np.max(np.abs(diff))
         assert diff.max() <= max_diff_bound, (
             f"Max difference too high: {diff.max()} > {max_diff_bound}"
