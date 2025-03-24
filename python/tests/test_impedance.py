@@ -78,7 +78,7 @@ def compare_cubes(
         )
 
         # s = np.abs(np.sum(np.sum(diff)) / np.sum(np.sum(expected.values)))
-        s = sum(diff.ravel()) / sum(abs(expected.values.ravel()))
+        s = abs(sum(diff.ravel()) / sum(expected.values.ravel()))
         assert s <= avg_diff_bound, (
             f"Average difference too high: {s} > {avg_diff_bound}"
         )

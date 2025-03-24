@@ -40,7 +40,7 @@ def main():
 
         diff = abs(xs - ys)
 
-        s = sum(sum(diff)) / sum(sum(abs(ys)))
+        s = abs(sum(sum(diff)) / sum(sum(ys)))
 
         if s > args.avg:
             msg = 'Error in {}, avg too high: {}'
