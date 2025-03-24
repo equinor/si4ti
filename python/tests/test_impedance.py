@@ -108,7 +108,7 @@ def test_timevarying_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -> 
         xtgeo.cube_from_file(f"../test-data/imp-tvw-dsyn-{i}-ref.sgy") for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes, 4.6e-4)
+    compare_cubes(relAI_cubes, expected_relAI_cubes)
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
@@ -128,7 +128,7 @@ def test_timevarying_wavelet_crosslinesorted_default_options(
         xtgeo.cube_from_file(f"../test-data/imp-tvw-dsyn-{i}-ref.sgy") for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes, 4.6e-4)
+    compare_cubes(relAI_cubes, expected_relAI_cubes)
     compare_cubes(dsyn_cubes, expected_dsyn_cubes)
 
 
