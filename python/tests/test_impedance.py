@@ -63,7 +63,7 @@ def input_cubes_crosslinesorted(tmp_path) -> list[xtgeo.Cubes]:
     return cubes
 
 
-def compare_cubes(
+def assert_cubes_equal(
     actuals: list[xtgeo.Cubes],
     references: list[xtgeo.Cubes],
     max_diff_bound: float = 4e-4,
@@ -108,8 +108,8 @@ def test_timevarying_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -> 
         xtgeo.cube_from_file(f"../test-data/imp-tvw-dsyn-{i}-ref.sgy") for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes)
-    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
+    assert_cubes_equal(relAI_cubes, expected_relAI_cubes)
+    assert_cubes_equal(dsyn_cubes, expected_dsyn_cubes)
 
 
 @pytest.mark.limit_memory("10.5 MB")
@@ -128,8 +128,8 @@ def test_timevarying_wavelet_crosslinesorted_default_options(
         xtgeo.cube_from_file(f"../test-data/imp-tvw-dsyn-{i}-ref.sgy") for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes)
-    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
+    assert_cubes_equal(relAI_cubes, expected_relAI_cubes)
+    assert_cubes_equal(dsyn_cubes, expected_dsyn_cubes)
 
 
 @pytest.mark.limit_memory("9.8 MB")
@@ -145,8 +145,8 @@ def test_timeinvariant_wavelet_default_options(input_cubes: list[xtgeo.Cubes]) -
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes)
-    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
+    assert_cubes_equal(relAI_cubes, expected_relAI_cubes)
+    assert_cubes_equal(dsyn_cubes, expected_dsyn_cubes)
 
 
 @pytest.mark.limit_memory("9.6 MB")
@@ -171,8 +171,8 @@ def test_timevarying_wavelet_segmented_crosslinesorted(
 
     # Increase max bound due to failures on CI using Linux and FFTW. The
     # default error bound is exceeded in less than 0.025% of the data points.
-    compare_cubes(relAI_cubes, expected_relAI_cubes)
-    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
+    assert_cubes_equal(relAI_cubes, expected_relAI_cubes)
+    assert_cubes_equal(dsyn_cubes, expected_dsyn_cubes)
 
 
 @pytest.mark.limit_memory("9.6 MB")
@@ -193,8 +193,8 @@ def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
         for i in range(3)
     ]
 
-    compare_cubes(relAI_cubes, expected_relAI_cubes)
-    compare_cubes(dsyn_cubes, expected_dsyn_cubes)
+    assert_cubes_equal(relAI_cubes, expected_relAI_cubes)
+    assert_cubes_equal(dsyn_cubes, expected_dsyn_cubes)
 
 
 # @pytest.fixture
