@@ -6,41 +6,185 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  segyio_version: '1.9.13'
+
 jobs:
   build:
+    name: C++, FFTW ${{ matrix.fftw }}
+    strategy:
+      matrix:
+        fftw: ["ON", "OFF"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+      with:
+        submodules: 'true'
+
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake build-essential \
-          libboost-all-dev libeigen3-dev libfftw3-dev
+          libboost-dev libeigen3-dev libfftw3-dev
 
     - name: Build and install segyio
       run: |
-        git clone --branch v1.9.12 https://github.com/equinor/segyio.git
+        git clone --branch "v${{ env.segyio_version }}" https://github.com/equinor/segyio.git
         cd segyio
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF
-        make
+        cmake .. -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_PYTHON=OFF \
+          -DEXPERIMENTAL=ON \
+          -DBUILD_TESTING=OFF \
+          -DBUILD_BIN=OFF
+        make -j
         sudo make install
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-      
+        cache: 'pip'
+
     - name: Install Python dependencies
-      run: pip install 'segyio==1.9.12'
+      run: pip install "segyio==${{ env.segyio_version }}"
 
     - name: Build and test
       run: |
         mkdir build
         cd build
-        cmake ..
-        make
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DBUILD_PYTHON=ON \
+              -DUSE_FFTW=${{ matrix.fftw }} \
+              ..
+        make -j
         ctest --output-on-failure
         make diff
+
+  # Compatibility with Red Hat Enterprise Linux 8
+  build-almalinux-8:
+    name: Check RHEL8 compatibility, FFTW ${{ matrix.fftw }}
+    strategy:
+      matrix:
+        fftw: ["ON", "OFF"]
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:8
+    steps:
+    - name: Install dependencies
+      run: |
+        dnf -y update
+        dnf -y install dnf-plugins-core
+        dnf -y config-manager --set-enabled powertools
+        dnf -y group install 'Development Tools'
+        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python3.11 python3.11-devel
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+
+    - name: Install Boost
+      run: |
+        wget https://archives.boost.io/release/1.79.0/source/boost_1_79_0.tar.gz
+        ls -l
+        tar xf boost_1_79_0.tar.gz
+        pushd boost_1_79_0
+        scl enable gcc-toolset-13 "./bootstrap.sh --with-libraries=math"
+        scl enable gcc-toolset-13 "./b2 -j 2"
+        scl enable gcc-toolset-13 "./b2 install"
+        popd
+        rm -rf boost_1_79_0
+
+    - name: Build and install segyio
+      run: |
+        git clone --branch v${{ env.segyio_version }} https://github.com/equinor/segyio.git
+        cd segyio
+        mkdir build
+        cd build
+        scl enable gcc-toolset-13 "cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF"
+        scl enable gcc-toolset-13 "make -j"
+        scl enable gcc-toolset-13 "make install"
+
+    - name: Patch segyio experimental header
+      run: |
+          sed -i 's/#include <cstring>/#include <cstdint>\n#include <cstring>/' /usr/local/include/segyio/segyio.hpp
+
+    - name: Install Python dependencies
+      run: |
+        python3.11 -m venv venv
+        source venv/bin/activate
+        python -m ensurepip --upgrade
+        python -m pip install --upgrade pip
+        python -m pip install "segyio==${{ env.segyio_version }}" pytest pytest-memray xtgeo segyio
+        echo PATH=${PATH} >> $GITHUB_ENV
+
+    - name: Build and test (C++)
+      run: |
+        python --version
+        which python
+        mkdir build
+        pushd build
+        source scl_source enable gcc-toolset-13 && cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DBUILD_PYTHON=ON \
+              -DUSE_FFTW=${{ matrix.fftw }} \
+              ..
+        scl enable gcc-toolset-13 "make -j"
+        ctest --output-on-failure
+        make diff
+
+    - name: Build using pip (Python)
+      run: |
+        python --version
+        which python
+        source scl_source enable gcc-toolset-13 && python -m pip install \
+          -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
+          -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
+          . --verbose
+
+    - name: Test (Python)
+      run: |
+        cd python
+        python -m pytest --memray tests/
+
+  build-python:
+    name: Python bindings, FFTW ${{ matrix.fftw }}
+    strategy:
+      matrix:
+        fftw: ["ON", "OFF"]
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential \
+          libeigen3-dev libfftw3-dev
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: pip install pytest pytest-memray xtgeo segyio
+
+    - name: Build
+      run: |
+        pip install \
+          -Ccmake.define.CMAKE_BUILD_TYPE=Debug \
+          -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
+          . --verbose
+
+    - name: Test
+      run: |
+        cd python
+        python -m pytest --memray tests/

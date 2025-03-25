@@ -78,15 +78,22 @@ struct Progress {
     static int count;
 
     static void report() {
+#ifndef MUTE_PROGRESS
         count++;
         if( count % (expected/20) == 0 )
             std::cout << "Progress: " << (count*100)/expected << "%\n";
+#endif
     }
 
     static void report( int n ) {
+#ifndef MUTE_PROGRESS
         for( int i = 0; i < n; ++i ) report();
+#endif
     }
 };
+
+int Progress::count = 0;
+int Progress::expected = 60;
 
 /*
  * Analyse the B-spline with De Boor's algorithm as an n * basis-functions
@@ -564,7 +571,9 @@ void correct( int start, int end,
             file.get( t, begin( trace ) );
             derived = (trace /= normalizer);
             // derived is updated in-place
-            derived = derive( derived, omega );
+            {
+                auto _ = derive( derived, omega );
+            }
 
             if( i != 0 ) {
                 const int r = t * localsize + (i-1) * vintpairsize;
@@ -572,7 +581,9 @@ void correct( int start, int end,
             }
 
             // trace is updated in-place
-            trace = apply_timeshift( trace, shift );
+            {
+                auto _ = apply_timeshift( trace, shift );
+            }
         }
 
         for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
@@ -683,10 +694,10 @@ struct Si4tiPreconditioner {
     Eigen::ComputationInfo info() { return Eigen::Success; }
 
     const matrix< T >* mat = nullptr;
-    int vintages;
-    int diagonals;
-    std::size_t traces;
-    std::size_t dims;
+    int vintages = 0;
+    int diagonals = 0;
+    std::size_t traces = 0;
+    std::size_t dims = 0;
 };
 
 template< typename T >
@@ -762,7 +773,8 @@ linear_system< T > build_system( const sparse< T >& B,
         for( int i = 0; i < vintages; ++i ){
             f[i].get( traceno, trc[i].data() );
             drv[i] = trc[i] /= normalizer;
-            drv[i] = derive( drv[i], omega );
+            // drv[i] is updated in-place
+            auto _ = derive( drv[i], omega );
         }
 
         // combinations(0..vintages)

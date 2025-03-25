@@ -1,0 +1,145 @@
+[build-system]
+requires = ["scikit-build-core>=0.10.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "si4ti"
+version = "1.1.0a3"
+description = "si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D seismic from changes in acoustic properties of a reservoir."
+readme = "python/README.md"
+authors = [
+  { name = "Equinor ASA" },
+]
+maintainers = [
+  { name = "Equinor ASA" },
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+
+dependencies = [
+  "numpy>=1.20", # Minimum needed for typing support
+  "xtgeo",
+]
+
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "Development Status :: 4 - Beta",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX :: Linux",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-memray",
+  "segyio",
+]
+
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+minimum-version = "build-system.requires"
+wheel.license-files = ["LICENSE"]
+install.components = ["python"]
+build-dir = "build/{wheel_tag}"
+wheel.install-dir = "si4ti"
+
+sdist.exclude = [
+  ".github/",
+  "travis/",
+  "travis.yml",
+]
+
+[tool.scikit-build.cmake.define]
+BUILD_PYTHON = true
+# The Python interface does not require the CLI tools.
+BUILD_TIMESHIFT = false
+BUILD_IMPEDANCE = false
+# The Python interface does not need the C++ tests.
+BUILD_TESTING = false
+
+[project.urls]
+Homepage = "https://github.com/equinor/si4ti"
+"Bug Tracker" = "https://github.com/equinor/si4ti/issues"
+
+[tool.ruff.lint]
+extend-select = [
+  "ARG",      # flake8-unused-arguments
+  "B",        # flake8-bugbear
+  "C4",       # flake8-comprehensions
+  "EM",       # flake8-errmsg
+  "EXE",      # flake8-executable
+  "FURB",     # refurb
+  "G",        # flake8-logging-format
+  "I",        # isort
+  "ICN",      # flake8-import-conventions
+  "NPY",      # NumPy specific rules
+  "PD",       # pandas-vet
+  "PGH",      # pygrep-hooks
+  "PIE",      # flake8-pie
+  "PL",       # pylint
+  "PT",       # flake8-pytest-style
+  "PTH",      # flake8-use-pathlib
+  "PYI",      # flake8-pyi
+  "RET",      # flake8-return
+  "RUF",      # Ruff-specific
+  "SIM",      # flake8-simplify
+  "T20",      # flake8-print
+  "UP",       # pyupgrade
+  "YTT",      # flake8-2020
+]
+ignore = [
+  "ISC001",   # Conflicts with formatter
+  "PLR09",    # Too many <...>
+  "PLR2004",  # Magic value used in comparison
+]
+typing-modules = ["mypackage._compat.typing"]
+isort.required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.per-file-ignores]
+"python/tests/**" = ["T20"]
+
+[tool.mypy]
+files = "python/src"
+python_version = "3.9"
+strict = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+plugins = ["numpy.typing.mypy_plugin"]
+
+# You can disable imports or control per-module/file settings here
+[[tool.mypy.overrides]]
+module = [ "numpy.*", ]
+ignore_missing_imports = true
+
+[tool.cibuildwheel.linux]
+before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
+
+[tool.cibuildwheel.macos]
+before-all = [ "brew install eigen libomp cmake" ]
+
+environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp/;/usr/local/opt/libomp/" }
+# Skip testing on:
+# - Python 3.9: Issues with h5py during testing (xtgeo dependency)
+test-skip = "cp39-*"
+
+[tool.cibuildwheel.windows]
+before-all = "choco install eigen -y"
+test-command = "cd /d {project}/python && pytest --memray tests --color=yes -v"
+
+[tool.cibuildwheel]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+build = "*"
+# Don't build for PyPy, Win32, i686, cannot build for Python 3.13 nor
+# linux_aarch64 due to missing xtgeo release
+skip = "pp* *-win32 *_i686 *musllinux* cp313-* *_aarch64"
+test-requires = ["pytest", "pytest-memray"]
+test-command = "cd {project}/python && pytest --memray tests --color=yes -v"
+build-verbosity = 1
