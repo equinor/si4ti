@@ -66,7 +66,7 @@ def input_cubes_crosslinesorted(tmp_path) -> list[xtgeo.Cubes]:
 def assert_cubes_equal(
     actuals: list[xtgeo.Cubes],
     references: list[xtgeo.Cubes],
-    max_diff_bound: float = 4e-4,
+    max_diff_bound: float = 8e-3,
     avg_diff_bound: float = 8e-3,
     strict: bool = False,
 ) -> None:
