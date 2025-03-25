@@ -113,3 +113,27 @@ plugins = ["numpy.typing.mypy_plugin"]
 
 [tool.codespell]
 ignore-words-list = [ "nd", "ptd", "localL" ]
+
+# Some target/architecture specific configuration is set in the GitHub workflow
+# building the wheels.
+[tool.cibuildwheel.linux]
+before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
+
+[tool.cibuildwheel.macos]
+before-all = [ "brew install eigen libomp cmake" ]
+
+environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/libomp/;/usr/local/opt/libomp" }
+# Skip testing on:
+# - Python 3.9: Issues with h5py during testing (xtgeo dependency)
+test-skip = "cp39-*"
+
+[tool.cibuildwheel]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+build = "*"
+# Don't build for PyPy, Win32, i686, cannot build for Python 3.13 nor
+# linux_aarch64 due to missing xtgeo release
+skip = "pp* *-win32 *_i686 *musllinux* cp313-* *_aarch64"
+test-requires = ["pytest", "pytest-memray"]
+test-command = "cd {project}/python && pytest --memray tests --color=yes -v"
+build-verbosity = 1
