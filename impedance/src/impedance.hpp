@@ -14,12 +14,6 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
-#include <segyio/segyio.hpp>
-
-using namespace segyio::literals;
-using input_file = segyio::basic_volume< segyio::readonly >;
-using output_file = segyio::basic_volume< segyio::trace_writer,
-                                          segyio::write_always >;
 
 namespace {
 
@@ -334,8 +328,7 @@ void add_boundary_inline( std::vector< OUTFILE_TYPE >& relAI_files,
 
     const int nvints = relAI_files.size();
 
-    const bool xlinesorted =
-        relAI_files.front().sorting() == segyio::sorting::xline();
+    const bool xlinesorted = relAI_files.front().xlinesorted();
     const std::size_t slow = xlinesorted ?
         relAI_files.front().inlinecount() : relAI_files.front().crosslinecount();
 
@@ -467,7 +460,7 @@ vector< T > compute_impedance( std::vector< INFILE_TYPE >& vintages,
                                int trc_start,
                                int trc_end ) {
 
-    bool xlinesorted = vintages.front().sorting() == segyio::sorting::xline();
+    const bool xlinesorted = vintages.front().xlinesorted();
     const int slow = xlinesorted ?
         vintages.front().inlinecount() : vintages.front().crosslinecount();
 
@@ -591,7 +584,7 @@ void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
                                                            vintages,
                                                            norm );
 
-    const bool xl_sorted = files.front().sorting() == segyio::sorting::xline();
+    const bool xl_sorted = files.front().xlinesorted();
     const std::size_t fast = xl_sorted ? files.front().crosslinecount()
                                        : files.front().inlinecount();
     const std::size_t slow = xl_sorted ? files.front().inlinecount()
