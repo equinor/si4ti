@@ -9,9 +9,6 @@
 
 #define EIGEN_DONT_PARALLELIZE
 
-int Progress::count = 0;
-int Progress::expected = 60;
-
 namespace {
 
 void printhelp(){
