@@ -33,7 +33,12 @@ jobs:
         cd segyio
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF
+        cmake .. -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_PYTHON=OFF \
+          -DEXPERIMENTAL=ON \
+          -DBUILD_TESTING=OFF \
+          -DBUILD_BIN=OFF
         make -j
         sudo make install
 
