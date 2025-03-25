@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing
 
-import numpy as np
 import pytest
 import segyio  #  type: ignore[import-untyped]
 import xtgeo  # type: ignore[import-untyped]
@@ -68,32 +67,17 @@ def assert_cubes_equal(
     references: list[xtgeo.Cubes],
     max_diff_bound: float = 8e-3,
     avg_diff_bound: float = 8e-3,
-    strict: bool = False,
 ) -> None:
     for actual, expected in zip(actuals, references):
         diff = abs(actual.values - expected.values)
-        # max_diff = np.max(np.abs(diff))
         assert diff.max() <= max_diff_bound, (
             f"Max difference too high: {diff.max()} > {max_diff_bound}"
         )
 
-        # s = np.abs(np.sum(np.sum(diff)) / np.sum(np.sum(expected.values)))
         s = abs(sum(diff.ravel()) / sum(expected.values.ravel()))
         assert s <= avg_diff_bound, (
             f"Average difference too high: {s} > {avg_diff_bound}"
         )
-
-        np.testing.assert_allclose(
-            actual.values, expected.values, rtol=0, atol=max_diff_bound, strict=strict
-        )
-
-        # np.testing.assert_allclose(
-        #    actual.values, expected.values, rtol=1e-6, atol=3e-4, strict=strict
-        # )
-
-        # np.testing.assert_allclose(
-        #    actual.values, expected.values, rtol=rtol, atol=0, strict=strict
-        # )
 
 
 @pytest.mark.limit_memory("10.5 MB")
@@ -169,8 +153,6 @@ def test_timevarying_wavelet_segmented_crosslinesorted(
         for i in range(3)
     ]
 
-    # Increase max bound due to failures on CI using Linux and FFTW. The
-    # default error bound is exceeded in less than 0.025% of the data points.
     assert_cubes_equal(relAI_cubes, expected_relAI_cubes)
     assert_cubes_equal(dsyn_cubes, expected_dsyn_cubes)
 
@@ -195,21 +177,3 @@ def test_timevarying_wavelet_segmented(input_cubes: list[xtgeo.Cubes]) -> None:
 
     assert_cubes_equal(relAI_cubes, expected_relAI_cubes)
     assert_cubes_equal(dsyn_cubes, expected_dsyn_cubes)
-
-
-# @pytest.fixture
-# def large_cubes() -> list[xtgeo.Cubes]:
-#    INPUT_FILES = [
-#        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/94-2001-processing/data/94p01ful.sgy",
-#        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/99-2001-processing/data/99p01ful.sgy",
-#        "/Users/AEJ/projects/timeshift/cpp/datasets/sleipner4d/01-2001-processing/data/01p01ful.sgy",
-#    ]
-#    return [xtgeo.cube_from_file(filename) for filename in INPUT_FILES]
-#
-#
-# def test_timeinvariant_wavelet_default_options_large_cubes(
-#    large_cubes: list[xtgeo.Cubes],
-# ) -> None:
-#    relAI_cubes, dsyn_cubes = compute_impedance(
-#        large_cubes,
-#    )

@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-import numpy.testing as npt
 import sys
 import segyio
 
@@ -45,10 +44,6 @@ def main():
         if not diff.max() < args.max:
             msg = 'Error in {}, max too high: {}'
             sys.exit(msg.format(base, diff.max()))
-
-        #npt.assert_allclose(xs, ys, rtol=args.rtol, atol=args.atol, strict=True)
-        #npt.assert_allclose(xs, ys, rtol=args.rtol, strict=True)
-        #npt.assert_allclose(xs, ys, rtol=0, atol=args.max, strict=True)
 
 if __name__ == '__main__':
     main()
