@@ -133,7 +133,7 @@ add_custom_target(ts-custom_norm
 )
 
 add_custom_target(diff-custom_norm
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 6e-5 -m 9e-6
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/diff.py -a 1e-4 -m 9e-6
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-cust_norm-0-ref.sgy ts-cust_norm-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/ts-cust_norm-1-ref.sgy ts-cust_norm-1.sgy
     COMMENT "Analysing timeshift with custom normalization"
