@@ -164,8 +164,8 @@ add_custom_target(xlinesorted-diff
 )
 
 add_custom_target(imp-segmented-xlinesorted
-    COMMENT "Running impedance, segmented"
-    COMMAND impedance --timevarying-wavelet --segments 2 --max-iter 3 ${segy-files} 1>/dev/null
+    COMMENT "Running impedance, segmented (crossline sorted)"
+    COMMAND impedance --timevarying-wavelet -i 193 -x 189 --segments 2 --max-iter 3 ${segy-files} 1>/dev/null
     DEPENDS imp-tinw-diff
 )
 
