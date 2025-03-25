@@ -39,12 +39,12 @@ struct ImpedanceOptions {
 //      If it is post-stack (only the one offset), the dimensions are
 //      normalised to (fast, slow, sample)
 //
-//  This means, from Python, inline-sorted and crossline-sorted files are not
-//  be distinguishable.
+// This means, from Python, inline-sorted and crossline-sorted files are not be
+// distinguishable.
 //
 // Making the data appear inline sorted in the wrapper combined with the way a
-// trace number is converted to an inline and crossline number ensures the
-// correct access pattern (increasing the slow index before the fast index)
+// trace number is converted to an inline and crossline number ensures the most
+// efficient access pattern (increasing the slow index before the fast index)
 // which is crucial for good performance.
 //
 // [1]: https://segyio.readthedocs.io/en/latest/segyio.html#segyio.tools.cube
