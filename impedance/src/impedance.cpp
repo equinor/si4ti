@@ -24,9 +24,6 @@ using output_file = segyio::basic_volume< segyio::trace_writer,
                                           segyio::write_always,
                                           xlinesorted_checker >;
 
-int Progress::count = 0;
-int Progress::expected = 10;
-
 namespace {
 
 struct options {
