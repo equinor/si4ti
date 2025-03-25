@@ -8,10 +8,14 @@ on:
 
 jobs:
   build:
+    name: C++, FFTW ${{ matrix.fftw }}
+    strategy:
+      matrix:
+        fftw: ["ON", "OFF"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -40,7 +44,9 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
-        make
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DUSE_FFTW=${{ matrix.fftw }} \
+              ..
+        make -j
         ctest --output-on-failure
         make diff
