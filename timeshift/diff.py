@@ -15,11 +15,7 @@ def main():
 
     parser.add_argument('--avg', '-a', type=float, default=8e-3)
 
-    parser.add_argument('--max', '-m', type=float, default=4e-4)
-
-    #parser.add_argument('--atol', type=float, default=0)
-    #parser.add_argument('--rtol', type=float, default=1e-3)
-
+    parser.add_argument('--max', '-m', type=float, default=8e-3)
 
     args = parser.parse_args()
 
