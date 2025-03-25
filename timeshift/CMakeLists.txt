@@ -10,6 +10,7 @@ target_link_libraries(timeshift Eigen3::Eigen
 
 if(USE_FFTW)
     target_link_libraries(timeshift ${fftw3f} ${fftw3})
+    target_include_directories(timeshift PRIVATE ${fftw3_includes})
 
     target_compile_definitions(timeshift
         PRIVATE EIGEN_FFTW_DEFAULT=1
@@ -51,6 +52,7 @@ target_link_libraries(tests catch2
 
 if(USE_FFTW)
     target_link_libraries(tests ${fftw3f} ${fftw3})
+    target_include_directories(tests PRIVATE ${fftw3_includes})
 
     target_compile_definitions(tests
         PRIVATE EIGEN_FFTW_DEFAULT=1
