@@ -1,0 +1,69 @@
+name: Style checks
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+env:
+  segyio_version: '1.9.13'
+
+jobs:
+  cppcheck:
+    name: cppcheck
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential \
+          libboost-dev libeigen3-dev libfftw3-dev cppcheck
+
+    - name: Build and install segyio
+      run: |
+        git clone --branch "v${{ env.segyio_version}}" https://github.com/equinor/segyio.git
+        cd segyio
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_PYTHON=OFF \
+          -DEXPERIMENTAL=ON \
+          -DBUILD_TESTING=OFF \
+          -DBUILD_BIN=OFF
+        make -j
+        sudo make install
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: "pip"
+
+    - name: Install Python dependencies
+      run: pip install "segyio==${{ env.segyio_version }}"
+
+    - name: Configure project
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DUSE_FFTW=ON \
+              ..
+
+    - name: Run cppcheck
+      working-directory: build
+      run: |
+        cppcheck --enable=style,portability,performance,warning \
+                 --library=posix \
+                 --inline-suppr \
+                 --project=compile_commands.json \
+                 --error-exitcode=1 \
+                 --suppressions-list=../cppcheck/suppressions.txt \
+                 --verbose \
+                 --template="{file}:{line} [{severity}] {message}"
