@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(si4ti VERSION 0.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
 option(BUILD_TESTING "Build tests" ON)
+option(BUILD_PYTHON "Build Python bindings" OFF)
 
 option(BUILD_TIMESHIFT "Build timeshift command line tool" ON)
 option(BUILD_IMPEDANCE "Build impedace command line tool" ON)
@@ -37,6 +38,12 @@ if(USE_FFTW)
     # is not installed into the standard include path of the compiler, e.g.,
     # when using homebrew.
     find_path(fftw3_includes NAMES "fftw3.h" REQUIRED)
+endif()
+
+if(BUILD_PYTHON)
+    set(PYBIND11_FINDPYTHON ON)
+    add_subdirectory(external/pybind11)
+    add_subdirectory(python)
 endif()
 
 if(BUILD_TESTING)

@@ -1,0 +1,72 @@
+[build-system]
+requires = ["scikit-build-core>=0.10.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "si4ti"
+version = "1.1.0a1"
+description = "si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D seismic from changes in acoustic properties of a reservoir."
+readme = "README.md"
+authors = [
+  { name = "Equinor ASA" },
+]
+maintainers = [
+  { name = "Equinor ASA" },
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+
+dependencies = [
+  "numpy>=1.20", # Minimum needed for typing support
+  "xtgeo",
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Natural Language :: English",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: C++",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-memray",
+  "segyio",
+]
+
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+minimum-version = "build-system.requires"
+wheel.license-files = ["LICENSE"]
+install.components = ["python"]
+build-dir = "build/{wheel_tag}"
+wheel.install-dir = "si4ti"
+
+sdist.exclude = [
+  ".github/",
+  "travis/",
+  "travis.yml",
+]
+
+[tool.scikit-build.cmake.define]
+BUILD_PYTHON = true
+# The Python interface does not require the CLI tools.
+BUILD_TIMESHIFT = false
+BUILD_IMPEDANCE = false
+# The Python interface does not need the C++ tests.
+BUILD_TESTING = false
+
+[project.urls]
+Homepage = "https://github.com/equinor/si4ti"
+"Bug Tracker" = "https://github.com/equinor/si4ti/issues"
