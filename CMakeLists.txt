@@ -12,7 +12,7 @@ option(BUILD_IMPEDANCE "Build impedace code" ON)
 option(BUILD_DOC "Build documentation" OFF)
 option(USE_FFTW "Build with fftw" OFF)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Eigen3 3.3.4 REQUIRED)
@@ -20,10 +20,6 @@ find_package(OpenMP COMPONENTS CXX REQUIRED)
 
 if (BUILD_TIMESHIFT)
     find_package(Boost 1.76 REQUIRED CONFIG)
-    # From Boost 1.82.0 Boost.math requires C++14 support
-    if (Boost_VERSION VERSION_GREATER_EQUAL 1.82.0)
-        set(CMAKE_CXX_STANDARD 14)
-    endif()
 endif()
 
 if(BUILD_TIMESHIFT OR BUILD_IMPEDANCE)

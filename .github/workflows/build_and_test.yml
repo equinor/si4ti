@@ -61,8 +61,7 @@ jobs:
     name: Check RHEL8 compatibility, FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
-        #fftw: ["OFF", "ON"]
-        fftw: ["OFF"]
+        fftw: ["ON", "OFF"]
     runs-on: ubuntu-latest
     container:
       image: almalinux:8
@@ -147,8 +146,7 @@ jobs:
     name: Python bindings, FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
-        #fftw: ["ON", "OFF"]
-        fftw: ["OFF"]
+        fftw: ["ON", "OFF"]
 
     runs-on: ubuntu-latest
     steps:
