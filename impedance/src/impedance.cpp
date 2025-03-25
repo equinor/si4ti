@@ -2,6 +2,39 @@
 
 #include <getopt.h>
 
+#include <segyio/segyio.hpp>
+
+template< typename Derived >
+struct indexcount_checker {
+    int fastindexcount() const noexcept(true);
+    int slowindexcount() const noexcept(true);
+};
+
+template< typename Derived >
+int indexcount_checker< Derived >::fastindexcount() const noexcept(true) {
+    const auto* self = static_cast< const Derived* >( this );
+    if (self->sorting() == segyio::sorting::xline())
+        return self->crosslinecount();
+    else
+        return self->inlinecount();
+}
+
+template< typename Derived >
+int indexcount_checker< Derived >::slowindexcount() const noexcept(true) {
+    const auto* self = static_cast< const Derived* >( this );
+    if (self->sorting() == segyio::sorting::xline())
+        return self->inlinecount();
+    else
+        return self->crosslinecount();
+}
+
+
+using input_file = segyio::basic_volume< segyio::readonly,
+                                         indexcount_checker >;
+using output_file = segyio::basic_volume< segyio::trace_writer,
+                                          segyio::write_always,
+                                          indexcount_checker >;
+
 int Progress::count = 0;
 int Progress::expected = 10;
 

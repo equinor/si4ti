@@ -14,12 +14,6 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
-#include <segyio/segyio.hpp>
-
-using namespace segyio::literals;
-using input_file = segyio::basic_volume< segyio::readonly >;
-using output_file = segyio::basic_volume< segyio::trace_writer,
-                                          segyio::write_always >;
 
 namespace {
 
@@ -346,10 +340,7 @@ void add_boundary_inline( std::vector< OUTPUT_TYPE >& relAI_files,
 
     const int nvints = relAI_files.size();
 
-    const bool xlinesorted =
-        relAI_files.front().sorting() == segyio::sorting::xline();
-    const std::size_t slow = xlinesorted ?
-        relAI_files.front().inlinecount() : relAI_files.front().crosslinecount();
+    const std::size_t slow = relAI_files.front().slowindexcount();
 
     const std::size_t traces = trc_end - trc_start + 1;
     const std::size_t tracelen = relAI_files.front().samplecount();
@@ -478,11 +469,7 @@ vector< T > compute_impedance( std::vector< INPUT_TYPE >& vintages,
                                T lat_smooth_4D,
                                int trc_start,
                                int trc_end ) {
-
-    bool xlinesorted = vintages.front().sorting() == segyio::sorting::xline();
-    const int slow = xlinesorted ?
-        vintages.front().inlinecount() : vintages.front().crosslinecount();
-
+    const int slow = vintages.front().slowindexcount();
     const int fast = (trc_end - trc_start + 1) / slow;
 
     const int nvints = vintages.size();
@@ -603,11 +590,8 @@ void compute_impedance_of_full_cube( std::vector< INPUT_TYPE >& files,
                                                            vintages,
                                                            norm );
 
-    const bool xl_sorted = files.front().sorting() == segyio::sorting::xline();
-    const std::size_t fast = xl_sorted ? files.front().crosslinecount()
-                                       : files.front().inlinecount();
-    const std::size_t slow = xl_sorted ? files.front().inlinecount()
-                                       : files.front().crosslinecount();
+    const std::size_t fast = files.front().fastindexcount();
+    const std::size_t slow = files.front().slowindexcount();
 
     const std::size_t tracelen = files.front().samplecount();
 
