@@ -50,6 +50,7 @@ jobs:
         cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
               -DBUILD_PYTHON=ON \
+              -DUSE_FFTW=${{ matrix.fftw }} \
               ..
         make -j
         ctest --output-on-failure
@@ -122,6 +123,7 @@ jobs:
         source scl_source enable gcc-toolset-13 && cmake -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
               -DBUILD_PYTHON=ON \
+              -DUSE_FFTW=${{ matrix.fftw }} \
               ..
         scl enable gcc-toolset-13 "make -j"
         ctest --output-on-failure
