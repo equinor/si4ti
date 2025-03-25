@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: C++, FFTW ${{ matrix.fftw }}
+    name: Ubuntu latest, FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
         fftw: ["ON", "OFF"]
@@ -27,7 +27,7 @@ jobs:
 
     # This installation of segyio is used to generate the experimental C++
     # headers needed to build si4ti. The Python interface is not build to
-    # simplify the build prcoess. The Python interface is instead installed via
+    # simplify the build process. The Python interface is instead installed via
     # pip (see below).
     - name: Build and install segyio
       run: |
@@ -54,7 +54,7 @@ jobs:
     - name: Install Python dependencies for tests
       run: pip install "segyio==${{ env.segyio_version }}"
 
-    - name: Build and test
+    - name: Build, test, and install (CMake)
       run: |
         mkdir build
         cd build
@@ -65,9 +65,22 @@ jobs:
         ctest --output-on-failure
         make diff
 
+    - name: Build Python bindings
+      run: |
+        cd python
+        python -m pip install \
+          -Ccmake.define.CMAKE_BUILD_TYPE=Release \
+          -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
+          .[test] --verbose
+
+    - name: Test Python bindings
+      run: |
+        cd python
+        python -m pytest --memray tests/
+
   # Compatibility with Red Hat Enterprise Linux 8
   build-almalinux-8:
-    name: Check RHEL8 compatibility, FFTW ${{ matrix.fftw }}
+    name: Alma Linux 8 (RHEL8 compatibility), FFTW ${{ matrix.fftw }}
     strategy:
       matrix:
         fftw: ["ON", "OFF"]
@@ -81,11 +94,9 @@ jobs:
         dnf -y install dnf-plugins-core
         dnf -y config-manager --set-enabled powertools
         dnf -y group install 'Development Tools'
-        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python3.11
+        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python3.11 python3.11-devel
 
     - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
 
     # Boost 1.76 is required, but Red Hat 8 does only provide Boost 1.66 by
     # default. We use Boost 1.79.0 to reproduce the Travis build being used
@@ -129,13 +140,11 @@ jobs:
         source venv/bin/activate
         python -m ensurepip --upgrade
         python -m pip install --upgrade pip
-        python -m pip install "segyio==${{ env.segyio_version }}"
+        python -m pip install segyio==${{ env.segyio_version }}
         echo PATH=${PATH} >> $GITHUB_ENV
 
-    - name: Build and test
+    - name: Build, test, and install (CMake)
       run: |
-        python --version
-        which python
         mkdir build
         pushd build
         source scl_source enable gcc-toolset-13 && cmake -DCMAKE_BUILD_TYPE=Release \
@@ -144,3 +153,17 @@ jobs:
         scl enable gcc-toolset-13 "make -j"
         ctest --output-on-failure
         make diff
+        make install
+
+    - name: Build Python bindings
+      run: |
+        cd python
+        source scl_source enable gcc-toolset-13 && python -m pip install \
+          -Ccmake.define.CMAKE_BUILD_TYPE=Release \
+          -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
+          .[test] --verbose
+
+    - name: Test Python bindings
+      run: |
+        cd python
+        python -m pytest --memray tests/
