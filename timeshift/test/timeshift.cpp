@@ -66,11 +66,11 @@ TEST_CASE("Regression test") {
 
     auto vint1 = vintage1();
     const auto omega = angular_frequency( 30, 1.0 );
-    const auto derived1 = derive( vint1, omega );
+    derive( vint1, omega );
 
     SECTION("Derive") {
         const auto expected = derived();
-        const auto result = derived1;
+        const auto result = vint1;
 
         CHECK( result.isApprox(expected, 1e-5) );
     }
@@ -79,7 +79,7 @@ TEST_CASE("Regression test") {
 
     SECTION("Linear operator") {
         const auto expected = linearoperator();
-        const auto result = linearoperator(derived1, spline);
+        const auto result = linearoperator(vint1, spline);
 
         CHECK( expected.rows() == result.rows() );
         CHECK( expected.cols() == result.cols() );
@@ -90,8 +90,8 @@ TEST_CASE("Regression test") {
     SECTION("Solution") {
         auto vint2 = vintage2();
         const Eigen::Matrix<double, -1, 1> delta = vint2 - vint1;
-        const auto derived2 = derive( vint2, omega );
-        vector<double> derived = ( derived1 + derived2 ) / 2;
+        derive( vint2, omega );
+        vector<double> derived = ( vint1 + vint2 ) / 2;
 
         const auto expected = solution();
         const auto result = solution( derived, delta, spline );

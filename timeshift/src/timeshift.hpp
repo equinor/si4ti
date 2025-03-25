@@ -368,7 +368,7 @@ vector< T > angular_frequency( int n, T dt = 1 ) {
 }
 
 template< typename T >
-vector< T >& derive( vector< T >& signal, const vector< T >& omega ) {
+void derive( vector< T >& signal, const vector< T >& omega ) {
 
     /*
      * D = FFTI(iωFFT(signal))
@@ -389,7 +389,6 @@ vector< T >& derive( vector< T >& signal, const vector< T >& omega ) {
     fft.fwd( ff, signal );
     ff.array() *= std::complex< T >(0, 1) * omega.array();
     fft.inv( signal , ff );
-    return signal;
 }
 
 template< typename T >
@@ -476,7 +475,7 @@ const T* end( const vector< T >& xs ) {
 }
 
 template< typename T >
-vector< T >& apply_timeshift( vector< T >& d, const vector< T >& shift ) {
+void apply_timeshift( vector< T >& d, const vector< T >& shift ) {
     vector< T > xs = vector< T >::LinSpaced( d.size(), 0, d.size() - 1 );
 
     const T d_0 = d[0];
@@ -505,8 +504,6 @@ vector< T >& apply_timeshift( vector< T >& d, const vector< T >& shift ) {
     xs += shift;
 
     std::transform( begin(xs), end(xs), begin(d), interpolate );
-
-    return d;
 }
 
 template< typename T >
@@ -564,7 +561,7 @@ void correct( int start, int end,
             file.get( t, begin( trace ) );
             derived = (trace /= normalizer);
             // derived is updated in-place
-            derived = derive( derived, omega );
+            derive( derived, omega );
 
             if( i != 0 ) {
                 const int r = t * localsize + (i-1) * vintpairsize;
@@ -572,7 +569,7 @@ void correct( int start, int end,
             }
 
             // trace is updated in-place
-            trace = apply_timeshift( trace, shift );
+            apply_timeshift( trace, shift );
         }
 
         for( int vint1 = 0;       vint1 < vintages; ++vint1 ) {
@@ -683,10 +680,10 @@ struct Si4tiPreconditioner {
     Eigen::ComputationInfo info() { return Eigen::Success; }
 
     const matrix< T >* mat = nullptr;
-    int vintages;
-    int diagonals;
-    std::size_t traces;
-    std::size_t dims;
+    int vintages = 0;
+    int diagonals = 0;
+    std::size_t traces = 0;
+    std::size_t dims = 0;
 };
 
 template< typename T >
@@ -762,7 +759,7 @@ linear_system< T > build_system( const sparse< T >& B,
         for( int i = 0; i < vintages; ++i ){
             f[i].get( traceno, trc[i].data() );
             drv[i] = trc[i] /= normalizer;
-            drv[i] = derive( drv[i], omega );
+            derive( drv[i], omega );
         }
 
         // combinations(0..vintages)
