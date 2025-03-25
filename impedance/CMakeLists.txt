@@ -75,7 +75,7 @@ add_custom_target(imp-tvw
 )
 
 add_custom_target(imp-tvw-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-2-ref.sgy relAI-2.sgy
@@ -94,7 +94,7 @@ add_custom_target(imp-tinw
 )
 
 add_custom_target(imp-tinw-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 4.4
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-2-ref.sgy relAI-2.sgy
@@ -119,7 +119,7 @@ add_custom_target(imp-custom-filenames
 )
 
 add_custom_target(imp-custom-filenames-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-0-ref.sgy r1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-1-ref.sgy r2.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-2-ref.sgy r3.sgy
@@ -132,7 +132,7 @@ add_custom_target(imp-custom-filenames-diff
 )
 
 add_custom_target(imp-segmented-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-2-ref.sgy relAI-2.sgy
@@ -151,7 +151,7 @@ add_custom_target(xlinesorted
 )
 
 add_custom_target(xlinesorted-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-2-ref.sgy relAI-2.sgy
@@ -170,7 +170,7 @@ add_custom_target(imp-segmented-xlinesorted
 )
 
 add_custom_target(imp-segmented-xlinesorted-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-2-ref.sgy relAI-2.sgy
