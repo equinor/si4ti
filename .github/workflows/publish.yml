@@ -19,12 +19,18 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: x86_64
+            cxx_flags: '-march=x86-64-v3'
           - os: macos-13
             arch: x86_64
             macos_target: '13.0'
+            cxx_flags: '-march=x86-64-v3'
           - os: macos-latest
             arch: arm64
             macos_target: '14.0'
+            # It is unclear if there is any target specific optimisation that
+            # we can choose here that is better than what the compiler chooses
+            # by default. Therefore, we don't specify anything for arm64.
+            cxx_flags:
 
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +60,7 @@ jobs:
         # workflow file.
         env:
           CIBW_ARCHS: ${{ matrix.arch }}
+          CXXFLAGS: ${{ matrix.cxx_flags }}
         run: |
           python -m cibuildwheel --output-dir wheelhouse .
 
