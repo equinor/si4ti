@@ -35,14 +35,14 @@ def main():
 
         diff = abs(xs - ys)
 
-        s = sum(sum(diff)) / sum(sum(ys))
+        s = abs(sum(sum(diff)) / sum(sum(ys)))
         if s > args.avg:
-            msg = 'Error in {}, avg too high: {}'
-            sys.exit(msg.format(base, s))
+            msg = 'Error in {}, avg too high: {} > {}'
+            sys.exit(msg.format(base, s, args.avg))
 
         if not diff.max() < args.max:
-            msg = 'Error in {}, max too high: {}'
-            sys.exit(msg.format(base, diff.max()))
+            msg = 'Error in {}, max too high: {} > {}'
+            sys.exit(msg.format(base, diff.max(), args.max))
 
 if __name__ == '__main__':
     main()

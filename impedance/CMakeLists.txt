@@ -3,21 +3,17 @@ project(si4ti-impedance LANGUAGES CXX)
 add_executable(impedance src/impedance.cpp)
 target_link_libraries(impedance Eigen3::Eigen
                                 segyio::segyio
-                                ${OpenMP_EXE_LINKER_FLAGS}
-                                ${OpenMP_CXX_FLAGS}
+                                OpenMP::OpenMP_CXX
 )
 
 if(USE_FFTW)
     target_link_libraries(impedance ${fftw3f} ${fftw3})
+    target_include_directories(impedance PRIVATE ${fftw3_includes})
 
     target_compile_definitions(impedance
         PRIVATE EIGEN_FFTW_DEFAULT=1
     )
 endif()
-
-target_compile_options(impedance
-    PRIVATE ${OpenMP_CXX_FLAGS}
-)
 
 install(TARGETS impedance
         EXPORT impedance
@@ -37,21 +33,17 @@ target_include_directories(impedance_tests PRIVATE src)
 target_link_libraries(impedance_tests catch2
                                       Eigen3::Eigen
                                       segyio::segyio
-                                      ${OpenMP_EXE_LINKER_FLAGS}
-                                      ${OpenMP_CXX_FLAGS}
+                                      OpenMP::OpenMP_CXX
 )
 
 if(USE_FFTW)
     target_link_libraries(impedance_tests ${fftw3f} ${fftw3})
+    target_include_directories(impedance_tests PRIVATE ${fftw3_includes})
 
     target_compile_definitions(impedance_tests
         PRIVATE EIGEN_FFTW_DEFAULT=1
     )
 endif()
-
-target_compile_options(impedance_tests
-    PRIVATE ${OpenMP_CXX_FLAGS}
-)
 
 add_test(NAME test COMMAND impedance_tests)
 
@@ -83,7 +75,7 @@ add_custom_target(imp-tvw
 )
 
 add_custom_target(imp-tvw-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-2-ref.sgy relAI-2.sgy
@@ -102,7 +94,7 @@ add_custom_target(imp-tinw
 )
 
 add_custom_target(imp-tinw-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 4.4
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-2-ref.sgy relAI-2.sgy
@@ -127,7 +119,7 @@ add_custom_target(imp-custom-filenames
 )
 
 add_custom_target(imp-custom-filenames-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-0-ref.sgy r1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-1-ref.sgy r2.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tinw-relAI-2-ref.sgy r3.sgy
@@ -140,7 +132,7 @@ add_custom_target(imp-custom-filenames-diff
 )
 
 add_custom_target(imp-segmented-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-2-ref.sgy relAI-2.sgy
@@ -159,7 +151,7 @@ add_custom_target(xlinesorted
 )
 
 add_custom_target(xlinesorted-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-tvw-relAI-2-ref.sgy relAI-2.sgy
@@ -172,13 +164,13 @@ add_custom_target(xlinesorted-diff
 )
 
 add_custom_target(imp-segmented-xlinesorted
-    COMMENT "Running impedance, segmented"
-    COMMAND impedance --timevarying-wavelet --segments 2 --max-iter 3 ${segy-files} 1>/dev/null
+    COMMENT "Running impedance, segmented (crossline sorted)"
+    COMMAND impedance --timevarying-wavelet -i 193 -x 189 --segments 2 --max-iter 3 ${segy-files} 1>/dev/null
     DEPENDS imp-tinw-diff
 )
 
 add_custom_target(imp-segmented-xlinesorted-diff
-    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py -a 28
+    COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/../timeshift/diff.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-0-ref.sgy relAI-0.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-1-ref.sgy relAI-1.sgy
         ${CMAKE_CURRENT_SOURCE_DIR}/../test-data/imp-segmented-relAI-2-ref.sgy relAI-2.sgy
