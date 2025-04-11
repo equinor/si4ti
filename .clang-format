@@ -1,0 +1,13 @@
+﻿# Format is chose to be similar to enforce style similar to existing C++ files.
+---
+AlignAfterOpenBracket: Align
+AlwaysBreakTemplateDeclarations: 'Yes'
+IndentWidth: '4'
+SpacesInAngles: 'true'
+SpacesInContainerLiterals: 'false'
+SpacesInParentheses: 'true'
+SpaceAfterTemplateKeyword: 'false'
+PointerAlignment: 'Left'
+ColumnLimit: 88
+
+...
