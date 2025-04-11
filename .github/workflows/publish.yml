@@ -1,4 +1,8 @@
-name: Wheels
+name: Wheels and command line tools
+
+env:
+  segyio_version: '1.9.13'
+  python_version: '3.11'
 
 on:
   push:
@@ -10,6 +14,84 @@ on:
   workflow_dispatch:
 
 jobs:
+  build_executables:
+    name: Build CLI tools for Red Hat Enterprise Linux 8
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:8
+    steps:
+    - name: Install dependencies
+      run: |
+        dnf -y update
+        dnf -y install dnf-plugins-core
+        dnf -y config-manager --set-enabled powertools
+        dnf -y group install 'Development Tools'
+        dnf -y install gcc-toolset-13 eigen3-devel cmake wget python${{ env.python_version }}
+
+    - uses: actions/checkout@v4
+
+    # Boost 1.76 is required, but Red Hat 8 does only provide Boost 1.66 by
+    # default. We use Boost 1.79.0 to reproduce the Travis build being used
+    # earlier for testing and releasing.
+    - name: Install Boost
+      run: |
+        wget https://archives.boost.io/release/1.79.0/source/boost_1_79_0.tar.gz
+        ls -l
+        tar xf boost_1_79_0.tar.gz
+        pushd boost_1_79_0
+        scl enable gcc-toolset-13 "./bootstrap.sh --with-libraries=math"
+        scl enable gcc-toolset-13 "./b2 -j 2"
+        scl enable gcc-toolset-13 "./b2 install"
+        popd
+        rm -rf boost_1_79_0
+
+    - name: Build and install segyio
+      run: |
+        git clone --branch v${{ env.segyio_version }} https://github.com/equinor/segyio.git
+        cd segyio
+        mkdir build
+        cd build
+        scl enable gcc-toolset-13 "cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF"
+        scl enable gcc-toolset-13 "make -j"
+        scl enable gcc-toolset-13 "make install"
+
+    # We need to patch the segyio header to find some integer definitions on
+    # Fedora and Red Hat Enterprise Linux compatible distributions.
+    #
+    # TODO: Remove this step once a new segyio release fixes this issue.
+    - name: Patch segyio experimental header
+      run: |
+          sed -i 's/#include <cstring>/#include <cstdint>\n#include <cstring>/' /usr/local/include/segyio/segyio.hpp
+
+    - name: Install Python dependencies
+      run: |
+        python${{ env.python_version }} -m venv venv
+        source venv/bin/activate
+        python -m ensurepip --upgrade
+        python -m pip install --upgrade pip
+        python -m pip install "segyio==${{ env.segyio_version }}"
+        echo PATH=${PATH} >> $GITHUB_ENV
+
+    # Run build of command line tools from bash script to reuse the environment
+    # of the GitHub Action, so we do not have to reinstall and rebuild all
+    # dependencies.
+    #
+    # TODO: Consider replacing the script by reusable GitHub Actions, a
+    # composite Action or something similar to remove the need of another
+    # script added to the repository.
+    - name: Build, test, and install (CMake)
+      run: |
+        scl enable gcc-toolset-13 "./deploy/build_executables.sh"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: si4ti-rhel8-executables
+        path: /opt/si4ti-rhel8-*
+        # We do not need to keep the artifacts for long because they are
+        # supposed to be uploaded to a new release in a timely manner. The
+        # upload has to be done manually.
+        retention-days: 7
+
   wheels:
     name: Build wheels on ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
