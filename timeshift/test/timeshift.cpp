@@ -467,7 +467,7 @@ SCENARIO("Preconditioning") {
 
 
         WHEN("Preconditioning the system M * x") {
-        THEN("2 vintage preconditioner should compute excact result") {
+        THEN("2 vintage preconditioner should compute exact result") {
 
             Eigen::VectorXd x( 10 );
             x << 1,2,3,4,5,6,7,8,9,10;
@@ -489,7 +489,7 @@ SCENARIO("Preconditioning") {
         }}
 
         WHEN("Preconditioning the system [ M, 0; 0, 2*M ] * x") {
-        THEN("3 vintage preconditioner should compute excact result") {
+        THEN("3 vintage preconditioner should compute exact result") {
             Eigen::VectorXd x( 20 );
             x << 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20;
 
@@ -528,12 +528,12 @@ SCENARIO( "Infer sampling interval ") {
                      segyio::config{}.with( segyio::ilbyte{ 5 } )
                                      .with( segyio::xlbyte{ 21 } ) );
 
-    GIVEN( "the sampling interval is user-spesified" ) {
+    GIVEN( "the sampling interval is user-specified" ) {
         sampling_interval = infer_interval( f, 5.0 );
         CHECK(sampling_interval == 5.0 );
     }
 
-    GIVEN( "the sampling interval is not user spesified" ) {
+    GIVEN( "the sampling interval is not user specified" ) {
         sampling_interval = infer_interval( f, 0.0 );;
         CHECK(sampling_interval == 4.0 );
     }

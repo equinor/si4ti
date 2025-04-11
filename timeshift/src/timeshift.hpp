@@ -826,7 +826,7 @@ vector< T > compute_timeshift( const sparse< T >& B,
                                const options& opts ) {
 
     /* The reason for separating this part in a function is to trigger implicit
-     * cleanup of objects. This signifficantly reduces the maximum memory
+     * cleanup of objects. This significantly reduces the maximum memory
      * consumption.
      */
 
