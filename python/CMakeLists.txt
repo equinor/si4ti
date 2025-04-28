@@ -29,5 +29,4 @@ endif()
 target_compile_definitions(_si4ti_python PRIVATE MUTE_PROGRESS)
 
 
-set(PYTHON_INSTALL_DIR .)
 install(TARGETS _si4ti_python DESTINATION si4ti)
