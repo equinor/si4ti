@@ -19,8 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
 
     - name: Install dependencies
       run: |
@@ -99,8 +97,6 @@ jobs:
         dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python${{ env.python_version }} python${{ env.python_version }}-devel
 
     - uses: actions/checkout@v4
-      with:
-        submodules: 'true'
 
     # Boost 1.76 is required, but Red Hat 8 does only provide Boost 1.66 by
     # default. We use Boost 1.79.0 to reproduce the Travis build being used
