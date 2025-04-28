@@ -576,10 +576,10 @@ template<typename INFILE_TYPE, typename OUTFILE_TYPE, typename OPTIONS>
 void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
                                      std::vector< OUTFILE_TYPE >& relAI_files,
                                      std::vector< OUTFILE_TYPE >& dsyn_files,
-                                     OPTIONS& opts ) {
+                                     const OPTIONS& opts ) {
     using T = float;
 
-    if( opts.overlap < 0 ) opts.overlap = opts.max_iter;
+    const int overlap = (opts.overlap < 0) ? opts.max_iter : opts.overlap;
 
     Progress::expected += opts.segments * ( opts.max_iter + 25 );
 
@@ -603,7 +603,7 @@ void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
 
     const auto sgments = segments( opts.segments,
                                    fast, slow,
-                                   opts.overlap );
+                                   overlap );
 
     for( const auto& segment : sgments ) {
         const std::size_t trc_start = segment.first;
