@@ -1,6 +1,4 @@
-#cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 cmake_minimum_required(VERSION 3.15...3.27)
-#project(${SKBUILD_PROJECT_NAME} LANGUAGES CXX)
 project(
   ${SKBUILD_PROJECT_NAME}
   VERSION ${SKBUILD_PROJECT_VERSION}
