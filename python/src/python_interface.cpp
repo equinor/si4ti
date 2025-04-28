@@ -72,7 +72,7 @@ class NumpyArrayWrapper {
 };
 
 std::pair< py::list, py::list > impedance( const py::list& input,
-                                           ImpedanceOptions options ) {
+                                           const ImpedanceOptions& options ) {
     std::vector< NumpyArrayWrapper > input_arrays;
 
     std::vector< NumpyArrayWrapper > relAI_arrays;
