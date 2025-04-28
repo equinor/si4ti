@@ -1,3 +1,4 @@
+import pathlib
 import typing
 
 import pytest
@@ -37,7 +38,7 @@ def input_cubes_crosslinesorted(tmp_path_factory) -> list[xtgeo.Cube]:
     cubes = []
 
     for f in INPUT_FILES:
-        dst_path = crossline_sorted_dir / f.split("/")[-1]
+        dst_path = crossline_sorted_dir / pathlib.Path(f).name
 
         with segyio.open(f, iline=193, xline=189) as src:
             spec = segyio.spec()
