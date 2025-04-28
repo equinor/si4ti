@@ -61,19 +61,11 @@ jobs:
         mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_PYTHON=ON \
-              -DCMAKE_INSTALL_PREFIX=/opt/si4ti \
               -DUSE_FFTW=${{ matrix.fftw }} \
               ..
         make -j
         ctest --output-on-failure
         make diff
-        sudo make install
-
-    - name: Test Python bindings built via CMake
-      run: |
-        cd python
-        PYTHONPATH="/opt/si4ti/lib/python3.11/site-packages" python -m pytest --memray tests/
 
     - name: Build Python bindings using pip
       run: |
@@ -159,19 +151,12 @@ jobs:
         mkdir build
         pushd build
         source scl_source enable gcc-toolset-13 && cmake -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_PYTHON=ON \
-              -DCMAKE_INSTALL_PREFIX=/opt/si4ti \
               -DUSE_FFTW=${{ matrix.fftw }} \
               ..
         scl enable gcc-toolset-13 "make -j"
         ctest --output-on-failure
         make diff
         make install
-
-    - name: Test Python bindings built via CMake
-      run: |
-        cd python
-        PYTHONPATH="/opt/si4ti/lib/python3.11/site-packages" python -m pytest --memray tests/
 
     - name: Build Python bindings using pip
       run: |
@@ -180,7 +165,7 @@ jobs:
           -Ccmake.define.USE_FFTW=${{ matrix.fftw }} \
           . --verbose
 
-    - name: Test Python bindings built via pip
+    - name: Test Python bindings
       run: |
         cd python
         python -m pytest --memray tests/
