@@ -17,6 +17,18 @@
 
 namespace {
 
+struct ImpedanceOptions {
+    int polarity = 1;
+    int segments = 1;
+    int overlap = -1;
+    bool tv_wavelet = false;
+    double damping_3D = 0.0001;
+    double damping_4D = 0.0001;
+    double latsmooth_3D = 0.05;
+    double latsmooth_4D = 4;
+    int max_iter = 50;
+};
+
 struct Progress {
     static int expected;
     static int count;
