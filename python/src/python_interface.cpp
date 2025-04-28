@@ -99,7 +99,7 @@ class Si4tiNumpyWrapper {
 };
 
 std::pair< py::list, py::list > impedance( const py::list& input,
-                                           ImpedanceOptions options ) {
+                                           const ImpedanceOptions& options ) {
     std::vector< Si4tiNumpyWrapper > input_files;
 
     std::vector< Si4tiNumpyWrapper > relAI_arrays;
