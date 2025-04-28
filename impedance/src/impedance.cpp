@@ -4,8 +4,6 @@
 
 #include <segyio/segyio.hpp>
 
-using namespace segyio::literals;
-
 template< typename Derived >
 struct xlinesorted_checker {
     bool xlinesorted() const noexcept(true);
