@@ -15,50 +15,35 @@ namespace python {
 // `input_file` and `output_file` types used in the impedance code. This allows
 // us to reuse the impedance code for the Python interface without any major
 // changes.
-//
-// For NumPy arrays the notion of inline or crossline sorted does not exist
-// the same way as for SEG-Y files. For a typical C-style array, the first
-// index, i.e., is the slowest and the last index is the fastest index.
-//
-// The segyio documentation [1] states the following meaning/order
-// of indices for post-stack cubes is normalised:
-//
-//      If it is post-stack (only the one offset), the dimensions are
-//      normalised to (fast, slow, sample)
-//
-// This means, from Python, inline-sorted and crossline-sorted files are not
-// distinguishable.
-//
-// Making the data appear inline sorted in the wrapper combined with the way a
-// trace number is converted to an inline and crossline number ensures the most
-// efficient access pattern (increasing the slow index before the fast index)
-// which is crucial for good performance.
-//
-// [1]: https://segyio.readthedocs.io/en/latest/segyio.html#segyio.tools.cube
 class Si4tiNumpyWrapper {
     py::array_t< float > data_;
 
     std::pair< std::size_t, std::size_t >
-    to_inline_crossline_nr( const int tracenr ) const {
+    to_fast_and_slow_index( const int tracenr ) const {
         assert( tracenr > -1 );
-        assert( tracenr < this->inlinecount() * this->crosslinecount() );
-        const std::size_t crosslinenr = tracenr % this->crosslinecount();
-        const std::size_t inlinenr = ( tracenr - crosslinenr ) / this->crosslinecount();
-        assert( inlinenr < this->inlinecount() );
-        assert( crosslinenr < this->crosslinecount() );
-        return { inlinenr, crosslinenr };
+        assert( tracenr < this->fastindexcount() * this->slowindexcount() );
+        const std::size_t slow_index = tracenr % this->slowindexcount();
+        const std::size_t fast_index =
+            ( tracenr - slow_index ) / this->slowindexcount();
+        assert( fast_index < this->fastindexcount() );
+        assert( slow_index < this->slowindexcount() );
+        return { fast_index, slow_index };
     }
 
   public:
     explicit Si4tiNumpyWrapper( py::array_t< float >&& data ) : data_( data ) {}
 
-    static constexpr bool xlinesorted() noexcept( true ) { return false; }
+    // The segyio documentation [1] states the following meaning/order
+    // of indices for post-stack cubes is normalised:
+    //
+    //      If it is post-stack (only the one offset), the dimensions are
+    //      normalised to (fast, slow, sample)
+    //
+    // [1]: https://segyio.readthedocs.io/en/latest/segyio.html#segyio.tools.cube
+    int fastindexcount() const { return this->data_.shape( 0 ); }
+    int slowindexcount() const { return this->data_.shape( 1 ); }
 
-    int inlinecount() const { return this->data_.shape( 0 ); }
-
-    int crosslinecount() const { return this->data_.shape( 1 ); }
-
-    int tracecount() const { return this->inlinecount() * this->crosslinecount(); }
+    int tracecount() const { return this->fastindexcount() * this->slowindexcount(); }
 
     int samplecount() const { return this->data_.shape( 2 ); }
 
@@ -67,21 +52,21 @@ class Si4tiNumpyWrapper {
     template< typename InputIt >
     InputIt* put( int tracenr, InputIt* in ) {
         auto r = this->data_.template mutable_unchecked< 3 >();
-        const auto numbers = this->to_inline_crossline_nr( tracenr );
-        const auto inlinenr = numbers.first;
-        const auto crosslinenr = numbers.second;
+        const auto indices = this->to_fast_and_slow_index( tracenr );
+        const auto fast_index = indices.first;
+        const auto slow_index = indices.second;
         std::copy_n( in, this->samplecount(),
-                     r.mutable_data( inlinenr, crosslinenr, 0 ) );
+                     r.mutable_data( fast_index, slow_index, 0 ) );
         return in + this->samplecount();
     }
 
     template< typename OutputIt >
     OutputIt* get( int tracenr, OutputIt* out ) const {
         auto r = this->data_.template unchecked< 3 >();
-        const auto numbers = this->to_inline_crossline_nr( tracenr );
-        const auto inlinenr = numbers.first;
-        const auto crosslinenr = numbers.second;
-        return std::copy_n( r.data( inlinenr, crosslinenr, 0 ), this->samplecount(),
+        const auto indices = this->to_fast_and_slow_index( tracenr );
+        const auto fast_index = indices.first;
+        const auto slow_index = indices.second;
+        return std::copy_n( r.data( fast_index, slow_index, 0 ), this->samplecount(),
                             out );
     }
 };
