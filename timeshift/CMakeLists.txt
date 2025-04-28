@@ -1,9 +1,6 @@
 project(si4ti-timeshift LANGUAGES CXX)
 
-find_package(segyio REQUIRED)
-find_package(Eigen3 3.3.4 REQUIRED)
-find_package(OpenMP COMPONENTS CXX REQUIRED)
-find_package(Boost 1.76 REQUIRED CONFIG)
+include(${CMAKE_SOURCE_DIR}/cmake/FindTimeShiftDependencies.cmake)
 
 add_executable(timeshift src/timeshift.cpp)
 target_link_libraries(timeshift Eigen3::Eigen
