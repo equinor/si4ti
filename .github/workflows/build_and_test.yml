@@ -8,6 +8,7 @@ on:
 
 env:
   segyio_version: '1.9.13'
+  python_version: '3.11'
 
 jobs:
   build:
@@ -47,7 +48,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '${{ env.python_version }}'
         cache: 'pip'
 
     # This installation of segyio is used within the tests run by `make diff`.
@@ -94,7 +95,7 @@ jobs:
         dnf -y install dnf-plugins-core
         dnf -y config-manager --set-enabled powertools
         dnf -y group install 'Development Tools'
-        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python3.11 python3.11-devel
+        dnf -y install fftw3-devel gcc-toolset-13 eigen3-devel cmake wget python${{ env.python_version }} python${{ env.python_version }}-devel
 
     - uses: actions/checkout@v4
 
@@ -136,7 +137,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        python3.11 -m venv venv
+        python${{ env.python_version }} -m venv venv
         source venv/bin/activate
         python -m ensurepip --upgrade
         python -m pip install --upgrade pip
