@@ -121,14 +121,6 @@ std::pair< py::list, py::list > impedance( const py::list& input,
 } /* namespace si4ti */
 
 PYBIND11_MODULE( _si4ti_python, m ) {
-    m.doc() = R"pbdoc(
-        si4ti Python bindings
-        -----------------------
-        .. currentmodule:: _si4ti_python
-        .. autosummary::
-        :toctree: _generate
-    )pbdoc";
-
     m.def( "impedance", &si4ti::python::impedance,
            "Computes the impedance from provided cubes and parameters",
            py::arg( "input" ), py::arg( "options" ), py::return_value_policy::move );
