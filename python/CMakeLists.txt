@@ -4,7 +4,11 @@ project(impedance-python LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(PYBIND11_FINDPYTHON ON)
+find_package(pybind11 CONFIG REQUIRED)
+
 pybind11_add_module(_si4ti_python MODULE src/python_interface.cpp)
+target_link_libraries(_si4ti_python PRIVATE pybind11::headers)
 target_include_directories(_si4ti_python PRIVATE ${CMAKE_SOURCE_DIR}/impedance/src
 )
 target_link_libraries(_si4ti_python PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
