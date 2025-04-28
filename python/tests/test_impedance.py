@@ -18,8 +18,8 @@ def input_cubes() -> list[xtgeo.Cube]:
 
 
 @typing.no_type_check
-@pytest.fixture
-def input_cubes_crosslinesorted(tmp_path) -> list[xtgeo.Cube]:
+@pytest.fixture(scope="session")
+def input_cubes_crosslinesorted(tmp_path_factory) -> list[xtgeo.Cube]:
     """Creates input cubes with crossline sorting in the same spirit as the
     tests for the command line interface tools.
 
@@ -32,8 +32,7 @@ def input_cubes_crosslinesorted(tmp_path) -> list[xtgeo.Cube]:
         "../test-data/vint2.sgy",
     ]
 
-    crossline_sorted_dir = tmp_path / "crossline_sorted_files"
-    crossline_sorted_dir.mkdir()
+    crossline_sorted_dir = tmp_path_factory.mktemp("crossline_sorted_files")
 
     cubes = []
 
