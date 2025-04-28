@@ -15,7 +15,7 @@ namespace python {
 // `input_file` and `output_file` types used in the impedance code. This allows
 // us to reuse the impedance code for the Python interface without any major
 // changes.
-class Si4tiNumpyWrapper {
+class NumpyArrayWrapper {
     py::array_t< float > data_;
 
     std::pair< std::size_t, std::size_t >
@@ -31,7 +31,7 @@ class Si4tiNumpyWrapper {
     }
 
   public:
-    explicit Si4tiNumpyWrapper( py::array_t< float >&& data ) : data_( data ) {}
+    explicit NumpyArrayWrapper( py::array_t< float >&& data ) : data_( data ) {}
 
     // The segyio documentation [1] states the following meaning/order
     // of indices for post-stack cubes is normalised:
@@ -73,10 +73,10 @@ class Si4tiNumpyWrapper {
 
 std::pair< py::list, py::list > impedance( const py::list& input,
                                            ImpedanceOptions options ) {
-    std::vector< Si4tiNumpyWrapper > input_files;
+    std::vector< NumpyArrayWrapper > input_files;
 
-    std::vector< Si4tiNumpyWrapper > relAI_arrays;
-    std::vector< Si4tiNumpyWrapper > dsyn_arrays;
+    std::vector< NumpyArrayWrapper > relAI_arrays;
+    std::vector< NumpyArrayWrapper > dsyn_arrays;
 
     for ( py::handle item : input ) {
         if ( not py::isinstance< py::array >( item ) ) {
@@ -96,17 +96,17 @@ std::pair< py::list, py::list > impedance( const py::list& input,
                                       numpy_array.strides( 1 ),
                                       numpy_array.strides( 2 ) };
 
-        input_files.emplace_back( Si4tiNumpyWrapper( std::move( numpy_array ) ) );
+        input_files.emplace_back( NumpyArrayWrapper( std::move( numpy_array ) ) );
 
         relAI_arrays.emplace_back(
-            Si4tiNumpyWrapper( py::array_t< float >( shape, strides ) ) );
+            NumpyArrayWrapper( py::array_t< float >( shape, strides ) ) );
         dsyn_arrays.emplace_back(
-            Si4tiNumpyWrapper( py::array_t< float >( shape, strides ) ) );
+            NumpyArrayWrapper( py::array_t< float >( shape, strides ) ) );
     }
 
     compute_impedance_of_full_cube( input_files, relAI_arrays, dsyn_arrays, options );
 
-    auto to_python_list = []( std::vector< Si4tiNumpyWrapper >&& data ) {
+    auto to_python_list = []( std::vector< NumpyArrayWrapper >&& data ) {
         py::list tmp;
         for ( auto& d : data ) {
             tmp.append( d.release_data() );
