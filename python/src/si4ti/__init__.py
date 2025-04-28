@@ -1,6 +1,7 @@
 """si4ti: Seismic Inversion for Time-lapse Interpretation"""
 
 __all__ = [
+    "InvalidShapeError",
     "__doc__",
     "compute_impedance",
 ]
@@ -13,6 +14,20 @@ from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
     impedance,
 )
+
+
+class InvalidShapeError(Exception):
+    pass
+
+
+def _assert_all_cube_shapes_equal(input_cubes: list[xtgeo.Cube]) -> None:
+    for c in input_cubes:
+        if c.values.shape != input_cubes[0].values.shape:
+            msg = (
+                "Input cubes must all equal shape, i.e., the have the same "
+                "number of inlines, crosslines and traces"
+            )
+            raise InvalidShapeError(msg)
 
 
 def _numpy_arrays_to_xtgeo_cubes(
@@ -92,6 +107,8 @@ def compute_impedance(
     Relative acoustic impedances and XXX: tuple[list[xtgeo.Cube], list[xtgeo.Cube]]
         Tuple of relAI and dsyn cubes
     """
+    _assert_all_cube_shapes_equal(input_cubes)
+
     options = ImpedanceOptions()
     options.polarity = -1 if inverse_polarity else 1
     options.segments = segments
