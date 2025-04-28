@@ -37,13 +37,16 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
 ]
 
+[project.urls]
+Homepage = "https://github.com/equinor/si4ti"
+"Bug Tracker" = "https://github.com/equinor/si4ti/issues"
+
 [project.optional-dependencies]
 test = [
   "pytest",
   "pytest-memray",
   "segyio",
 ]
-
 
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
@@ -61,7 +64,3 @@ sdist.exclude = [
 # By default, don't use FFTW. It would imply license changes if we would
 # bundle it with the Python bindings.
 USE_FFTW = false
-
-[project.urls]
-Homepage = "https://github.com/equinor/si4ti"
-"Bug Tracker" = "https://github.com/equinor/si4ti/issues"
