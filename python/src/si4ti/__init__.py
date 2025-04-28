@@ -2,7 +2,6 @@
 
 __all__ = [
     "__doc__",
-    "__version__",
     "compute_impedance",
 ]
 
@@ -12,7 +11,6 @@ import xtgeo  # type: ignore[import-untyped]
 
 from ._si4ti_python import (  # type: ignore[import-not-found]
     ImpedanceOptions,
-    __version__,
     impedance,
 )
 
