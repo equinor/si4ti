@@ -19,12 +19,12 @@ class NumpyArrayWrapper {
     py::array_t< float > data_;
 
     std::pair< std::size_t, std::size_t >
-    to_fast_and_slow_index( const int tracenr ) const {
-        assert( tracenr > -1 );
-        assert( tracenr < this->fastindexcount() * this->slowindexcount() );
-        const std::size_t slow_index = tracenr % this->slowindexcount();
+    to_fast_and_slow_index( const int trace_nr ) const {
+        assert( trace_nr > -1 );
+        assert( trace_nr < this->fastindexcount() * this->slowindexcount() );
+        const std::size_t slow_index = trace_nr % this->slowindexcount();
         const std::size_t fast_index =
-            ( tracenr - slow_index ) / this->slowindexcount();
+            ( trace_nr - slow_index ) / this->slowindexcount();
         assert( fast_index < this->fastindexcount() );
         assert( slow_index < this->slowindexcount() );
         return { fast_index, slow_index };
@@ -49,9 +49,9 @@ class NumpyArrayWrapper {
     py::array_t< float > release_data() { return std::move( this->data_ ); }
 
     template< typename InputIt >
-    InputIt* put( int tracenr, InputIt* in ) {
+    InputIt* put( int trace_nr, InputIt* in ) {
         auto r = this->data_.template mutable_unchecked< 3 >();
-        const auto indices = this->to_fast_and_slow_index( tracenr );
+        const auto indices = this->to_fast_and_slow_index( trace_nr );
         const auto fast_index = indices.first;
         const auto slow_index = indices.second;
         std::copy_n( in, this->samplecount(),
@@ -60,9 +60,9 @@ class NumpyArrayWrapper {
     }
 
     template< typename OutputIt >
-    OutputIt* get( int tracenr, OutputIt* out ) const {
+    OutputIt* get( int trace_nr, OutputIt* out ) const {
         auto r = this->data_.template unchecked< 3 >();
-        const auto indices = this->to_fast_and_slow_index( tracenr );
+        const auto indices = this->to_fast_and_slow_index( trace_nr );
         const auto fast_index = indices.first;
         const auto slow_index = indices.second;
         return std::copy_n( r.data( fast_index, slow_index, 0 ), this->samplecount(),
@@ -72,7 +72,7 @@ class NumpyArrayWrapper {
 
 std::pair< py::list, py::list > impedance( const py::list& input,
                                            const ImpedanceOptions& options ) {
-    std::vector< NumpyArrayWrapper > input_files;
+    std::vector< NumpyArrayWrapper > input_arrays;
 
     std::vector< NumpyArrayWrapper > relAI_arrays;
     std::vector< NumpyArrayWrapper > dsyn_arrays;
@@ -95,7 +95,7 @@ std::pair< py::list, py::list > impedance( const py::list& input,
                                       numpy_array.strides( 1 ),
                                       numpy_array.strides( 2 ) };
 
-        input_files.emplace_back( NumpyArrayWrapper( std::move( numpy_array ) ) );
+        input_arrays.emplace_back( NumpyArrayWrapper( std::move( numpy_array ) ) );
 
         relAI_arrays.emplace_back(
             NumpyArrayWrapper( py::array_t< float >( shape, strides ) ) );
@@ -103,7 +103,7 @@ std::pair< py::list, py::list > impedance( const py::list& input,
             NumpyArrayWrapper( py::array_t< float >( shape, strides ) ) );
     }
 
-    compute_impedance_of_full_cube( input_files, relAI_arrays, dsyn_arrays, options );
+    compute_impedance_of_full_cube( input_arrays, relAI_arrays, dsyn_arrays, options );
 
     auto to_python_list = []( std::vector< NumpyArrayWrapper >&& data ) {
         py::list tmp;
