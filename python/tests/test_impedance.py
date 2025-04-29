@@ -1,8 +1,8 @@
 import typing
 
 import pytest
-import segyio  # type: ignore[import-untyped]
-import xtgeo  # type: ignore[import-untyped]
+import segyio
+import xtgeo
 from si4ti import compute_impedance
 
 

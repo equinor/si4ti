@@ -8,9 +8,9 @@ __all__ = [
 
 import numpy as np
 import numpy.typing as npt
-import xtgeo  # type: ignore[import-untyped]
+import xtgeo
 
-from ._si4ti_python import (  # type: ignore[import-not-found]
+from ._si4ti_python import (
     ImpedanceOptions,
     impedance,
 )
