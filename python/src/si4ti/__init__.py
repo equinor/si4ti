@@ -69,7 +69,8 @@ def compute_impedance(
     latsmooth_4D: float = 4.0,
     max_iter: int = 50,
 ) -> tuple[list[xtgeo.Cube], list[xtgeo.Cube]]:
-    """Compute impedance from provided cubes and parameters
+    """Compute relative impedance (relAI) and synthetic seismic (dsyn) from
+    provided cubes and parameters
 
     Parameters
     ----------
@@ -104,7 +105,7 @@ def compute_impedance(
 
     Returns
     -------
-    Relative acoustic impedances and XXX: tuple[list[xtgeo.Cube], list[xtgeo.Cube]]
+    Relative acoustic impedances (relAI) and synthetic seismic (dsyn) : tuple[list[xtgeo.Cube], list[xtgeo.Cube]]
         Tuple of relAI and dsyn cubes
     """
     _assert_all_cube_shapes_equal(input_cubes)
