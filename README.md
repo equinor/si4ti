@@ -63,20 +63,6 @@ apply-timeshift --help
 si4ti provides a Python bindings for the impedance calculations. No Python
 interface for the timeshift is provided.
 
-### Installation ###
-Pre-built wheels are available for the following platforms for Python 3.9 up to
-3.12:
-
- * `manylinux_2_28` for `x86_64`
- * MacOS X 14.0 and newer for `arm64`
- * MacOS X 13.0 and newer for `x86_64`
-
-The pre-built wheels can be installed via `pip`
-
-```bash
-pip install si4ti
-```
-
 ### Build from source ###
 You can install si4ti via the source distribution (sdist) or the Git
 repository. This allows to compile the package with FFTW3 support as well as
@@ -88,54 +74,41 @@ During compilation, you need the following dependencies.
  * [CMake](https://cmake.org) version 3.15 or greater
  * [Eigen3](https://eigen.tuxfamily.org) version 3.3.4 or greater
  * [OpenMP](https://www.openmp.org)
- * [scikit-build-core](https://scikit-build-core.readthedocs.io/en/latest/)
-   version 0.1 or greater, if build via `pip`
- * [fftw](https://www.fftw.org) with single precision (`float`) interface, if
-   built with `USE_FFTW=True`
+   version 0.1 or greater
+ * [fftw](https://www.fftw.org) compiled with --enable-float to enable single
+   precision interface, if built with `USE_FFTW=ON`
 
-At runtime, you additionally need
- * [NumPy](https://numpy.org)
- * [xtgeo](https://xtgeo.readthedocs.io/en/stable/)
-
-If you want to run the tests, which is highly recommended, you also need
- * [pytest](https://docs.pytest.org/en/stable/)
- * [pytest-memray](https://pytest-memray.readthedocs.io/en/latest/)
-
-#### Compilation via CMake ####
-The Python bindings can be compiled directly via the CMake interface following
-the instructions above by setting the `BUILD_PYTHON` parameter to `ON`. The
-command line from above would become
-
-```bash
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_BUILD_PYTHON=ON
-```
-
-If you only need the Python bindings and not the command line tools, you can
-deactivate them from the build using the options mentioned above. In this case,
-you can also deactivate the tests for the command line tools:
-
-```bash
-cmake .. -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_BUILD_PYTHON=ON \
-  -DBUILD_TIMESHIFT=OFF \
-  -DBUILD_IMPEDANCE=OFF \
-  -DBUILD_TESTING=OFF
-```
-
-#### Compilation via pip ####
+#### Compilation ####
 Compilation of the Python bindings via `pip` only builds the bindings and not
 the command line tools. One can specify compile options directly during the
-`pip` invocation similarly to the build process using CMake directly. The
-following command builds and installs the Python bindings with OpenMP and FFTW
-(both installed via Homebrew) from the root of the repository. It also enables
-platform specific optimisation (`-march=native`) and strict warnings (`-Wall
--pedantic`).
+`pip` invocation similarly to using CMake directly. The following command
+builds and installs the Python bindings in test configuration with OpenMP and
+FFTW on MacOS from the `python/` directory of the repository. It also enables
+platform specific optimisation (`-march=native`) as it may significantly
+improve performance.
+
+First change into the `python/` directory
 
 ```bash
-pip install -Ccmake.define.CMAKE_PREFIX_PATH="/opt/homebrew/opt/libomp" \
+cd python/
+```
+
+and then invoke the build process via pip
+
+```bash
+OpenMP_ROOT="/opt/homebrew/opt/libomp" \
+pip install \
     -Ccmake.define.USE_FFTW=ON \
-    -Ccmake.define.CMAKE_CXX_FLAGS="-march=native -Wall -pedantic" \
-    .
+    -Ccmake.define.CMAKE_CXX_FLAGS="-march=native" \
+    -Ccmake.define.USE_FFTW=ON \
+    .[test]
+```
+
+Afterwards you can run the tests
+
+
+```bash
+python -m pytest tests
 ```
 
 ### Running Python bindings tests ###
