@@ -26,21 +26,12 @@ using output_file = segyio::basic_volume< segyio::trace_writer,
 
 namespace {
 
-struct options {
+struct CliOptions : ImpedanceOptions {
     std::vector< std::string > files;
     std::vector< std::string > output_files;
     int             verbosity            = 0;
     segyio::ilbyte  ilbyte               = segyio::ilbyte();
     segyio::xlbyte  xlbyte               = segyio::xlbyte();
-    int             polarity             = 1;
-    int             segments             = 1;
-    int             overlap              = -1;
-    bool            tv_wavelet           = false;
-    double          damping_3D           = 0.0001;
-    double          damping_4D           = 0.0001;
-    double          latsmooth_3D         = 0.05;
-    double          latsmooth_4D         = 4;
-    int             max_iter             = 50;
 };
 
 
@@ -88,7 +79,7 @@ void printhelp(){
     ;
 }
 
-options parseopts( int argc, char** argv ) {
+CliOptions parseopts( int argc, char** argv ) {
     static struct option longopts[] = {
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
@@ -107,7 +98,7 @@ options parseopts( int argc, char** argv ) {
         { nullptr },
     };
 
-    options opts;
+    CliOptions opts;
 
     while( true ) {
         int option_index = 0;
