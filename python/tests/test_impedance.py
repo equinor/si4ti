@@ -23,9 +23,8 @@ def input_cubes_crosslinesorted(tmp_path_factory) -> list[xtgeo.Cube]:
     """Creates input cubes with crossline sorting in the same spirit as the
     tests for the command line interface tools.
 
-    We cannot cannot inform xtgeo about the sorting when creating an xtgeo
-    cube. Therefore, we create temporary SEG-Y files with crossline sorting.
-    """
+    We cannot inform xtgeo about the sorting when creating an xtgeo cube.
+    Therefore, we create temporary SEG-Y files with crossline sorting."""
     INPUT_FILES = [
         "../test-data/vint0.sgy",
         "../test-data/vint1.sgy",
