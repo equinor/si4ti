@@ -6,14 +6,14 @@ build-backend = "scikit_build_core.build"
 name = "si4ti"
 version = "1.1.0a1"
 description = "si4ti is a LGPL licensed seismic inversion tool for monitoring effects in 4D seismic from changes in acoustic properties of a reservoir."
-readme = "README.md"
+readme = "../README.md"
 authors = [
   { name = "Equinor ASA" },
 ]
 maintainers = [
   { name = "Equinor ASA" },
 ]
-license = { file = "LICENSE" }
+license = { file = "../LICENSE" }
 requires-python = ">=3.9"
 
 dependencies = [
@@ -48,10 +48,8 @@ test = [
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
 minimum-version = "build-system.requires"
-wheel.license-files = ["LICENSE"]
-install.components = ["python"]
+wheel.license-files = ["../LICENSE"]
 build-dir = "build/{wheel_tag}"
-wheel.install-dir = "si4ti"
 
 sdist.exclude = [
   ".github/",
@@ -60,12 +58,9 @@ sdist.exclude = [
 ]
 
 [tool.scikit-build.cmake.define]
-BUILD_PYTHON = true
-# The Python interface does not require the CLI tools.
-BUILD_TIMESHIFT = false
-BUILD_IMPEDANCE = false
-# The Python interface does not need the C++ tests.
-BUILD_TESTING = false
+# By default, don't use FFTW. It would imply license changes if we would
+# bundle it with the Python bindings.
+USE_FFTW = false
 
 [project.urls]
 Homepage = "https://github.com/equinor/si4ti"
