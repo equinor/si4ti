@@ -77,8 +77,8 @@ vector< T > myhamn( int n ){
     return 0.5 * (1 - filter.array().cos());
 }
 
-template< typename T, typename INFILE_TYPE >
-vector< T > timeinvariant_wavelet( INFILE_TYPE& survey ) {
+template< typename T, typename INPUT_TYPE >
+vector< T > timeinvariant_wavelet( INPUT_TYPE& survey ) {
 
     const auto tracelen = survey.samplecount();
 
@@ -98,8 +98,8 @@ vector< T > timeinvariant_wavelet( INFILE_TYPE& survey ) {
     return freqwav;
 }
 
-template< typename T, typename INFILE_TYPE >
-matrix< T > timevarying_wavelet( INFILE_TYPE& survey ) {
+template< typename T, typename INPUT_TYPE >
+matrix< T > timevarying_wavelet( INPUT_TYPE& survey ) {
 
     const auto tracelen = survey.samplecount();
     const int win_size = 101;
@@ -160,8 +160,8 @@ matrix< T > timevarying_wavelet( INFILE_TYPE& survey ) {
     return freqwav;
 }
 
-template< typename T, typename INFILE_TYPE >
-std::vector< matrix< T > > wavelets( std::vector< INFILE_TYPE >& vintages,
+template< typename T, typename INPUT_TYPE >
+std::vector< matrix< T > > wavelets( std::vector< INPUT_TYPE >& vintages,
                                      bool tv_wavelet,
                                      int polarity ) {
     std::vector< matrix< T > > wvlets;
@@ -286,8 +286,8 @@ struct solution_1D {
     vector< T > rj;
 };
 
-template< typename T, typename INFILE_TYPE >
-solution_1D< T > solve_1D( std::vector< INFILE_TYPE >&  vintages,
+template< typename T, typename INPUT_TYPE >
+solution_1D< T > solve_1D( std::vector< INPUT_TYPE >&  vintages,
                            const std::vector< matrix< T > >& L,
                            const std::vector< matrix< T > >& A,
                            T damping,
@@ -333,8 +333,8 @@ solution_1D< T > solve_1D( std::vector< INFILE_TYPE >&  vintages,
     return sol;
 }
 
-template< typename T, typename OUTFILE_TYPE >
-void add_boundary_inline( std::vector< OUTFILE_TYPE >& relAI_files,
+template< typename T, typename OUTPUT_TYPE >
+void add_boundary_inline( std::vector< OUTPUT_TYPE >& relAI_files,
                           vector< T >& b,
                           T norm,
                           T lat_smooth_3D, T lat_smooth_4D,
@@ -465,9 +465,9 @@ vector< T > conjugate_gradient( const MatrixType& L,
     return x;
 }
 
-template< typename T, typename INFILE_TYPE, typename OUTFILE_TYPE >
-vector< T > compute_impedance( std::vector< INFILE_TYPE >& vintages,
-                               std::vector< OUTFILE_TYPE >& relAI_files,
+template< typename T, typename INPUT_TYPE, typename OUTPUT_TYPE >
+vector< T > compute_impedance( std::vector< INPUT_TYPE >& vintages,
+                               std::vector< OUTPUT_TYPE >& relAI_files,
                                const std::vector< matrix< T > >& A,
                                T norm,
                                int max_iter,
@@ -519,9 +519,9 @@ vector< T > compute_impedance( std::vector< INFILE_TYPE >& vintages,
     return sol.rj / norm;
 }
 
-template< typename Vector, typename OUTFILE_TYPE >
+template< typename Vector, typename OUTPUT_TYPE >
 void writefile( const Vector& v,
-                OUTFILE_TYPE& f,
+                OUTPUT_TYPE& f,
                 int trc_start, int trc_end ) {
 
     auto itr = v.data();
@@ -578,10 +578,10 @@ std::vector< std::pair< std::size_t, std::size_t > > segments( int numseg,
     return sgmnts;
 }
 
-template<typename INFILE_TYPE, typename OUTFILE_TYPE, typename OPTIONS>
-void compute_impedance_of_full_cube( std::vector< INFILE_TYPE >& files,
-                                     std::vector< OUTFILE_TYPE >& relAI_files,
-                                     std::vector< OUTFILE_TYPE >& dsyn_files,
+template<typename INPUT_TYPE, typename OUTPUT_TYPE, typename OPTIONS>
+void compute_impedance_of_full_cube( std::vector< INPUT_TYPE >& files,
+                                     std::vector< OUTPUT_TYPE >& relAI_files,
+                                     std::vector< OUTPUT_TYPE >& dsyn_files,
                                      const OPTIONS& opts ) {
     using T = float;
 
