@@ -46,7 +46,7 @@ jobs:
     - name: Install Python dependencies
       run: pip install "segyio==${{ env.segyio_version }}"
 
-    - name: Configure project
+    - name: Configure project (command line tools)
       run: |
         mkdir build
         cd build
@@ -55,7 +55,7 @@ jobs:
               -DUSE_FFTW=ON \
               ..
 
-    - name: Run cppcheck
+    - name: Run cppcheck (command line tools)
       working-directory: build
       run: |
         cppcheck --enable=style,portability,performance,warning \
@@ -64,5 +64,27 @@ jobs:
                  --project=compile_commands.json \
                  --error-exitcode=1 \
                  --suppressions-list=../cppcheck/suppressions.txt \
+                 --verbose \
+                 --template="{file}:{line} [{severity}] {message}"
+
+    - name: Configure project (Python bindings)
+      run: |
+        cd python
+        python -m pip install \
+          -Ccmake.define.CMAKE_BUILD_TYPE=Release \
+          -Ccmake.define.USE_FFTW=ON \
+          -Ccmake.define.CMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -Cbuild-dir=cppcheck-build \
+          .
+
+    - name: Run cppcheck (Python bindings)
+      working-directory: python/cppcheck-build
+      run: |
+        cppcheck --enable=style,portability,performance,warning \
+                 --library=posix \
+                 --inline-suppr \
+                 --project=compile_commands.json \
+                 --error-exitcode=1 \
+                 --suppressions-list=../../cppcheck/suppressions.txt \
                  --verbose \
                  --template="{file}:{line} [{severity}] {message}"
