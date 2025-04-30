@@ -5,22 +5,35 @@
 #include <segyio/segyio.hpp>
 
 template< typename Derived >
-struct xlinesorted_checker {
-    bool xlinesorted() const noexcept(true);
+struct indexcount_checker {
+    int fastindexcount() const noexcept(true);
+    int slowindexcount() const noexcept(true);
 };
 
 template< typename Derived >
-bool xlinesorted_checker< Derived >::xlinesorted() const noexcept(true) {
+int indexcount_checker< Derived >::fastindexcount() const noexcept(true) {
     const auto* self = static_cast< const Derived* >( this );
-    return self->sorting() == segyio::sorting::xline();
+    if (self->sorting() == segyio::sorting::xline())
+        return self->crosslinecount();
+    else
+        return self->inlinecount();
+}
+
+template< typename Derived >
+int indexcount_checker< Derived >::slowindexcount() const noexcept(true) {
+    const auto* self = static_cast< const Derived* >( this );
+    if (self->sorting() == segyio::sorting::xline())
+        return self->inlinecount();
+    else
+        return self->crosslinecount();
 }
 
 
 using input_file = segyio::basic_volume< segyio::readonly,
-                                         xlinesorted_checker >;
+                                         indexcount_checker >;
 using output_file = segyio::basic_volume< segyio::trace_writer,
                                           segyio::write_always,
-                                          xlinesorted_checker >;
+                                          indexcount_checker >;
 
 namespace {
 
