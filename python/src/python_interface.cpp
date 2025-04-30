@@ -11,18 +11,6 @@ namespace py = pybind11;
 namespace si4ti {
 namespace python {
 
-struct ImpedanceOptions {
-    int polarity = 1;
-    int segments = 1;
-    int overlap = -1;
-    bool tv_wavelet = false;
-    double damping_3D = 0.0001;
-    double damping_4D = 0.0001;
-    double latsmooth_3D = 0.05;
-    double latsmooth_4D = 4;
-    int max_iter = 50;
-};
-
 // Wrapper around a NumPy array to ensure that has the same interface like the
 // `input_file` and `output_file` types used in the impedance code. This allows
 // us to reuse the impedance code for the Python interface without any major
@@ -145,18 +133,18 @@ PYBIND11_MODULE( _si4ti_python, m ) {
            "Computes the impedance from provided cubes and parameters",
            py::arg( "input" ), py::arg( "options" ), py::return_value_policy::move );
 
-    py::class_< si4ti::python::ImpedanceOptions >( m, "ImpedanceOptions" )
+    py::class_< ImpedanceOptions >( m, "ImpedanceOptions" )
         .def( py::init<>(),
               R"pbdoc(
             Impedance options, equivalent to the CLI options.
             )pbdoc" )
-        .def_readwrite( "polarity", &si4ti::python::ImpedanceOptions::polarity )
-        .def_readwrite( "segments", &si4ti::python::ImpedanceOptions::segments )
-        .def_readwrite( "overlap", &si4ti::python::ImpedanceOptions::overlap )
-        .def_readwrite( "tv_wavelet", &si4ti::python::ImpedanceOptions::tv_wavelet )
-        .def_readwrite( "damping_3D", &si4ti::python::ImpedanceOptions::damping_3D )
-        .def_readwrite( "damping_4D", &si4ti::python::ImpedanceOptions::damping_4D )
-        .def_readwrite( "latsmooth_3D", &si4ti::python::ImpedanceOptions::latsmooth_3D )
-        .def_readwrite( "latsmooth_4D", &si4ti::python::ImpedanceOptions::latsmooth_4D )
-        .def_readwrite( "max_iter", &si4ti::python::ImpedanceOptions::max_iter );
+        .def_readwrite( "polarity", &ImpedanceOptions::polarity )
+        .def_readwrite( "segments", &ImpedanceOptions::segments )
+        .def_readwrite( "overlap", &ImpedanceOptions::overlap )
+        .def_readwrite( "tv_wavelet", &ImpedanceOptions::tv_wavelet )
+        .def_readwrite( "damping_3D", &ImpedanceOptions::damping_3D )
+        .def_readwrite( "damping_4D", &ImpedanceOptions::damping_4D )
+        .def_readwrite( "latsmooth_3D", &ImpedanceOptions::latsmooth_3D )
+        .def_readwrite( "latsmooth_4D", &ImpedanceOptions::latsmooth_4D )
+        .def_readwrite( "max_iter", &ImpedanceOptions::max_iter );
 }
