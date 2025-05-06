@@ -45,7 +45,6 @@ Homepage = "https://github.com/equinor/si4ti"
 test = [
   "pytest",
   "pytest-memray",
-  "segyio",
 ]
 
 [tool.scikit-build]
