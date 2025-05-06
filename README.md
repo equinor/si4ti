@@ -96,25 +96,14 @@ OpenMP_ROOT="/opt/homebrew/opt/libomp" pip install -Ccmake.define.USE_FFTW=ON .[
 
 Afterwards you can run the tests
 
-
 ```bash
-python -m pytest tests
+python -m pytest --memray tests
 ```
 
 Note, that you are expected to observe increased performance if compiling with
 platform specific optimisation. You can add relevant compiler flags either via
-the `CXXFLAGS` environment variable or the CMake paremeter `CMAKE_CXX_FLAGS`
+the `CXXFLAGS` environment variable or the CMake parameter `CMAKE_CXX_FLAGS`
 (via `-Ccmake.define.CMAKE_CXX_FLAGS=<flags>`).
-
-### Running Python bindings tests ###
-After successful compilation and installation, navigate to the `python/`
-directory and run pytest. For this to work, the `si4ti` package must be
-available in your current Python environment.
-
-```bash
-cd python
-python -m pytest --memray tests
-```
 
 ### Usage ###
 The interface is inspired by the command line interface. Please check the
