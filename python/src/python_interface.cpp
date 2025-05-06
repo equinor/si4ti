@@ -70,6 +70,12 @@ class NumpyArrayWrapper {
     }
 };
 
+// `input` expects a Python list of three-dimensional NumPy arrays. The arrays
+// must fulfill the following properties:
+//
+// - All arrays have the same shape.
+// - The arrays are or can be converted into arrays of type `float`.
+// - The arrays must be contiguous in the trace dimension (third dimension).
 std::pair< py::list, py::list > impedance( const py::list& input,
                                            const ImpedanceOptions& options ) {
     std::vector< NumpyArrayWrapper > input_arrays;
@@ -85,8 +91,12 @@ std::pair< py::list, py::list > impedance( const py::list& input,
 
         py::array_t< float > numpy_array = py::cast< py::array >( item );
         if ( numpy_array.strides( 2 ) != sizeof( float ) ) {
-            throw std::runtime_error(
-                "The NumPy arrays must be contiguous in trace direction." );
+            const std::string msg{
+                "The NumPy arrays must have stride " +
+                std::to_string( sizeof( float ) ) +
+                "in trace dimension to be contiguous in this dimension. " +
+                "Got stride" + std::to_string( numpy_array.strides( 2 ) ) + "." };
+            throw std::runtime_error( msg );
         }
 
         const py::ssize_t shape[3]{ numpy_array.shape( 0 ), numpy_array.shape( 1 ),
