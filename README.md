@@ -74,7 +74,6 @@ During compilation, you need the following dependencies.
  * [CMake](https://cmake.org) version 3.15 or greater
  * [Eigen3](https://eigen.tuxfamily.org) version 3.3.4 or greater
  * [OpenMP](https://www.openmp.org)
-   version 0.1 or greater
  * [fftw](https://www.fftw.org) if the bindings are built with `USE_FFTW=ON`
 
 Compilation of the Python bindings via `pip` only builds the bindings and not
