@@ -91,7 +91,7 @@ cd python/
 and then invoke the build process via pip
 
 ```bash
-pip install -Ccmake.define.USE_FFTW=ON .[test]
+OpenMP_ROOT="/opt/homebrew/opt/libomp" pip install -Ccmake.define.USE_FFTW=ON .[test]
 ```
 
 Afterwards you can run the tests
