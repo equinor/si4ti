@@ -75,7 +75,7 @@ def compute_impedance(
     Parameters
     ----------
     input_cubes : list[xtgeo.Cube]
-        List of input cubes
+        List of input cubes. The cubes must all have the equal shape.
     inverse-polarity : bool, optional
         Invert polarity of the data, by default False
     segments : int, optional
