@@ -24,7 +24,7 @@ def _assert_all_cube_shapes_equal(input_cubes: list[xtgeo.Cube]) -> None:
     for c in input_cubes:
         if c.values.shape != input_cubes[0].values.shape:
             msg = (
-                "Input cubes must all equal shape, i.e., the have the same "
+                "Input cubes must all have equal shape, i.e., the have the same "
                 "number of inlines, crosslines and traces"
             )
             raise InvalidShapeError(msg)
