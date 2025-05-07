@@ -1,3 +1,5 @@
+#ifndef IMPEDANCE_HPP
+#define IMPEDANCE_HPP
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -12,29 +14,42 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/FFT>
-#include <segyio/segyio.hpp>
-
-using namespace segyio::literals;
-using input_file = segyio::basic_volume< segyio::readonly >;
-using output_file = segyio::basic_volume< segyio::trace_writer,
-                                          segyio::write_always >;
 
 namespace {
+
+struct ImpedanceOptions {
+    int polarity = 1;
+    int segments = 1;
+    int overlap = -1;
+    bool tv_wavelet = false;
+    double damping_3D = 0.0001;
+    double damping_4D = 0.0001;
+    double latsmooth_3D = 0.05;
+    double latsmooth_4D = 4;
+    int max_iter = 50;
+};
 
 struct Progress {
     static int expected;
     static int count;
 
     static void report() {
+#ifndef MUTE_PROGRESS
         count++;
         if( count % (expected/20) == 0 )
             std::cout << "Progress: " << (count*100)/expected << "%\n";
+#endif
     }
 
     static void report( int n ) {
+#ifndef MUTE_PROGRESS
         for( int i = 0; i < n; ++i ) report();
+#endif
     }
 };
+
+int Progress::count = 0;
+int Progress::expected = 10;
 
 template< typename T >
 using vector = Eigen::Matrix< T, Eigen::Dynamic, 1 >;
@@ -62,8 +77,8 @@ vector< T > myhamn( int n ){
     return 0.5 * (1 - filter.array().cos());
 }
 
-template< typename T >
-vector< T > timeinvariant_wavelet( input_file& survey ) {
+template< typename T, typename INPUT_TYPE >
+vector< T > timeinvariant_wavelet( INPUT_TYPE& survey ) {
 
     const auto tracelen = survey.samplecount();
 
@@ -83,8 +98,8 @@ vector< T > timeinvariant_wavelet( input_file& survey ) {
     return freqwav;
 }
 
-template< typename T >
-matrix< T > timevarying_wavelet( input_file& survey ) {
+template< typename T, typename INPUT_TYPE >
+matrix< T > timevarying_wavelet( INPUT_TYPE& survey ) {
 
     const auto tracelen = survey.samplecount();
     const int win_size = 101;
@@ -145,8 +160,8 @@ matrix< T > timevarying_wavelet( input_file& survey ) {
     return freqwav;
 }
 
-template< typename T >
-std::vector< matrix< T > > wavelets( std::vector< input_file >& vintages,
+template< typename T, typename INPUT_TYPE >
+std::vector< matrix< T > > wavelets( std::vector< INPUT_TYPE >& vintages,
                                      bool tv_wavelet,
                                      int polarity ) {
     std::vector< matrix< T > > wvlets;
@@ -271,8 +286,8 @@ struct solution_1D {
     vector< T > rj;
 };
 
-template< typename T >
-solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
+template< typename T, typename INPUT_TYPE >
+solution_1D< T > solve_1D( std::vector< INPUT_TYPE >&  vintages,
                            const std::vector< matrix< T > >& L,
                            const std::vector< matrix< T > >& A,
                            T damping,
@@ -318,8 +333,8 @@ solution_1D< T > solve_1D( std::vector< input_file >&  vintages,
     return sol;
 }
 
-template< typename T >
-void add_boundary_inline( std::vector< output_file >& relAI_files,
+template< typename T, typename OUTPUT_TYPE >
+void add_boundary_inline( std::vector< OUTPUT_TYPE >& relAI_files,
                           vector< T >& b,
                           T norm,
                           T lat_smooth_3D, T lat_smooth_4D,
@@ -331,10 +346,7 @@ void add_boundary_inline( std::vector< output_file >& relAI_files,
 
     const int nvints = relAI_files.size();
 
-    const bool xlinesorted =
-        relAI_files.front().sorting() == segyio::sorting::xline();
-    const std::size_t slow = xlinesorted ?
-        relAI_files.front().inlinecount() : relAI_files.front().crosslinecount();
+    const std::size_t slow = relAI_files.front().slowindexcount();
 
     const std::size_t traces = trc_end - trc_start + 1;
     const std::size_t tracelen = relAI_files.front().samplecount();
@@ -451,9 +463,9 @@ vector< T > conjugate_gradient( const MatrixType& L,
     return x;
 }
 
-template< typename T >
-vector< T > compute_impedance( std::vector< input_file >& vintages,
-                               std::vector< output_file >& relAI_files,
+template< typename T, typename INPUT_TYPE, typename OUTPUT_TYPE >
+vector< T > compute_impedance( std::vector< INPUT_TYPE >& vintages,
+                               std::vector< OUTPUT_TYPE >& relAI_files,
                                const std::vector< matrix< T > >& A,
                                T norm,
                                int max_iter,
@@ -463,11 +475,7 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
                                T lat_smooth_4D,
                                int trc_start,
                                int trc_end ) {
-
-    bool xlinesorted = vintages.front().sorting() == segyio::sorting::xline();
-    const int slow = xlinesorted ?
-        vintages.front().inlinecount() : vintages.front().crosslinecount();
-
+    const int slow = vintages.front().slowindexcount();
     const int fast = (trc_end - trc_start + 1) / slow;
 
     const int nvints = vintages.size();
@@ -505,9 +513,9 @@ vector< T > compute_impedance( std::vector< input_file >& vintages,
     return sol.rj / norm;
 }
 
-template< typename Vector >
+template< typename Vector, typename OUTPUT_TYPE >
 void writefile( const Vector& v,
-                output_file& f,
+                OUTPUT_TYPE& f,
                 int trc_start, int trc_end ) {
 
     auto itr = v.data();
@@ -562,6 +570,74 @@ std::vector< std::pair< std::size_t, std::size_t > > segments( int numseg,
     }
 
     return sgmnts;
+}
+
+template<typename INPUT_TYPE, typename OUTPUT_TYPE, typename OPTIONS>
+void compute_impedance_of_full_cube( std::vector< INPUT_TYPE >& files,
+                                     std::vector< OUTPUT_TYPE >& relAI_files,
+                                     std::vector< OUTPUT_TYPE >& dsyn_files,
+                                     const OPTIONS& opts ) {
+    using T = float;
+
+    const int overlap = (opts.overlap < 0) ? opts.max_iter : opts.overlap;
+
+    Progress::expected += opts.segments * ( opts.max_iter + 25 );
+
+    std::vector< matrix< T > > wvlets = wavelets< T >( files,
+                                                       opts.tv_wavelet,
+                                                       opts.polarity );
+
+    Progress::report( 5 );
+
+    T norm = normalization( wvlets );
+    const int vintages = files.size();
+
+    std::vector< matrix< T > > A = forward_operators< T >( wvlets,
+                                                           vintages,
+                                                           norm );
+
+    const std::size_t fast = files.front().fastindexcount();
+    const std::size_t slow = files.front().slowindexcount();
+
+    const std::size_t tracelen = files.front().samplecount();
+
+    const auto sgments = segments( opts.segments,
+                                   fast, slow,
+                                   overlap );
+
+    for( const auto& segment : sgments ) {
+        const std::size_t trc_start = segment.first;
+        const std::size_t trc_end = segment.second;
+
+        vector< T > relAI = compute_impedance< T >( files,
+                                                    relAI_files,
+                                                    A,
+                                                    norm,
+                                                    opts.max_iter,
+                                                    opts.damping_3D,
+                                                    opts.damping_4D,
+                                                    opts.latsmooth_3D,
+                                                    opts.latsmooth_4D,
+                                                    trc_start, trc_end );
+
+        const std::size_t traces = trc_end - trc_start + 1;
+        const std::size_t cubesize = traces * tracelen;
+
+        for( int i = 0; i < vintages; ++i ) {
+            auto seg = relAI.segment( i * cubesize, cubesize );
+
+            writefile( seg,
+                       relAI_files[ i ],
+                       trc_start, trc_end );
+
+            seg = reconstruct_data< T >( seg, A[ i ], norm, traces );
+
+            writefile( seg,
+                       dsyn_files[ i ],
+                       trc_start, trc_end );
+        }
+        Progress::report( 5 );
+    }
 }
 
 }
@@ -681,3 +757,4 @@ struct generic_product_impl< Si4tiImpMatrix< T, Reporter >,
 };
 
 } }
+#endif /* IMPEDANCE_HPP */

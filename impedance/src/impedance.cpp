@@ -2,10 +2,50 @@
 
 #include <getopt.h>
 
-int Progress::count = 0;
-int Progress::expected = 10;
+#include <segyio/segyio.hpp>
+
+template< typename Derived >
+struct indexcount_checker {
+    int fastindexcount() const noexcept(true);
+    int slowindexcount() const noexcept(true);
+};
+
+template< typename Derived >
+int indexcount_checker< Derived >::fastindexcount() const noexcept(true) {
+    const auto* self = static_cast< const Derived* >( this );
+    if (self->sorting() == segyio::sorting::xline())
+        return self->crosslinecount();
+    else
+        return self->inlinecount();
+}
+
+template< typename Derived >
+int indexcount_checker< Derived >::slowindexcount() const noexcept(true) {
+    const auto* self = static_cast< const Derived* >( this );
+    if (self->sorting() == segyio::sorting::xline())
+        return self->inlinecount();
+    else
+        return self->crosslinecount();
+}
+
+
+using input_file = segyio::basic_volume< segyio::readonly,
+                                         indexcount_checker >;
+using output_file = segyio::basic_volume< segyio::trace_writer,
+                                          segyio::write_always,
+                                          indexcount_checker >;
 
 namespace {
+
+struct CliOptions : ImpedanceOptions {
+    std::vector< std::string > files;
+    std::vector< std::string > output_files;
+    int             verbosity            = 0;
+    segyio::ilbyte  ilbyte               = segyio::ilbyte();
+    segyio::xlbyte  xlbyte               = segyio::xlbyte();
+};
+
+
 
 void printhelp(){
     std::cout <<
@@ -34,7 +74,7 @@ void printhelp(){
         "                              splitting. Defaults to maximum number\n"
         "                              of iterations of the linear solver \n"
         "-p, --inverse-polarity        invert polarity of the data\n"
-        "-m, --max-iter                maximum number of itarations for\n"
+        "-m, --max-iter                maximum number of iterations for\n"
         "                              linear solver\n"
         "-O, --output-files            space separated list of filenames. The\n"
         "                              list is terminated by a double dash\n"
@@ -50,24 +90,7 @@ void printhelp(){
     ;
 }
 
-struct options {
-    std::vector< std::string > files;
-    std::vector< std::string > output_files;
-    int             verbosity            = 0;
-    segyio::ilbyte  ilbyte               = segyio::ilbyte();
-    segyio::xlbyte  xlbyte               = segyio::xlbyte();
-    int             polarity             = 1;
-    int             segments             = 1;
-    int             overlap              = -1;
-    bool            tv_wavelet           = false;
-    double          damping_3D           = 0.0001;
-    double          damping_4D           = 0.0001;
-    double          latsmooth_3D         = 0.05;
-    double          latsmooth_4D         = 4;
-    int             max_iter             = 50;
-};
-
-options parseopts( int argc, char** argv ) {
+CliOptions parseopts( int argc, char** argv ) {
     static struct option longopts[] = {
         { "ilbyte",               required_argument, 0, 'i' },
         { "xlbyte",               required_argument, 0, 'x' },
@@ -86,7 +109,7 @@ options parseopts( int argc, char** argv ) {
         { nullptr },
     };
 
-    options opts;
+    CliOptions opts;
 
     while( true ) {
         int option_index = 0;
@@ -162,14 +185,9 @@ output_file create_file( std::string filename,
 
 }
 
+
 int main( int argc, char** argv ) {
-    using T = float;
-
     auto opts = parseopts( argc, argv );
-
-    if( opts.overlap < 0 ) opts.overlap = opts.max_iter;
-
-    Progress::expected += opts.segments * ( opts.max_iter + 25 );
 
     std::vector< input_file > files;
 
@@ -185,27 +203,15 @@ int main( int argc, char** argv ) {
             or   front.crosslinecount() != back.crosslinecount()
             or   front.inlinecount()    != back.inlinecount()
             or   front.tracecount()     != back.tracecount() )
-            
+
             throw std::invalid_argument( "Input files must all "
                                          "have equal structure" );
     }
 
-    std::vector< matrix< T > > wvlets = wavelets< T >( files,
-                                                       opts.tv_wavelet,
-                                                       opts.polarity );
-
-    Progress::report( 5 );
-
-    T norm = normalization( wvlets );
-    const int vintages = files.size();
-
-    std::vector< matrix< T > > A = forward_operators< T >( wvlets,
-                                                           vintages,
-                                                           norm );
-
     std::vector< output_file > relAI_files;
     std::vector< output_file > dsyn_files;
 
+    const int vintages = files.size();
     for( int i = 0; i < vintages; ++i ) {
 
         std::string relAI_fname;
@@ -233,49 +239,6 @@ int main( int argc, char** argv ) {
         dsyn_files.emplace_back( std::move( dsyn_file ) );
     }
 
-    const bool xl_sorted = files.front().sorting() == segyio::sorting::xline();
-    const std::size_t fast = xl_sorted ? files.front().crosslinecount()
-                                       : files.front().inlinecount();
-    const std::size_t slow = xl_sorted ? files.front().inlinecount()
-                                       : files.front().crosslinecount();
+    compute_impedance_of_full_cube(files, relAI_files, dsyn_files, opts);
 
-    const std::size_t tracelen = files.front().samplecount();
-
-    const auto sgments = segments( opts.segments,
-                                   fast, slow,
-                                   opts.overlap );
-
-    for( const auto& segment : sgments ) {
-        const std::size_t trc_start = segment.first;
-        const std::size_t trc_end = segment.second;
-
-        vector< T > relAI = compute_impedance< T >( files,
-                                                    relAI_files,
-                                                    A,
-                                                    norm,
-                                                    opts.max_iter,
-                                                    opts.damping_3D,
-                                                    opts.damping_4D,
-                                                    opts.latsmooth_3D,
-                                                    opts.latsmooth_4D,
-                                                    trc_start, trc_end );
-
-        const std::size_t traces = trc_end - trc_start + 1;
-        const std::size_t cubesize = traces * tracelen;
-
-        for( int i = 0; i < vintages; ++i ) {
-            auto seg = relAI.segment( i * cubesize, cubesize );
-
-            writefile( seg,
-                       relAI_files[ i ],
-                       trc_start, trc_end );
-
-            seg = reconstruct_data< T >( seg, A[ i ], norm, traces );
-
-            writefile( seg,
-                       dsyn_files[ i ],
-                       trc_start, trc_end );
-        }
-        Progress::report( 5 );
-    }
 }
