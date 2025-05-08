@@ -63,10 +63,24 @@ apply-timeshift --help
 si4ti provides a Python bindings for the impedance calculations. No Python
 interface for the timeshift is provided.
 
+### Installation ###
+Pre-built wheels are available for the following platforms for Python 3.9 up to
+3.13:
+
+ * `manylinux_2_28` for `x86_64`
+ * MacOS X 14.0 and newer for `arm64`
+ * MacOS X 13.0 and newer for `x86_64`
+
+The pre-built wheels can be installed via `pip`
+
+```bash
+pip install si4ti
+```
+
 ### Build from source ###
-You can install si4ti via the source distribution (sdist) or the Git
-repository. This allows to compile the package with FFTW3 support as well as
-platform specific optimisation which may improve the performance.
+You can install si4ti from source via the the Git repository. This allows to
+compile the package with FFTW3 support as well as platform specific
+optimisation which may improve the performance.
 
 During compilation, you need the following dependencies.
  * A C++11 compatible compiler (tested on gcc and clang)
