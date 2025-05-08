@@ -1,0 +1,95 @@
+name: Wheels
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - '*'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  wheels:
+    name: Build wheels on ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      # The main deployment target is (Red Hat) Linux. It is convenient to
+      # build the wheels for MacOS for testing and development. No wheels for
+      # windows are build as this was not straightforward to get working and
+      # there is no documented need for such wheels.
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: macos-13
+            arch: x86_64
+            macos_target: '13.0'
+            openmp_root: '/usr/local/opt/libomp'
+          - os: macos-latest
+            arch: arm64
+            macos_target: '14.0'
+            openmp_root: '/opt/homebrew/opt/libomp/'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Used to host cibuildwheel
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      # The majority of cibuildhweel configuration is done via pyproject.toml,
+      # but for options specific to a MacOS target platform, i.e., an option
+      # different on arm64 than on x86_64, it is easiest to set them in the
+      # workflow file.
+      #
+      # The minimum supported MacOS version is set to 13.0 (amd64) and 14.0
+      # (arm64). OpenMP installed via Homebrew requires rather new MacOS
+      # versions [1]. If we want to support older platforms, we would need to
+      # build our own OpenMP library from source.
+      #
+      # On MacOS, we need to specify OpenMP_Root such that CMake is able
+      # to find OpenMP installed via Homebrew.
+      #
+      # [1]: https://cibuildwheel.pypa.io/en/stable/faq/#macos-library-dependencies-do-not-satisfy-target-macos
+      - name: Build wheels
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_ENVIRONMENT_MACOS: >
+            MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos_target }}
+            OpenMP_ROOT=${{ matrix.openmp_root }}
+        run: |
+          python -m cibuildwheel --output-dir wheelhouse python
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-${{ matrix.arch }}
+          path: ./wheelhouse/*.whl
+          # We do not need to keep the artifacts for long because they are
+          # supposed to be pushed to PyPI.
+          retention-days: 7
+
+  publish:
+    needs: [wheels]
+    name: Publish wheels to PyPI
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-*
+          merge-multiple: true
+          path: ./wheelhouse/
+
+      - name: Publish wheels to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ./wheelhouse/

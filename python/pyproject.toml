@@ -53,13 +53,27 @@ minimum-version = "build-system.requires"
 wheel.license-files = ["../LICENSE"]
 build-dir = "build/{wheel_tag}"
 
-sdist.exclude = [
-  ".github/",
-  "travis/",
-  "travis.yml",
-]
-
 [tool.scikit-build.cmake.define]
 # By default, don't use FFTW. It would imply license changes if we would
 # bundle it with the Python bindings.
 USE_FFTW = false
+
+[tool.cibuildwheel]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+build = "*"
+# Don't build for PyPy, Win32, i686, and musllinux
+# Cannot build for linux_aarch64 due to missing xtgeo release
+skip = "pp* *-win32 *_i686 *musllinux* *_aarch64"
+test-extras = "test"
+test-command = "cd {project}/python && pytest --memray tests --color=yes -v"
+build-verbosity = 1
+
+# Some target/architecture specific configuration is set in the GitHub workflow
+# building the wheels because it is simpler to set these configurations
+# target-dependent in the workflow.
+[tool.cibuildwheel.linux]
+before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
+
+[tool.cibuildwheel.macos]
+before-all = [ "brew install --formula eigen libomp cmake" ]
