@@ -14,7 +14,7 @@ maintainers = [
   { name = "Equinor ASA" },
 ]
 license = { file = "../LICENSE" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 dependencies = [
   "numpy>=1.20", # Minimum needed for typing support
@@ -29,7 +29,6 @@ classifiers = [
   "Operating System :: POSIX :: Linux",
   "Programming Language :: C++",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -64,7 +63,9 @@ manylinux-aarch64-image = "manylinux_2_28"
 build = "*"
 # Don't build for PyPy, Win32, i686, and musllinux
 # Cannot build for linux_aarch64 due to missing xtgeo release
-skip = "pp* *-win32 *_i686 *musllinux* *_aarch64"
+# Don't build on Python 3.9 as it is almost end of life and we cannot test the
+# wheels on MacOS due to issues with h2py
+skip = "pp* *-win32 *_i686 *musllinux* *_aarch64 cp39-*"
 test-extras = "test"
 test-command = "cd {project}/python && pytest --memray tests --color=yes -v"
 build-verbosity = 1

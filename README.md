@@ -64,7 +64,7 @@ si4ti provides a Python bindings for the impedance calculations. No Python
 interface for the timeshift is provided.
 
 ### Installation ###
-Pre-built wheels are available for the following platforms for Python 3.9 up to
+Pre-built wheels are available for the following platforms for Python 3.10 up to
 3.13:
 
  * `manylinux_2_28` for `x86_64`
@@ -84,7 +84,7 @@ optimisation which may improve the performance.
 
 During compilation, you need the following dependencies.
  * A C++11 compatible compiler (tested on gcc and clang)
- * Python 3.9 or greater including the development headers
+ * Python 3.10 or greater including the development headers
  * [CMake](https://cmake.org) version 3.15 or greater
  * [Eigen3](https://eigen.tuxfamily.org) version 3.3.4 or greater
  * [OpenMP](https://www.openmp.org)
