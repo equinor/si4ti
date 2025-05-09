@@ -77,4 +77,4 @@ build-verbosity = 1
 before-all = "yum install -y make gcc gcc-c++ make eigen3-devel libomp-devel"
 
 [tool.cibuildwheel.macos]
-before-all = [ "brew install eigen libomp cmake" ]
+before-all = [ "brew install --formula eigen libomp cmake" ]
