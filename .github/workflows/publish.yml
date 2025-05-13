@@ -23,14 +23,20 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: x86_64
+            cxx_flags: '-march=x86-64-v3'
           - os: macos-13
             arch: x86_64
             macos_target: '13.0'
             openmp_root: '/usr/local/opt/libomp'
+            cxx_flags: '-march=x86-64-v3'
           - os: macos-latest
             arch: arm64
             macos_target: '14.0'
             openmp_root: '/opt/homebrew/opt/libomp/'
+            # There is no obvious compile-time optimisation that we can choose
+            # here that is better than what the compiler chooses by default.
+            # Therefore, we don't specify anything for arm64.
+            cxx_flags:
 
     steps:
       - uses: actions/checkout@v4
@@ -63,6 +69,8 @@ jobs:
           CIBW_ENVIRONMENT_MACOS: >
             MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos_target }}
             OpenMP_ROOT=${{ matrix.openmp_root }}
+          CIBW_ENVIRONMENT: >
+            CXXFLAGS='${{ matrix.cxx_flags }}'
         run: |
           python -m cibuildwheel --output-dir wheelhouse python
 

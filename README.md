@@ -77,6 +77,17 @@ The pre-built wheels can be installed via `pip`
 pip install si4ti
 ```
 
+si4ti is compute intense and highly profits from compiler optimisation and
+vectorisation. Therefore, the prebuilt wheels have vectorisation enabled, but
+still aim for good portability. The `x86_64` wheels use `x86-64-v3`
+architecture optimisations which should be supported by Intel Haswell (released
+2013), AMD Excavator, and newer CPUs, see [the GCC documentation for more
+information](https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html) and overview
+of [microarchitecture levels on
+Wikipedia](https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels). The
+`arm64` wheels are currently using the default optimisation chosen by the
+compiler and should be portable between all `arm64` platforms.
+
 ### Build from source ###
 You can install si4ti from source via the the Git repository. This allows to
 compile the package with FFTW3 support as well as platform specific
