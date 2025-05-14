@@ -165,7 +165,9 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [wheels]
+    # We do not want to publish if either, building wheels or the command line
+    # tools, fail because both should be in good shape for a release.
+    needs: [wheels, build_executables]
     name: Publish wheels to PyPI
     runs-on: ubuntu-latest
     environment: pypi
