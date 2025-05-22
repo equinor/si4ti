@@ -51,7 +51,7 @@ jobs:
         cd segyio
         mkdir build
         cd build
-        scl enable gcc-toolset-13 "cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF -DSEGYIO_NO_GIT_VER=ON"
+        scl enable gcc-toolset-13 "cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_PYTHON=OFF -DEXPERIMENTAL=ON -DBUILD_TESTING=OFF -DBUILD_BIN=OFF"
         scl enable gcc-toolset-13 "make -j"
         scl enable gcc-toolset-13 "make install"
 
@@ -73,7 +73,7 @@ jobs:
         echo PATH=${PATH} >> $GITHUB_ENV
 
     # Run build of command line tools from bash script to reuse the environment
-    # of the GitHub Action. so we do not have to reinstall and rebuild all
+    # of the GitHub Action, so we do not have to reinstall and rebuild all
     # dependencies.
     #
     # TODO: Consider replacing the script by reusable GitHub Actions, a
