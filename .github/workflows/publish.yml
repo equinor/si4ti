@@ -93,12 +93,6 @@ jobs:
         retention-days: 7
 
   wheels:
-    # This job does not directly depend on the command line tools, but we do
-    # not need to waste compute time building the wheels if building the
-    # command line tools fails. Building the command line tools uses less
-    # compute time in total than building the wheels so we build the command
-    # line tools first.
-    needs: [build_executables]
     name: Build wheels on ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
