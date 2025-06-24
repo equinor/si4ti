@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
-project(si4ti VERSION 0.0.0 LANGUAGES CXX)
+project(si4ti VERSION 1.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(${CMAKE_SOURCE_DIR}/cmake/CommonConfiguration.cmake)
