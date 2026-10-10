@@ -65,7 +65,7 @@ interface for the timeshift is provided.
 
 ### Installation ###
 Pre-built wheels are available for the following platforms for Python 3.11 up to
-3.14:
+3.15:
 
  * `manylinux_2_28` for `x86_64`
  * MacOS X 15.0 and newer for `arm64`

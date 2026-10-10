@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add support for Python 3.15.
+  - Python 3.15t (free-threaded Python) is not supported.
 - Drop support for Python 3.10 (end of life).
 
 ## 1.2.0 - 2026-08-11
