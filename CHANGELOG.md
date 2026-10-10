@@ -1,5 +1,9 @@
 # si4ti changelog
 
+## Unreleased
+
+- Drop support for Python 3.10 (end of life).
+
 ## 1.2.0 - 2026-08-11
 
 - Add support for Python 3.14.
